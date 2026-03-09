@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ADMIN_SESSION_KEY } from "@/lib/auth-context";
+import { ADMIN_SESSION_KEY, useAuth } from "@/lib/auth-context";
 
 type Mode = "signin" | "signup" | "forgot_email" | "forgot_code" | "forgot_newpass";
 
@@ -34,6 +34,7 @@ function InfoMsg({ text }: { text: string }) {
 }
 
 export default function LoginAdminPage() {
+    const { setAdminSession } = useAuth();
     const [mode, setMode] = useState<Mode>("signin");
 
     // Sign in / sign up fields
@@ -56,7 +57,9 @@ export default function LoginAdminPage() {
     const router = useRouter();
 
     function saveSession(adminId: string, email: string) {
-        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ adminId, email }));
+        const session = { adminId, email };
+        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+        setAdminSession(session);
     }
 
     // ── Sign In ───────────────────────────────────────────────────────────────

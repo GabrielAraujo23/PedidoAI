@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Public / client routes — pass through without sidebar
     if (isPublic) {
         return (
-            <AuthContext.Provider value={{ adminSession, loading, signOut }}>
+            <AuthContext.Provider value={{ adminSession, loading, signOut, setAdminSession }}>
                 {children}
             </AuthContext.Provider>
         );
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Admin route with session — full layout with sidebar
     return (
-        <AuthContext.Provider value={{ adminSession, loading, signOut }}>
+        <AuthContext.Provider value={{ adminSession, loading, signOut, setAdminSession }}>
             <div className="flex h-screen overflow-hidden">
                 <NavSidebar />
                 <main className="flex-1 overflow-y-auto ml-64 bg-transparent p-4 md:p-8">

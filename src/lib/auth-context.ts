@@ -15,12 +15,14 @@ export interface AuthContextValue {
     adminSession: AdminSession | null;
     loading: boolean;
     signOut: () => void;
+    setAdminSession: (session: AdminSession) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue>({
     adminSession: null,
     loading: true,
     signOut: () => {},
+    setAdminSession: () => {},
 });
 
 export function useAuth() {
