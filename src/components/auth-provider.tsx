@@ -7,7 +7,7 @@ import { NavSidebar } from "@/components/nav-sidebar";
 import { AuthContext, AdminSession, ADMIN_SESSION_KEY } from "@/lib/auth-context";
 
 // Public paths: no admin session required
-const PUBLIC_PREFIXES = ["/login", "/loginadmin", "/cliente"];
+const PUBLIC_PREFIXES = ["/login", "/loginadmin", "/cliente/"];
 
 function isPublicPath(pathname: string) {
     return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
