@@ -191,21 +191,30 @@ export default function LojaPage() {
 
     async function handleSave() {
         const errs = validate(form);
-        if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+        if (Object.keys(errs).length > 0) {
+            setErrors(errs);
+            setToast({ type: "error", message: "Corrija os campos destacados antes de salvar." });
+            return;
+        }
+
+        if (!adminId.current) {
+            setToast({ type: "error", message: "Sessão não encontrada. Faça login novamente." });
+            return;
+        }
 
         setSaving(true);
         const payload = {
             admin_id: adminId.current,
-            store_name: form.storeName,
-            cnpj: form.cnpj,
-            address: form.address,
-            phone: form.phone,
-            business_hours: form.businessHours,
+            store_name: form.storeName || null,
+            cnpj: form.cnpj || null,
+            address: form.address || null,
+            phone: form.phone || null,
+            business_hours: form.businessHours || null,
             delivery_rate_per_km: form.deliveryRate ? parseFloat(form.deliveryRate) : null,
-            tax_regime: form.taxRegime,
-            state_registration: form.stateRegistration,
+            tax_regime: form.taxRegime || null,
+            state_registration: form.stateRegistration || null,
             product_categories: form.categories,
-            logo_url: form.logoUrl,
+            logo_url: form.logoUrl || null,
             updated_at: new Date().toISOString(),
         };
 
@@ -214,7 +223,11 @@ export default function LojaPage() {
             : await supabase.from("store_settings").insert(payload).select("id").single();
 
         if (error) {
-            setToast({ type: "error", message: "Erro ao salvar. Tente novamente." });
+            console.error("store_settings save error:", error);
+            const detail = error.code === "42P01"
+                ? "Tabela não encontrada. Execute a migration 005 no Supabase."
+                : error.message ?? "Erro desconhecido.";
+            setToast({ type: "error", message: `Erro ao salvar: ${detail}` });
         } else {
             if (!settingId && data) setSettingId(data.id);
             setDirty(false);
@@ -248,7 +261,7 @@ export default function LojaPage() {
             {/* Toast */}
             {toast && (
                 <div className={cn(
-                    "fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium",
+                    "fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-sm",
                     toast.type === "success" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
                 )}>
                     {toast.type === "success"
