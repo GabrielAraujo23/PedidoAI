@@ -11,6 +11,7 @@ import {
     LogOut,
     MessageSquare,
     ShieldCheck,
+    ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: Package, label: "Pedidos", href: "/pedidos" },
     { icon: Users, label: "Clientes", href: "/clientes" },
+    { icon: ShoppingBag, label: "Produtos", href: "/produtos" },
     { icon: MessageSquare, label: "Chat Inteligente", href: "/chat" },
     { icon: Store, label: "Informações da Loja", href: "/loja" },
 ];
