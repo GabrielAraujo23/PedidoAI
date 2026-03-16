@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
+import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 import type { LucideIcon } from "lucide-react";
 
@@ -48,8 +49,6 @@ function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const CART_KEY = "pedidoai_cart";
-
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function CatalogPage() {
@@ -57,24 +56,21 @@ export default function CatalogPage() {
     const [mounted, setMounted] = useState(false);
     const [products, setProducts] = useState<Product[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(true);
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("Todos");
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
     const router = useRouter();
+    const { items, addItem, updateQuantity, totalItems, totalPrice } = useCart();
+
+    // Derive quantity map for O(1) lookups in the render loop
+    const quantityMap = Object.fromEntries(items.map((i) => [i.product_id, i.quantity]));
 
     useEffect(() => {
         setMounted(true);
         const raw = localStorage.getItem("pedidoai_client_session");
         if (!raw) { router.push("/login"); return; }
         setSession(JSON.parse(raw) as ClientSession);
-
-        // Restore cart from localStorage if navigating back from checkout
-        const savedCart = localStorage.getItem(CART_KEY);
-        if (savedCart) {
-            try { setQuantities(JSON.parse(savedCart)); } catch { /* ignore */ }
-        }
 
         supabase
             .from("products")
@@ -96,11 +92,6 @@ export default function CatalogPage() {
         return () => clearTimeout(t);
     }, [toast]);
 
-    // Persist cart to localStorage whenever it changes
-    useEffect(() => {
-        if (mounted) localStorage.setItem(CART_KEY, JSON.stringify(quantities));
-    }, [quantities, mounted]);
-
     // ── Derived state ──────────────────────────────────────────────────────────
 
     const categories = ["Todos", ...Array.from(new Set(products.map((p) => p.category)))];
@@ -119,22 +110,6 @@ export default function CatalogPage() {
         (acc[p.category] ??= []).push(p);
         return acc;
     }, {});
-
-    const cartItems = products
-        .filter((p) => (quantities[p.id] ?? 0) > 0)
-        .map((p) => ({ ...p, qty: quantities[p.id] }));
-
-    const cartTotal = cartItems.reduce((s, i) => s + i.qty * i.price, 0);
-    const totalItems = cartItems.reduce((s, i) => s + i.qty, 0);
-
-    function setQty(id: string, qty: number) {
-        setQuantities((prev) => ({ ...prev, [id]: Math.max(0, qty) }));
-    }
-
-    function handleCheckout() {
-        localStorage.setItem(CART_KEY, JSON.stringify(quantities));
-        router.push("/cliente/checkout");
-    }
 
     if (!mounted || !session) return null;
 
@@ -165,7 +140,7 @@ export default function CatalogPage() {
                     {/* Cart summary */}
                     <div className="bg-[#F97316] rounded-xl p-4 text-white">
                         <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">SEU CARRINHO</p>
-                        <p className="text-2xl font-bold mt-1">{formatCurrency(cartTotal)}</p>
+                        <p className="text-2xl font-bold mt-1">{formatCurrency(totalPrice)}</p>
                         <div className="flex items-center gap-1.5 mt-1 text-sm opacity-90">
                             <ShoppingBag className="w-4 h-4 shrink-0" />
                             <span>
@@ -266,7 +241,7 @@ export default function CatalogPage() {
                                         {/* Grid */}
                                         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                                             {prods.map((p) => {
-                                                const qty = quantities[p.id] ?? 0;
+                                                const qty = quantityMap[p.id] ?? 0;
                                                 const Icon = CATEGORY_ICONS[p.category] ?? Package;
                                                 return (
                                                     <div
@@ -297,7 +272,7 @@ export default function CatalogPage() {
                                                             <div className="flex items-center gap-2">
                                                                 <div className="flex items-center border border-[#E5E7EB] rounded-lg overflow-hidden">
                                                                     <button
-                                                                        onClick={() => setQty(p.id, qty - 1)}
+                                                                        onClick={() => updateQuantity(p.id, qty - 1)}
                                                                         disabled={qty === 0}
                                                                         className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                                                     >
@@ -305,14 +280,20 @@ export default function CatalogPage() {
                                                                     </button>
                                                                     <span className="w-7 text-center text-sm font-semibold text-[#111827]">{qty}</span>
                                                                     <button
-                                                                        onClick={() => setQty(p.id, qty + 1)}
+                                                                        onClick={() => qty === 0
+                                                                            ? addItem({ product_id: p.id, name: p.name, unit: p.unit, price: p.price })
+                                                                            : updateQuantity(p.id, qty + 1)
+                                                                        }
                                                                         className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:bg-gray-100 transition-colors"
                                                                     >
                                                                         <Plus className="w-3 h-3" />
                                                                     </button>
                                                                 </div>
                                                                 <button
-                                                                    onClick={() => setQty(p.id, qty === 0 ? 1 : 0)}
+                                                                    onClick={() => qty === 0
+                                                                        ? addItem({ product_id: p.id, name: p.name, unit: p.unit, price: p.price })
+                                                                        : updateQuantity(p.id, 0)
+                                                                    }
                                                                     className="relative flex-1 h-7 bg-[#F97316] text-white rounded-lg flex items-center justify-center hover:bg-[#F97316]/90 transition-colors"
                                                                 >
                                                                     <ShoppingCart className="w-3.5 h-3.5" />
@@ -343,18 +324,18 @@ export default function CatalogPage() {
 
                         {/* Thumbnails */}
                         <div className="flex -space-x-2 shrink-0">
-                            {cartItems.slice(0, 3).map((item, i) => (
+                            {items.slice(0, 3).map((item, i) => (
                                 <div
-                                    key={item.id}
+                                    key={item.product_id}
                                     style={{ zIndex: 3 - i }}
                                     className="w-9 h-9 rounded-full bg-gray-700 border-2 border-[#111827] flex items-center justify-center text-white text-xs font-bold shrink-0"
                                 >
                                     {item.name.charAt(0)}
                                 </div>
                             ))}
-                            {cartItems.length > 3 && (
+                            {items.length > 3 && (
                                 <div className="w-9 h-9 rounded-full bg-gray-600 border-2 border-[#111827] flex items-center justify-center text-white text-xs font-bold">
-                                    +{cartItems.length - 3}
+                                    +{items.length - 3}
                                 </div>
                             )}
                         </div>
@@ -362,21 +343,21 @@ export default function CatalogPage() {
                         {/* Total */}
                         <div className="flex-1 min-w-0">
                             <p className="text-[11px] text-gray-400 leading-none">Total do Pedido</p>
-                            <p className="text-lg font-bold text-[#F97316] leading-tight">{formatCurrency(cartTotal)}</p>
+                            <p className="text-lg font-bold text-[#F97316] leading-tight">{formatCurrency(totalPrice)}</p>
                             <p className="text-[10px] text-gray-500">Entrega a calcular</p>
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 shrink-0">
                             <button
-                                onClick={handleCheckout}
+                                onClick={() => router.push("/cliente/checkout")}
                                 className="bg-[#F97316] text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-[#F97316]/90 transition-colors flex items-center gap-2"
                             >
                                 FINALIZAR COMPRA
                                 <span>→</span>
                             </button>
                             <button
-                                onClick={handleCheckout}
+                                onClick={() => router.push("/cliente/checkout")}
                                 className="w-10 h-10 bg-[#F97316]/20 text-[#F97316] rounded-full flex items-center justify-center hover:bg-[#F97316]/30 transition-colors"
                             >
                                 <ShoppingCart className="w-5 h-5" />

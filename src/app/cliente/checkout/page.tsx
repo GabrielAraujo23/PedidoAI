@@ -10,21 +10,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
+import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-
-interface Product {
-    id: string;
-    name: string;
-    description: string | null;
-    category: string;
-    subcategory: string | null;
-    unit: string;
-    price: number;
-}
 
 type PaymentMethod = "pix" | "cartao" | "dinheiro" | "vr";
 
@@ -34,8 +24,6 @@ const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; Icon: typeof QrCode }
     { id: "dinheiro", label: "Dinheiro", Icon: Banknote },
     { id: "vr",       label: "VR / VA",  Icon: UtensilsCrossed },
 ];
-
-const CART_KEY = "pedidoai_cart";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -48,9 +36,6 @@ function formatCurrency(v: number) {
 export default function CheckoutPage() {
     const [session, setSession] = useState<ClientSession | null>(null);
     const [mounted, setMounted] = useState(false);
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loadingProducts, setLoadingProducts] = useState(true);
     const [address, setAddress] = useState("");
     const [payment, setPayment] = useState<PaymentMethod>("pix");
     const [coupon, setCoupon] = useState("");
@@ -58,6 +43,7 @@ export default function CheckoutPage() {
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
     const router = useRouter();
+    const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
 
     useEffect(() => {
         setMounted(true);
@@ -66,14 +52,6 @@ export default function CheckoutPage() {
 
         const sess = JSON.parse(raw) as ClientSession;
         setSession(sess);
-
-        // Load cart
-        const cartRaw = localStorage.getItem(CART_KEY);
-        if (!cartRaw) { router.push("/cliente/chat"); return; }
-        const qtys: Record<string, number> = JSON.parse(cartRaw);
-        const nonZero = Object.fromEntries(Object.entries(qtys).filter(([, v]) => v > 0));
-        if (Object.keys(nonZero).length === 0) { router.push("/cliente/chat"); return; }
-        setQuantities(nonZero);
 
         // Pre-fill address from client record
         supabase
@@ -84,19 +62,15 @@ export default function CheckoutPage() {
             .then(({ data }) => {
                 if (data?.address) setAddress(data.address);
             });
-
-        // Fetch product details for items in cart
-        const ids = Object.keys(nonZero);
-        supabase
-            .from("products")
-            .select("id, name, description, category, subcategory, unit, price")
-            .in("id", ids)
-            .then(({ data }) => {
-                setProducts((data as Product[]) ?? []);
-                setLoadingProducts(false);
-            });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Redirect back to catalog if cart becomes empty (but not during order placement)
+    useEffect(() => {
+        if (mounted && totalItems === 0 && !placing) {
+            router.push("/cliente/chat");
+        }
+    }, [mounted, totalItems, placing, router]);
 
     useEffect(() => {
         if (!toast) return;
@@ -104,32 +78,10 @@ export default function CheckoutPage() {
         return () => clearTimeout(t);
     }, [toast]);
 
-    // ── Derived ────────────────────────────────────────────────────────────────
-
-    const cartItems = products
-        .filter((p) => (quantities[p.id] ?? 0) > 0)
-        .map((p) => ({ ...p, qty: quantities[p.id] }));
-
-    const subtotal = cartItems.reduce((s, i) => s + i.qty * i.price, 0);
-
-    function setQty(id: string, qty: number) {
-        const next = Math.max(0, qty);
-        setQuantities((prev) => {
-            const updated = { ...prev, [id]: next };
-            localStorage.setItem(CART_KEY, JSON.stringify(updated));
-            return updated;
-        });
-    }
-
-    function removeItem(id: string) {
-        setQty(id, 0);
-        setProducts((prev) => prev.filter((p) => p.id !== id));
-    }
-
     // ── Submit ─────────────────────────────────────────────────────────────────
 
     async function handlePlaceOrder() {
-        if (!session || cartItems.length === 0) return;
+        if (!session || items.length === 0) return;
         setPlacing(true);
 
         // Auto-increment order ID
@@ -137,7 +89,7 @@ export default function CheckoutPage() {
         const ids = (allOrders ?? []).map((o: { id: string }) => parseInt(o.id) || 0);
         const nextId = String((ids.length > 0 ? Math.max(...ids) : 0) + 1);
         const novoCount = (allOrders ?? []).filter((o: { status: string }) => o.status === "novo").length;
-        const productsStr = cartItems.map((i) => `${i.qty}x ${i.name}`).join(", ");
+        const productsStr = items.map((i) => `${i.quantity}x ${i.name}`).join(", ");
 
         const { data: orderData, error } = await supabase
             .from("orders")
@@ -153,25 +105,25 @@ export default function CheckoutPage() {
             .single();
 
         if (error || !orderData) {
-            setToast({ type: "error", message: "Erro ao realizar pedido. Tente novamente." });
+            setToast({ type: "error", message: "Erro ao criar pedido. Tente novamente." });
             setPlacing(false);
             return;
         }
 
         // Insert order_items
         await supabase.from("order_items").insert(
-            cartItems.map((i) => ({
+            items.map((i) => ({
                 order_id: orderData.id,
-                product_id: i.id,
+                product_id: i.product_id,
                 product_name: i.name,
                 unit: i.unit,
-                quantity: i.qty,
+                quantity: i.quantity,
                 unit_price: i.price,
             }))
         );
 
         // Clear cart and navigate to success page
-        localStorage.removeItem(CART_KEY);
+        clearCart();
         router.push(`/cliente/pedido/${orderData.id}`);
     }
 
@@ -216,18 +168,12 @@ export default function CheckoutPage() {
                                 Itens no Carrinho
                             </h2>
 
-                            {loadingProducts ? (
-                                <div className="space-y-3">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                        <Skeleton key={i} className="h-16 rounded-lg" />
-                                    ))}
-                                </div>
-                            ) : cartItems.length === 0 ? (
+                            {items.length === 0 ? (
                                 <p className="text-sm text-[#6B7280] text-center py-6">Carrinho vazio.</p>
                             ) : (
                                 <div className="space-y-3">
-                                    {cartItems.map((item) => (
-                                        <div key={item.id} className="flex items-center gap-3 py-3 border-b border-[#E5E7EB] last:border-0">
+                                    {items.map((item) => (
+                                        <div key={item.product_id} className="flex items-center gap-3 py-3 border-b border-[#E5E7EB] last:border-0">
                                             {/* Info */}
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-sm text-[#111827]">{item.name}</p>
@@ -236,14 +182,14 @@ export default function CheckoutPage() {
                                             {/* Qty */}
                                             <div className="flex items-center border border-[#E5E7EB] rounded-lg overflow-hidden shrink-0">
                                                 <button
-                                                    onClick={() => setQty(item.id, item.qty - 1)}
+                                                    onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
                                                     className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:bg-gray-100 transition-colors"
                                                 >
                                                     <Minus className="w-3 h-3" />
                                                 </button>
-                                                <span className="w-8 text-center text-sm font-semibold text-[#111827]">{item.qty}</span>
+                                                <span className="w-8 text-center text-sm font-semibold text-[#111827]">{item.quantity}</span>
                                                 <button
-                                                    onClick={() => setQty(item.id, item.qty + 1)}
+                                                    onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                                                     className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:bg-gray-100 transition-colors"
                                                 >
                                                     <Plus className="w-3 h-3" />
@@ -251,11 +197,11 @@ export default function CheckoutPage() {
                                             </div>
                                             {/* Subtotal */}
                                             <p className="text-sm font-bold text-[#F97316] w-20 text-right shrink-0">
-                                                {formatCurrency(item.qty * item.price)}
+                                                {formatCurrency(item.quantity * item.price)}
                                             </p>
                                             {/* Remove */}
                                             <button
-                                                onClick={() => removeItem(item.id)}
+                                                onClick={() => removeItem(item.product_id)}
                                                 className="p-1.5 text-[#6B7280] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -292,7 +238,7 @@ export default function CheckoutPage() {
                             <div className="space-y-2 text-sm mb-4">
                                 <div className="flex justify-between text-[#6B7280]">
                                     <span>Subtotal</span>
-                                    <span>{formatCurrency(subtotal)}</span>
+                                    <span>{formatCurrency(totalPrice)}</span>
                                 </div>
                                 <div className="flex justify-between text-[#6B7280]">
                                     <span>Taxa de Entrega</span>
@@ -300,7 +246,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="border-t border-[#E5E7EB] pt-2 flex justify-between font-bold text-base">
                                     <span className="text-[#111827]">Total</span>
-                                    <span className="text-[#F97316] text-lg">{formatCurrency(subtotal)}</span>
+                                    <span className="text-[#F97316] text-lg">{formatCurrency(totalPrice)}</span>
                                 </div>
                             </div>
 
@@ -339,7 +285,7 @@ export default function CheckoutPage() {
                             {/* Place order button */}
                             <button
                                 onClick={handlePlaceOrder}
-                                disabled={placing || cartItems.length === 0}
+                                disabled={placing || items.length === 0}
                                 className="w-full h-11 bg-[#F97316] text-white rounded-full font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#F97316]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 <Rocket className="w-4 h-4" />

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 
 const NAV = [
@@ -22,6 +23,7 @@ export function ClientHeader({ searchValue = "", onSearchChange }: ClientHeaderP
     const [session, setSession] = useState<ClientSession | null>(null);
     const pathname = usePathname();
     const router = useRouter();
+    const { clearCart } = useCart();
 
     useEffect(() => {
         const raw = localStorage.getItem("pedidoai_client_session");
@@ -30,7 +32,7 @@ export function ClientHeader({ searchValue = "", onSearchChange }: ClientHeaderP
 
     function handleLogout() {
         localStorage.removeItem("pedidoai_client_session");
-        localStorage.removeItem("pedidoai_cart");
+        clearCart();
         router.push("/login");
     }
 

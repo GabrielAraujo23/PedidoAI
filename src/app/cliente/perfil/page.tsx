@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
+import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 import type { Status } from "@/lib/types";
 
@@ -79,6 +80,7 @@ export default function ProfilePage() {
     const [darkMode, setDarkMode] = useState(false);
 
     const router = useRouter();
+    const { clearCart } = useCart();
 
     useEffect(() => {
         setMounted(true);
@@ -114,7 +116,7 @@ export default function ProfilePage() {
 
     function handleLogout() {
         localStorage.removeItem("pedidoai_client_session");
-        localStorage.removeItem("pedidoai_cart");
+        clearCart();
         router.push("/login");
     }
 
