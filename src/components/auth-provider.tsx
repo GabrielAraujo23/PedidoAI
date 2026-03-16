@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <AuthContext.Provider value={{ adminSession, loading, signOut, setAdminSession }}>
             <div className="flex h-screen overflow-hidden">
                 <NavSidebar />
-                <main className="flex-1 overflow-y-auto ml-64 bg-transparent p-4 md:p-8">
+                <main className="flex-1 overflow-y-auto ml-64 bg-[#F9FAFB] p-4 md:p-8">
                     {children}
                 </main>
             </div>
