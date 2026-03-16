@@ -329,7 +329,7 @@ export default function ProdutosPage() {
                         <p className="text-sm text-muted-foreground mt-1">
                             {search || filterCategory !== "Todos"
                                 ? "Tente ajustar os filtros de busca."
-                                : "Clique em "Adicionar Produto" para começar."}
+                                : 'Clique em "Adicionar Produto" para começar.'}
                         </p>
                     </div>
                 ) : (
