@@ -127,8 +127,12 @@ export default function ClienteChatPage() {
             .eq("active", true)
             .order("category", { ascending: true })
             .order("name", { ascending: true })
-            .then(({ data }) => {
-                setProducts((data as Product[]) ?? []);
+            .then(({ data, error }) => {
+                if (error) {
+                    setToast({ type: "error", message: "Erro ao carregar produtos." });
+                } else {
+                    setProducts((data as Product[]) ?? []);
+                }
                 setLoadingProducts(false);
             });
 
@@ -165,6 +169,12 @@ export default function ClienteChatPage() {
             selectedCategory === "Todos" || p.category === selectedCategory;
         return matchSearch && matchCategory;
     });
+
+    // Group filtered products by category, preserving order
+    const groupedProducts = filteredProducts.reduce<Record<string, Product[]>>((acc, p) => {
+        (acc[p.category] ??= []).push(p);
+        return acc;
+    }, {});
 
     const cartItems = products
         .filter((p) => (quantities[p.id] ?? 0) > 0)
@@ -419,61 +429,72 @@ export default function ClienteChatPage() {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {filteredProducts.map((p) => {
-                                const qty = quantities[p.id] ?? 0;
-                                return (
-                                    <div
-                                        key={p.id}
-                                        className={cn(
-                                            "bg-white/70 backdrop-blur rounded-2xl p-3 shadow-sm border-2 transition-all duration-200",
-                                            qty > 0
-                                                ? "border-primary shadow-primary/10 bg-orange-50/60"
-                                                : "border-transparent hover:border-white/60"
-                                        )}
-                                    >
-                                        <p className="font-semibold text-sm text-secondary leading-tight">{p.name}</p>
-                                        {p.subcategory && (
-                                            <p className="text-[11px] text-muted-foreground mt-0.5">{p.subcategory}</p>
-                                        )}
-                                        <p className="text-[11px] text-muted-foreground">{p.unit}</p>
-                                        <p className="font-bold text-primary text-sm mt-1.5">{formatCurrency(p.price)}</p>
+                        <div className="space-y-6">
+                            {Object.entries(groupedProducts).map(([category, prods]) => (
+                                <div key={category}>
+                                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                                        <span className="flex-1 border-b border-white/40" />
+                                        {category}
+                                        <span className="flex-1 border-b border-white/40" />
+                                    </p>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                        {prods.map((p) => {
+                                            const qty = quantities[p.id] ?? 0;
+                                            return (
+                                                <div
+                                                    key={p.id}
+                                                    className={cn(
+                                                        "bg-white/70 backdrop-blur rounded-2xl p-3 shadow-sm border-2 transition-all duration-200",
+                                                        qty > 0
+                                                            ? "border-primary shadow-primary/10 bg-orange-50/60"
+                                                            : "border-transparent hover:border-white/60"
+                                                    )}
+                                                >
+                                                    <p className="font-semibold text-sm text-secondary leading-tight">{p.name}</p>
+                                                    {p.subcategory && (
+                                                        <p className="text-[11px] text-muted-foreground mt-0.5">{p.subcategory}</p>
+                                                    )}
+                                                    <p className="text-[11px] text-muted-foreground">{p.unit}</p>
+                                                    <p className="font-bold text-primary text-sm mt-1.5">{formatCurrency(p.price)}</p>
 
-                                        {/* Quantity selector */}
-                                        <div className="flex items-center gap-1.5 mt-2.5">
-                                            <button
-                                                onClick={() => setQty(p.id, qty - 1)}
-                                                disabled={qty === 0}
-                                                className={cn(
-                                                    "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
-                                                    qty === 0
-                                                        ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                                                        : "bg-primary/10 text-primary hover:bg-primary/20"
-                                                )}
-                                            >
-                                                <Minus className="w-3 h-3" />
-                                            </button>
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                value={qty === 0 ? "" : qty}
-                                                onChange={(e) => {
-                                                    const v = parseInt(e.target.value);
-                                                    setQty(p.id, isNaN(v) ? 0 : v);
-                                                }}
-                                                placeholder="0"
-                                                className="flex-1 h-7 rounded-lg border border-input bg-white text-center text-sm font-semibold outline-none focus:ring-1 focus:ring-primary min-w-0"
-                                            />
-                                            <button
-                                                onClick={() => setQty(p.id, qty + 1)}
-                                                className="w-7 h-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
-                                            >
-                                                <Plus className="w-3 h-3" />
-                                            </button>
-                                        </div>
+                                                    {/* Quantity selector */}
+                                                    <div className="flex items-center gap-1.5 mt-2.5">
+                                                        <button
+                                                            onClick={() => setQty(p.id, qty - 1)}
+                                                            disabled={qty === 0}
+                                                            className={cn(
+                                                                "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                                                                qty === 0
+                                                                    ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                                                                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                                                            )}
+                                                        >
+                                                            <Minus className="w-3 h-3" />
+                                                        </button>
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            value={qty === 0 ? "" : qty}
+                                                            onChange={(e) => {
+                                                                const v = parseInt(e.target.value);
+                                                                setQty(p.id, isNaN(v) ? 0 : v);
+                                                            }}
+                                                            placeholder="0"
+                                                            className="flex-1 h-7 rounded-lg border border-input bg-white text-center text-sm font-semibold outline-none focus:ring-1 focus:ring-primary min-w-0"
+                                                        />
+                                                        <button
+                                                            onClick={() => setQty(p.id, qty + 1)}
+                                                            className="w-7 h-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                                                        >
+                                                            <Plus className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            })}
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
