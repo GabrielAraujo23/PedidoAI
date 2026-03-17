@@ -245,3 +245,18 @@ export function generateSecureToken(): string {
 export function truncate(v: string, max: number): string {
     return v.length > max ? v.slice(0, max) : v;
 }
+
+// ── Sanitizar texto vindo de APIs externas ───────────────────
+// Remove tags HTML e caracteres de controle para prevenir
+// armazenamento de markup malicioso no banco de dados.
+// Usar sempre em campos logradouro/bairro/cidade/uf de viaCEP,
+// BrasilAPI ou AwesomeAPI antes de salvar no state ou no DB.
+
+export function sanitizeExternalText(v: unknown, max: number): string {
+    if (typeof v !== "string") return "";
+    return v
+        .replace(/<[^>]*>/g, "")           // strip HTML tags
+        .replace(/[\x00-\x1F\x7F]/g, "")   // strip control chars
+        .trim()
+        .slice(0, max);
+}

@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import type { Client } from "@/lib/types";
 import type { ClientSession } from "@/lib/auth-context";
 import {
-    validateName, validatePhone, sanitizeExternalCoords, truncate, LIMITS,
+    validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS,
 } from "@/lib/validators";
 
 type Step = "phone" | "returning" | "new_client";
@@ -112,10 +112,10 @@ export default function LoginPage() {
             }
 
             setAddrFields({
-                street:       data.logradouro ?? "",
-                neighborhood: data.bairro     ?? "",
-                city:         data.localidade ?? "",
-                state:        data.uf         ?? "",
+                street:       sanitizeExternalText(data.logradouro, LIMITS.street),
+                neighborhood: sanitizeExternalText(data.bairro,     LIMITS.neighborhood),
+                city:         sanitizeExternalText(data.localidade,  LIMITS.city),
+                state:        sanitizeExternalText(data.uf,          LIMITS.state),
             });
             setCepStatus("ok");
 

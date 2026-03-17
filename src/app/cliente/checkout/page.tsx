@@ -14,7 +14,7 @@ import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
 import { calculateDistance } from "@/lib/haversine";
 import type { ClientSession } from "@/lib/auth-context";
-import { sanitizeExternalCoords, truncate, LIMITS } from "@/lib/validators";
+import { sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS } from "@/lib/validators";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -207,10 +207,10 @@ export default function CheckoutPage() {
 
             setAddrForm((prev) => ({
                 ...prev,
-                street:       viaData.logradouro ?? "",
-                neighborhood: viaData.bairro     ?? "",
-                city:         viaData.localidade ?? "",
-                state:        viaData.uf         ?? "",
+                street:       sanitizeExternalText(viaData.logradouro, LIMITS.street),
+                neighborhood: sanitizeExternalText(viaData.bairro,     LIMITS.neighborhood),
+                city:         sanitizeExternalText(viaData.localidade,  LIMITS.city),
+                state:        sanitizeExternalText(viaData.uf,          LIMITS.state),
             }));
             setCepStatus("ok");
 
@@ -231,10 +231,10 @@ export default function CheckoutPage() {
                     if (sessionRef.current) {
                         await supabase.from("clients").update({
                             cep:          digits,
-                            street:       truncate(viaData.logradouro ?? "", LIMITS.street),
-                            neighborhood: truncate(viaData.bairro     ?? "", LIMITS.neighborhood),
-                            city:         truncate(viaData.localidade ?? "", LIMITS.city),
-                            state:        truncate(viaData.uf         ?? "", LIMITS.state),
+                            street:       sanitizeExternalText(viaData.logradouro, LIMITS.street),
+                            neighborhood: sanitizeExternalText(viaData.bairro,     LIMITS.neighborhood),
+                            city:         sanitizeExternalText(viaData.localidade,  LIMITS.city),
+                            state:        sanitizeExternalText(viaData.uf,          LIMITS.state),
                             latitude:     coords.lat,
                             longitude:    coords.lng,
                         }).eq("id", sessionRef.current.clientId);

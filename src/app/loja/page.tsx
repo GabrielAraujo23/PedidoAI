@@ -17,7 +17,7 @@ import { ADMIN_SESSION_KEY } from "@/lib/auth-context";
 import {
     validateStoreName, validatePhone, validateDeliveryRate, validateDeliveryRadius,
     validateLatitude, validateLongitude, validateCategory, validateBusinessHours,
-    sanitizeExternalCoords, truncate, LIMITS,
+    sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS,
 } from "@/lib/validators";
 
 // ── Input masks ────────────────────────────────────────────────────────────
@@ -257,10 +257,10 @@ export default function LojaPage() {
             const data = await res.json();
             if (fetchedCepRef.current !== digits) return; // stale
 
-            const street = data.street ?? "";
-            const neighborhood = data.neighborhood ?? "";
-            const city = data.city ?? "";
-            const state = data.state ?? "";
+            const street       = sanitizeExternalText(data.street,       LIMITS.street);
+            const neighborhood = sanitizeExternalText(data.neighborhood, LIMITS.neighborhood);
+            const city         = sanitizeExternalText(data.city,         LIMITS.city);
+            const state        = sanitizeExternalText(data.state,        LIMITS.state);
 
             setForm((f) => ({
                 ...f,
