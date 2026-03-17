@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
     ChevronRight, ShoppingCart, MapPin, QrCode,
     CreditCard, Banknote, UtensilsCrossed, Trash2,
-    Rocket, Minus, Plus, AlertCircle, Check, Loader2,
+    Rocket, Minus, Plus, AlertCircle, Check, Loader2, Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -63,14 +63,17 @@ function maskCep(v: string): string {
 
 export default function CheckoutPage() {
     const [session, setSession] = useState<ClientSession | null>(null);
+    const sessionRef = useRef<ClientSession | null>(null);
     const [mounted, setMounted] = useState(false);
     const [payment, setPayment] = useState<PaymentMethod>("pix");
     const [coupon, setCoupon] = useState("");
     const [placing, setPlacing] = useState(false);
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-    // Address form
+    // Address state
     const [addrForm, setAddrForm] = useState<AddrForm>(EMPTY_ADDR);
+    const [addrLoadState, setAddrLoadState] = useState<"loading" | "found" | "none">("loading");
+    const [editingAddress, setEditingAddress] = useState(false);
     const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
     const [cepError, setCepError] = useState("");
     const fetchedCepRef = useRef("");
@@ -80,7 +83,7 @@ export default function CheckoutPage() {
     const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [distanceKm, setDistanceKm] = useState<number | null>(null);
     const [deliveryFee, setDeliveryFee] = useState(0);
-    const [deliveryStatus, setDeliveryStatus] = useState<"idle" | "ok">("idle");
+    const [deliveryStatus, setDeliveryStatus] = useState<"idle" | "ok" | "too_far">("idle");
 
     const router = useRouter();
     const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
@@ -91,9 +94,11 @@ export default function CheckoutPage() {
         setMounted(true);
         const raw = localStorage.getItem("pedidoai_client_session");
         if (!raw) { router.push("/login"); return; }
-        setSession(JSON.parse(raw) as ClientSession);
+        const sess = JSON.parse(raw) as ClientSession;
+        setSession(sess);
+        sessionRef.current = sess;
 
-        // Load store settings for delivery calculation
+        // Load store settings (parallel with client fetch)
         supabase
             .from("store_settings")
             .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
@@ -107,14 +112,45 @@ export default function CheckoutPage() {
                         lat,
                         lng,
                         radius: parseFloat(data?.delivery_radius_km ?? "20") || 20,
-                        rate: parseFloat(data?.delivery_rate_per_km ?? "3") || 3,
+                        rate:   parseFloat(data?.delivery_rate_per_km ?? "3")  || 3,
                     });
+                }
+            });
+
+        // Fetch client's saved address
+        supabase
+            .from("clients")
+            .select("*")
+            .eq("id", sess.clientId)
+            .single()
+            .then(({ data }) => {
+                if (data?.cep && data?.street) {
+                    setAddrForm({
+                        cep:          data.cep,
+                        street:       data.street       || "",
+                        neighborhood: data.neighborhood || "",
+                        city:         data.city         || "",
+                        state:        data.state        || "",
+                        number:       data.number       || "",
+                        complement:   data.complement   || "",
+                    });
+                    setCepStatus("ok");
+                    setAddrLoadState("found");
+                    // If coordinates are saved → trigger delivery calculation
+                    if (data.latitude && data.longitude) {
+                        setCustomerCoords({
+                            lat: parseFloat(String(data.latitude)),
+                            lng: parseFloat(String(data.longitude)),
+                        });
+                    }
+                } else {
+                    setAddrLoadState("none");
                 }
             });
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Redirect back to catalog if cart is empty (but not while placing order)
+    // Redirect to catalog if cart is empty (but not while placing an order)
     useEffect(() => {
         if (mounted && totalItems === 0 && !placing) {
             router.push("/cliente/chat");
@@ -130,9 +166,13 @@ export default function CheckoutPage() {
         );
         const rounded = Math.round(dist * 10) / 10;
         setDistanceKm(rounded);
-        const chargedKm = Math.max(0, rounded - storeCoords.radius);
-        setDeliveryFee(Math.round(chargedKm * storeCoords.rate * 100) / 100);
-        setDeliveryStatus("ok");
+        if (rounded > storeCoords.radius) {
+            setDeliveryStatus("too_far");
+            setDeliveryFee(0);
+        } else {
+            setDeliveryStatus("ok");
+            setDeliveryFee(Math.round(rounded * storeCoords.rate * 100) / 100);
+        }
     }, [customerCoords, storeCoords]);
 
     // Toast auto-dismiss
@@ -154,12 +194,11 @@ export default function CheckoutPage() {
 
         try {
             const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-            const data = await res.json();
+            const viaData = await res.json();
 
-            // Discard if CEP changed while fetching
             if (fetchedCepRef.current !== digits) return;
 
-            if (data.erro) {
+            if (viaData.erro) {
                 setCepStatus("error");
                 setCepError("CEP não encontrado. Verifique e tente novamente.");
                 return;
@@ -167,10 +206,10 @@ export default function CheckoutPage() {
 
             setAddrForm((prev) => ({
                 ...prev,
-                street:       data.logradouro ?? "",
-                neighborhood: data.bairro     ?? "",
-                city:         data.localidade ?? "",
-                state:        data.uf         ?? "",
+                street:       viaData.logradouro ?? "",
+                neighborhood: viaData.bairro     ?? "",
+                city:         viaData.localidade ?? "",
+                state:        viaData.uf         ?? "",
             }));
             setCepStatus("ok");
 
@@ -183,10 +222,22 @@ export default function CheckoutPage() {
             if (fetchedCepRef.current !== digits) return;
 
             if (geoData[0]) {
-                setCustomerCoords({
-                    lat: parseFloat(geoData[0].lat),
-                    lng: parseFloat(geoData[0].lon),
-                });
+                const lat = parseFloat(geoData[0].lat);
+                const lng = parseFloat(geoData[0].lon);
+                setCustomerCoords({ lat, lng });
+
+                // Persist address + coordinates to client record immediately
+                if (sessionRef.current) {
+                    await supabase.from("clients").update({
+                        cep:          digits,
+                        street:       viaData.logradouro ?? "",
+                        neighborhood: viaData.bairro     ?? "",
+                        city:         viaData.localidade ?? "",
+                        state:        viaData.uf         ?? "",
+                        latitude:     lat,
+                        longitude:    lng,
+                    }).eq("id", sessionRef.current.clientId);
+                }
             }
         } catch {
             if (fetchedCepRef.current === digits) {
@@ -198,7 +249,6 @@ export default function CheckoutPage() {
 
     function handleCepChange(raw: string) {
         const masked = maskCep(raw);
-        // Reset all derived address state when CEP changes
         setAddrForm({ ...EMPTY_ADDR, cep: masked, number: addrForm.number, complement: addrForm.complement });
         setCepStatus("idle");
         setCepError("");
@@ -224,11 +274,29 @@ export default function CheckoutPage() {
         }
     }
 
+    function handleEditAddress() {
+        setEditingAddress(true);
+        setAddrForm(EMPTY_ADDR);
+        setCepStatus("idle");
+        setCepError("");
+        setCustomerCoords(null);
+        setDistanceKm(null);
+        setDeliveryStatus("idle");
+        setDeliveryFee(0);
+        fetchedCepRef.current = "";
+    }
+
     // ── Order placement ────────────────────────────────────────────────────────
 
     async function handlePlaceOrder() {
         if (!session || items.length === 0) return;
         setPlacing(true);
+
+        // Update number + complement on client record
+        await supabase.from("clients").update({
+            number:     addrForm.number     || null,
+            complement: addrForm.complement || null,
+        }).eq("id", session.clientId);
 
         const { data: allOrders } = await supabase.from("orders").select("id, status");
         const ids = (allOrders ?? []).map((o: { id: string }) => parseInt(o.id) || 0);
@@ -245,16 +313,15 @@ export default function CheckoutPage() {
                 products:     productsStr,
                 status:       "novo",
                 position:     novoCount,
-                // Structured address
                 cep:          addrForm.cep.replace(/\D/g, "") || null,
-                street:       addrForm.street  || null,
-                number:       addrForm.number  || null,
-                complement:   addrForm.complement || null,
+                street:       addrForm.street       || null,
+                number:       addrForm.number       || null,
+                complement:   addrForm.complement   || null,
                 neighborhood: addrForm.neighborhood || null,
-                city:         addrForm.city    || null,
-                state:        addrForm.state   || null,
+                city:         addrForm.city         || null,
+                state:        addrForm.state        || null,
                 distance_km:  distanceKm,
-                delivery_fee: deliveryFee || null,
+                delivery_fee: deliveryStatus === "ok" ? deliveryFee : null,
             })
             .select("id")
             .single();
@@ -284,13 +351,24 @@ export default function CheckoutPage() {
 
     const orderTotal = totalPrice + deliveryFee;
 
-    // Disable "Fazer Pedido" when: CEP not validated, no house number, or outside radius
     const canPlaceOrder =
         items.length > 0 &&
         cepStatus === "ok" &&
-        addrForm.number.trim() !== "";
+        addrForm.number.trim() !== "" &&
+        deliveryStatus !== "too_far";
 
-    if (!mounted || !session) return null;
+    const showSavedCard = addrLoadState === "found" && !editingAddress;
+    const showCepInput  = addrLoadState === "none"  || editingAddress;
+
+    // ── Loading state ──────────────────────────────────────────────────────────
+
+    if (!mounted || !session || addrLoadState === "loading") {
+        return (
+            <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[#F97316]" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
@@ -378,99 +456,29 @@ export default function CheckoutPage() {
                                 Endereço de Entrega
                             </h2>
 
-                            {/* CEP — always visible */}
-                            <div className="space-y-1 mb-3">
-                                <label className="text-xs font-semibold text-[#374151]">CEP</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        inputMode="numeric"
-                                        placeholder="00000-000"
-                                        maxLength={9}
-                                        value={addrForm.cep}
-                                        onChange={(e) => handleCepChange(e.target.value)}
-                                        onBlur={handleCepBlur}
-                                        className={cn(
-                                            "w-full h-10 px-3 pr-9 rounded-lg border text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 transition-colors",
-                                            cepStatus === "error" && "border-red-400 bg-red-50 focus:border-red-400",
-                                            cepStatus === "ok"    && "border-green-400 focus:border-green-400",
-                                            cepStatus !== "error" && cepStatus !== "ok" && "border-[#E5E7EB] focus:border-[#F97316]"
-                                        )}
-                                    />
-                                    {cepStatus === "loading" && (
-                                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F97316] animate-spin" />
-                                    )}
-                                    {cepStatus === "ok" && (
-                                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
-                                    )}
-                                </div>
-
-                                {/* CEP inline error */}
-                                {cepError && (
-                                    <p className="flex items-center gap-1 text-xs text-red-500">
-                                        <AlertCircle className="w-3 h-3 shrink-0" />
-                                        {cepError}
-                                    </p>
-                                )}
-
-                                {/* Delivery coverage feedback */}
-                                {deliveryStatus === "ok" && distanceKm !== null && (
-                                    deliveryFee === 0
-                                        ? <p className="text-xs text-green-600 font-medium">
-                                            ✅ Entrega grátis para sua região! (~{distanceKm.toFixed(1)} km da loja)
-                                          </p>
-                                        : <p className="text-xs text-orange-500 font-medium">
-                                            🛵 Frete: {formatCurrency(deliveryFee)} (~{distanceKm.toFixed(1)} km da loja)
-                                          </p>
-                                )}
-                            </div>
-
-                            {/* Remaining fields — only shown after CEP is fetched */}
-                            {cepStatus === "ok" && (
+                            {/* ── Saved address card ── */}
+                            {showSavedCard && (
                                 <div className="space-y-3">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                                        {/* Street — read-only */}
-                                        <div className="sm:col-span-2 space-y-1">
-                                            <label className="text-xs font-semibold text-[#374151]">Rua / Logradouro</label>
-                                            <input
-                                                readOnly
-                                                value={addrForm.street}
-                                                className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                            />
+                                    <div className="flex items-start justify-between gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
+                                        <div className="flex items-start gap-2">
+                                            <MapPin className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                                            <p className="text-sm text-green-700 leading-relaxed">
+                                                📍 {addrForm.street}{addrForm.number ? `, ${addrForm.number}` : ""}{" "}
+                                                — {addrForm.neighborhood}, {addrForm.city} — {addrForm.state},{" "}
+                                                {addrForm.cep}
+                                            </p>
                                         </div>
+                                        <button
+                                            onClick={handleEditAddress}
+                                            className="flex items-center gap-1 text-xs text-[#F97316] hover:underline shrink-0 font-medium"
+                                        >
+                                            <Pencil className="w-3 h-3" />
+                                            Alterar endereço
+                                        </button>
+                                    </div>
 
-                                        {/* Neighborhood — read-only */}
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-[#374151]">Bairro</label>
-                                            <input
-                                                readOnly
-                                                value={addrForm.neighborhood}
-                                                className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                            />
-                                        </div>
-
-                                        {/* City — read-only */}
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-[#374151]">Cidade</label>
-                                            <input
-                                                readOnly
-                                                value={addrForm.city}
-                                                className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                            />
-                                        </div>
-
-                                        {/* State — read-only */}
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-[#374151]">Estado</label>
-                                            <input
-                                                readOnly
-                                                value={addrForm.state}
-                                                className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                            />
-                                        </div>
-
-                                        {/* Number — required, editable */}
+                                    {/* Number field — only if missing from saved address */}
+                                    {!addrForm.number.trim() && (
                                         <div className="space-y-1">
                                             <label className="text-xs font-semibold text-[#374151]">
                                                 Número <span className="text-red-400">*</span>
@@ -483,34 +491,161 @@ export default function CheckoutPage() {
                                                 className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
                                             />
                                         </div>
+                                    )}
 
-                                        {/* Complement — optional, editable */}
-                                        <div className="sm:col-span-2 space-y-1">
-                                            <label className="text-xs font-semibold text-[#374151]">
-                                                Complemento <span className="text-[#9CA3AF] font-normal">(opcional)</span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                placeholder="Apto 42, Bloco B"
-                                                value={addrForm.complement}
-                                                onChange={(e) => setAddrForm((prev) => ({ ...prev, complement: e.target.value }))}
-                                                className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Confirmed address summary */}
-                                    {addrForm.number.trim() && (
-                                        <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                            <MapPin className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                                            <p className="text-xs text-green-700 leading-relaxed">
-                                                {addrForm.street}, {addrForm.number}
-                                                {addrForm.complement ? `, ${addrForm.complement}` : ""}{" "}
-                                                — {addrForm.neighborhood}, {addrForm.city}/{addrForm.state}
-                                            </p>
-                                        </div>
+                                    {/* Delivery status for saved address */}
+                                    {deliveryStatus === "ok" && distanceKm !== null && (
+                                        <p className="text-xs text-green-600 font-medium">
+                                            ✅ Entrega disponível (~{distanceKm.toFixed(1)} km da loja)
+                                        </p>
+                                    )}
+                                    {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
+                                        <p className="text-xs text-red-500 font-medium">
+                                            ❌ Fora da área de entrega. Cobrimos até {storeCoords.radius} km.
+                                        </p>
                                     )}
                                 </div>
+                            )}
+
+                            {/* ── CEP input flow ── */}
+                            {showCepInput && (
+                                <>
+                                    {/* CEP field — always visible */}
+                                    <div className="space-y-1 mb-3">
+                                        <label className="text-xs font-semibold text-[#374151]">CEP</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="00000-000"
+                                                maxLength={9}
+                                                value={addrForm.cep}
+                                                onChange={(e) => handleCepChange(e.target.value)}
+                                                onBlur={handleCepBlur}
+                                                className={cn(
+                                                    "w-full h-10 px-3 pr-9 rounded-lg border text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 transition-colors",
+                                                    cepStatus === "error" && "border-red-400 bg-red-50 focus:border-red-400",
+                                                    cepStatus === "ok"    && "border-green-400 focus:border-green-400",
+                                                    cepStatus !== "error" && cepStatus !== "ok" && "border-[#E5E7EB] focus:border-[#F97316]"
+                                                )}
+                                            />
+                                            {cepStatus === "loading" && (
+                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F97316] animate-spin" />
+                                            )}
+                                            {cepStatus === "ok" && (
+                                                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                                            )}
+                                        </div>
+
+                                        {/* CEP inline error */}
+                                        {cepError && (
+                                            <p className="flex items-center gap-1 text-xs text-red-500">
+                                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                                {cepError}
+                                            </p>
+                                        )}
+
+                                        {/* Delivery coverage feedback */}
+                                        {deliveryStatus === "ok" && distanceKm !== null && (
+                                            <p className="text-xs text-green-600 font-medium">
+                                                ✅ Entrega disponível (~{distanceKm.toFixed(1)} km da loja)
+                                            </p>
+                                        )}
+                                        {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
+                                            <p className="text-xs text-red-500 font-medium">
+                                                ❌ Fora da área de entrega. Cobrimos até {storeCoords.radius} km.
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Address fields — shown after CEP is ok */}
+                                    {cepStatus === "ok" && (
+                                        <div className="space-y-3">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                                                {/* Street — read-only */}
+                                                <div className="sm:col-span-2 space-y-1">
+                                                    <label className="text-xs font-semibold text-[#374151]">Rua / Logradouro</label>
+                                                    <input
+                                                        readOnly
+                                                        value={addrForm.street}
+                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
+                                                    />
+                                                </div>
+
+                                                {/* Neighborhood — read-only */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-semibold text-[#374151]">Bairro</label>
+                                                    <input
+                                                        readOnly
+                                                        value={addrForm.neighborhood}
+                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
+                                                    />
+                                                </div>
+
+                                                {/* City — read-only */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-semibold text-[#374151]">Cidade</label>
+                                                    <input
+                                                        readOnly
+                                                        value={addrForm.city}
+                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
+                                                    />
+                                                </div>
+
+                                                {/* State — read-only */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-semibold text-[#374151]">Estado</label>
+                                                    <input
+                                                        readOnly
+                                                        value={addrForm.state}
+                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
+                                                    />
+                                                </div>
+
+                                                {/* Number — required, editable */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-semibold text-[#374151]">
+                                                        Número <span className="text-red-400">*</span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="123"
+                                                        value={addrForm.number}
+                                                        onChange={(e) => setAddrForm((prev) => ({ ...prev, number: e.target.value }))}
+                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
+                                                    />
+                                                </div>
+
+                                                {/* Complement — optional, editable */}
+                                                <div className="sm:col-span-2 space-y-1">
+                                                    <label className="text-xs font-semibold text-[#374151]">
+                                                        Complemento <span className="text-[#9CA3AF] font-normal">(opcional)</span>
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Apto 42, Bloco B"
+                                                        value={addrForm.complement}
+                                                        onChange={(e) => setAddrForm((prev) => ({ ...prev, complement: e.target.value }))}
+                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Confirmed address summary */}
+                                            {addrForm.number.trim() && (
+                                                <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                    <MapPin className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                                                    <p className="text-xs text-green-700 leading-relaxed">
+                                                        {addrForm.street}, {addrForm.number}
+                                                        {addrForm.complement ? `, ${addrForm.complement}` : ""}{" "}
+                                                        — {addrForm.neighborhood}, {addrForm.city}/{addrForm.state}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -530,14 +665,14 @@ export default function CheckoutPage() {
                                 <div className="flex justify-between text-[#6B7280]">
                                     <span>Taxa de Entrega</span>
                                     {deliveryStatus === "ok" ? (
-                                        deliveryFee === 0
-                                            ? <span className="text-green-600 font-medium">Grátis</span>
-                                            : <span>
-                                                {formatCurrency(deliveryFee)}
-                                                {distanceKm !== null && (
-                                                    <span className="text-[10px] text-[#9CA3AF] ml-1">(~{distanceKm.toFixed(1)} km)</span>
-                                                )}
-                                              </span>
+                                        <span>
+                                            {formatCurrency(deliveryFee)}
+                                            {distanceKm !== null && (
+                                                <span className="text-[10px] text-[#9CA3AF] ml-1">(~{distanceKm.toFixed(1)} km)</span>
+                                            )}
+                                        </span>
+                                    ) : deliveryStatus === "too_far" ? (
+                                        <span className="text-red-500 font-medium text-xs">Fora da área</span>
                                     ) : (
                                         <span className="text-[#F97316] font-medium">A calcular</span>
                                     )}
@@ -597,7 +732,9 @@ export default function CheckoutPage() {
                                         ? "Preencha o CEP para continuar."
                                         : addrForm.number.trim() === ""
                                             ? "Informe o número do endereço."
-                                            : ""}
+                                            : deliveryStatus === "too_far"
+                                                ? "Entrega indisponível para sua região."
+                                                : ""}
                                 </p>
                             )}
 

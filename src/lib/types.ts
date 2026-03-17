@@ -15,5 +15,15 @@ export interface Client {
     name: string;
     phone: string | null;
     address: string | null;
+    // Structured address (migration 009)
+    cep?: string | null;
+    street?: string | null;
+    number?: string | null;
+    complement?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
+    state?: string | null;
+    latitude?: number | string | null;
+    longitude?: number | string | null;
     created_at?: string;
 }
