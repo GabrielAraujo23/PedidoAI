@@ -55,6 +55,9 @@ interface FormState {
     phone: string;
     businessHours: string;
     deliveryRate: string;
+    deliveryRadius: string;
+    latitude: string;
+    longitude: string;
     categories: string[];
     taxRegime: string;
     stateRegistration: string;
@@ -63,7 +66,8 @@ interface FormState {
 
 const EMPTY: FormState = {
     storeName: "", cnpj: "", address: "", phone: "",
-    businessHours: "", deliveryRate: "", categories: [],
+    businessHours: "", deliveryRate: "", deliveryRadius: "",
+    latitude: "", longitude: "", categories: [],
     taxRegime: "", stateRegistration: "", logoUrl: "",
 };
 
@@ -125,6 +129,9 @@ export default function LojaPage() {
                         phone: data.phone ?? "",
                         businessHours: data.business_hours ?? "",
                         deliveryRate: data.delivery_rate_per_km != null ? String(data.delivery_rate_per_km) : "",
+                        deliveryRadius: data.delivery_radius_km != null ? String(data.delivery_radius_km) : "",
+                        latitude: data.latitude != null ? String(data.latitude) : "",
+                        longitude: data.longitude != null ? String(data.longitude) : "",
                         categories: data.product_categories ?? [],
                         taxRegime: data.tax_regime ?? "",
                         stateRegistration: data.state_registration ?? "",
@@ -211,6 +218,9 @@ export default function LojaPage() {
             phone: form.phone || null,
             business_hours: form.businessHours || null,
             delivery_rate_per_km: form.deliveryRate ? parseFloat(form.deliveryRate) : null,
+            delivery_radius_km: form.deliveryRadius ? parseFloat(form.deliveryRadius) : null,
+            latitude: form.latitude ? parseFloat(form.latitude) : null,
+            longitude: form.longitude ? parseFloat(form.longitude) : null,
             tax_regime: form.taxRegime || null,
             state_registration: form.stateRegistration || null,
             product_categories: form.categories,
@@ -477,6 +487,63 @@ export default function LojaPage() {
                                     {errors.deliveryRate && <p className="text-xs text-red-500">{errors.deliveryRate}</p>}
                                 </>
                             )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="delivery-radius">Raio de Entrega (km)</Label>
+                            {loading ? <SkelField /> : (
+                                <Input
+                                    id="delivery-radius"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="20"
+                                    className="glass border-none"
+                                    value={form.deliveryRadius}
+                                    onChange={(e) => setField("deliveryRadius", e.target.value)}
+                                />
+                            )}
+                        </div>
+
+                        <Separator className="bg-white/20" />
+
+                        <div className="space-y-3">
+                            <div>
+                                <Label>Localização da Loja</Label>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Acesse maps.google.com, clique com botão direito na loja e copie as coordenadas.
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="latitude" className="text-xs">Latitude</Label>
+                                    {loading ? <SkelField /> : (
+                                        <Input
+                                            id="latitude"
+                                            type="number"
+                                            step="any"
+                                            placeholder="-23.5505"
+                                            className="glass border-none"
+                                            value={form.latitude}
+                                            onChange={(e) => setField("latitude", e.target.value)}
+                                        />
+                                    )}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="longitude" className="text-xs">Longitude</Label>
+                                    {loading ? <SkelField /> : (
+                                        <Input
+                                            id="longitude"
+                                            type="number"
+                                            step="any"
+                                            placeholder="-46.6333"
+                                            className="glass border-none"
+                                            value={form.longitude}
+                                            onChange={(e) => setField("longitude", e.target.value)}
+                                        />
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         <Separator className="bg-white/20" />
