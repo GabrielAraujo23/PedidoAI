@@ -42,6 +42,12 @@ function maskStateReg(v: string): string {
     return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}.${d.slice(9)}`;
 }
 
+function maskCep(v: string): string {
+    const d = v.replace(/\D/g, "").slice(0, 8);
+    if (d.length <= 5) return d;
+    return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const TAX_REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI"];
@@ -51,7 +57,16 @@ const TAX_REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI"]
 interface FormState {
     storeName: string;
     cnpj: string;
+    // address kept as derived formatted string (backward compat)
     address: string;
+    // structured address
+    cep: string;
+    street: string;
+    number: string;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    state: string;
     phone: string;
     businessHours: string;
     deliveryRate: string;
@@ -65,8 +80,10 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-    storeName: "", cnpj: "", address: "", phone: "",
-    businessHours: "", deliveryRate: "", deliveryRadius: "",
+    storeName: "", cnpj: "", address: "",
+    cep: "", street: "", number: "", complement: "",
+    neighborhood: "", city: "", state: "",
+    phone: "", businessHours: "", deliveryRate: "", deliveryRadius: "",
     latitude: "", longitude: "", categories: [],
     taxRegime: "", stateRegistration: "", logoUrl: "",
 };
@@ -102,6 +119,13 @@ export default function LojaPage() {
     const [addingCategory, setAddingCategory] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // CEP state
+    const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+    const [cepError, setCepError] = useState("");
+    const [coordsAutoFilled, setCoordsAutoFilled] = useState(false);
+    const [coordsNotFound, setCoordsNotFound] = useState(false);
+    const fetchedCepRef = useRef("");
+
     const adminId = useRef<string | null>(null);
 
     // ── Load ──────────────────────────────────────────────────────────────
@@ -126,6 +150,13 @@ export default function LojaPage() {
                         storeName: data.store_name ?? "",
                         cnpj: data.cnpj ?? "",
                         address: data.address ?? "",
+                        cep: data.cep ?? "",
+                        street: data.street ?? "",
+                        number: data.number ?? "",
+                        complement: data.complement ?? "",
+                        neighborhood: data.neighborhood ?? "",
+                        city: data.city ?? "",
+                        state: data.state ?? "",
                         phone: data.phone ?? "",
                         businessHours: data.business_hours ?? "",
                         deliveryRate: data.delivery_rate_per_km != null ? String(data.delivery_rate_per_km) : "",
@@ -137,6 +168,10 @@ export default function LojaPage() {
                         stateRegistration: data.state_registration ?? "",
                         logoUrl: data.logo_url ?? "",
                     });
+                    // If CEP already saved, show it as validated
+                    if (data.cep && data.street) {
+                        setCepStatus("ok");
+                    }
                 }
                 setLoading(false);
             });
@@ -168,6 +203,91 @@ export default function LojaPage() {
         setForm((f) => ({ ...f, [key]: value }));
         setDirty(true);
         if (errors[key]) setErrors((e) => { const n = { ...e }; delete n[key]; return n; });
+    }
+
+    // ── CEP auto-fill ─────────────────────────────────────────────────────
+
+    async function fetchStoreCep(rawCep: string) {
+        const digits = rawCep.replace(/\D/g, "");
+        if (digits.length !== 8) return;
+        if (fetchedCepRef.current === digits) return;
+        fetchedCepRef.current = digits;
+
+        setCepStatus("loading");
+        setCepError("");
+        setCoordsAutoFilled(false);
+        setCoordsNotFound(false);
+
+        try {
+            // Primary: BrasilAPI v2 (includes coordinates for many CEPs)
+            const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`);
+            if (fetchedCepRef.current !== digits) return; // stale
+
+            if (!res.ok) {
+                setCepStatus("error");
+                setCepError("CEP não encontrado. Verifique e tente novamente.");
+                fetchedCepRef.current = "";
+                return;
+            }
+
+            const data = await res.json();
+            if (fetchedCepRef.current !== digits) return; // stale
+
+            const street = data.street ?? "";
+            const neighborhood = data.neighborhood ?? "";
+            const city = data.city ?? "";
+            const state = data.state ?? "";
+
+            setForm((f) => ({
+                ...f,
+                street,
+                neighborhood,
+                city,
+                state,
+            }));
+            setDirty(true);
+
+            // Try to get coordinates
+            let lat: string | null = null;
+            let lng: string | null = null;
+
+            const brasilLat = data.location?.coordinates?.latitude;
+            const brasilLng = data.location?.coordinates?.longitude;
+
+            if (brasilLat && brasilLng) {
+                lat = String(brasilLat);
+                lng = String(brasilLng);
+            } else {
+                // Fallback: AwesomeAPI
+                try {
+                    const awRes = await fetch(`https://cep.awesomeapi.com.br/json/${digits}`);
+                    if (fetchedCepRef.current !== digits) return; // stale
+                    if (awRes.ok) {
+                        const awData = await awRes.json();
+                        if (awData.lat && awData.lng) {
+                            lat = String(awData.lat);
+                            lng = String(awData.lng);
+                        }
+                    }
+                } catch { /* ignore fallback errors */ }
+            }
+
+            if (fetchedCepRef.current !== digits) return; // stale
+
+            if (lat && lng) {
+                setForm((f) => ({ ...f, latitude: lat!, longitude: lng! }));
+                setCoordsAutoFilled(true);
+            } else {
+                setCoordsNotFound(true);
+            }
+
+            setCepStatus("ok");
+        } catch {
+            if (fetchedCepRef.current !== digits) return;
+            setCepStatus("error");
+            setCepError("CEP não encontrado. Verifique e tente novamente.");
+            fetchedCepRef.current = "";
+        }
     }
 
     // ── Logo upload ───────────────────────────────────────────────────────
@@ -209,12 +329,24 @@ export default function LojaPage() {
             return;
         }
 
+        // Derive formatted address string for backward compat
+        const formattedAddress = form.street
+            ? `${form.street}${form.number ? `, ${form.number}` : ""}${form.neighborhood ? `, ${form.neighborhood}` : ""}${form.city ? ` - ${form.city}` : ""}${form.state ? `/${form.state}` : ""}`
+            : form.address;
+
         setSaving(true);
         const payload = {
             admin_id: adminId.current,
             store_name: form.storeName || null,
             cnpj: form.cnpj || null,
-            address: form.address || null,
+            address: formattedAddress || null,
+            cep: form.cep || null,
+            street: form.street || null,
+            number: form.number || null,
+            complement: form.complement || null,
+            neighborhood: form.neighborhood || null,
+            city: form.city || null,
+            state: form.state || null,
             phone: form.phone || null,
             business_hours: form.businessHours || null,
             delivery_rate_per_km: form.deliveryRate ? parseFloat(form.deliveryRate) : null,
@@ -352,19 +484,138 @@ export default function LojaPage() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="address">Endereço Principal</Label>
+                        {/* ── Endereço Principal (CEP auto-fill) ──── */}
+                        <div className="space-y-3">
+                            <Label className="flex items-center gap-1.5">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                Endereço Principal
+                            </Label>
+
                             {loading ? <SkelField /> : (
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        id="address"
-                                        placeholder="Rua, Número, Bairro, Cidade"
-                                        className="glass border-none pl-9"
-                                        value={form.address}
-                                        onChange={(e) => setField("address", e.target.value)}
-                                    />
-                                </div>
+                                <>
+                                    {/* CEP field */}
+                                    <div className="space-y-1">
+                                        <Label htmlFor="store-cep" className="text-xs">CEP</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="store-cep"
+                                                placeholder="00000-000"
+                                                className={cn(
+                                                    "glass border-none pr-9",
+                                                    cepStatus === "error" && "ring-2 ring-red-400",
+                                                    cepStatus === "ok" && "ring-2 ring-emerald-400",
+                                                )}
+                                                value={form.cep}
+                                                onChange={(e) => {
+                                                    const masked = maskCep(e.target.value);
+                                                    setField("cep", masked);
+                                                    const digits = masked.replace(/\D/g, "");
+                                                    if (digits.length < 8) {
+                                                        if (cepStatus !== "idle") {
+                                                            setCepStatus("idle");
+                                                            setCepError("");
+                                                            setCoordsAutoFilled(false);
+                                                            setCoordsNotFound(false);
+                                                            fetchedCepRef.current = "";
+                                                        }
+                                                    } else {
+                                                        fetchStoreCep(masked);
+                                                    }
+                                                }}
+                                                maxLength={9}
+                                            />
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                {cepStatus === "loading" && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                                                {cepStatus === "ok" && <Check className="w-4 h-4 text-emerald-500" />}
+                                                {cepStatus === "error" && <AlertCircle className="w-4 h-4 text-red-500" />}
+                                            </div>
+                                        </div>
+                                        {cepStatus === "error" && cepError && (
+                                            <p className="text-xs text-red-500">{cepError}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Auto-filled fields — shown when CEP is ok */}
+                                    {cepStatus === "ok" && (
+                                        <div className="space-y-3">
+                                            {/* Rua */}
+                                            <div className="space-y-1">
+                                                <Label className="text-xs text-muted-foreground">Rua / Logradouro</Label>
+                                                <Input
+                                                    readOnly
+                                                    value={form.street}
+                                                    className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                />
+                                            </div>
+
+                                            {/* Número + Complemento */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-1">
+                                                    <Label htmlFor="store-number" className="text-xs">Número</Label>
+                                                    <Input
+                                                        id="store-number"
+                                                        placeholder="Ex: 123"
+                                                        className="glass border-none"
+                                                        value={form.number}
+                                                        onChange={(e) => setField("number", e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label htmlFor="store-complement" className="text-xs">Complemento</Label>
+                                                    <Input
+                                                        id="store-complement"
+                                                        placeholder="Sala 2, Bloco A..."
+                                                        className="glass border-none"
+                                                        value={form.complement}
+                                                        onChange={(e) => setField("complement", e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Bairro */}
+                                            <div className="space-y-1">
+                                                <Label className="text-xs text-muted-foreground">Bairro</Label>
+                                                <Input
+                                                    readOnly
+                                                    value={form.neighborhood}
+                                                    className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                />
+                                            </div>
+
+                                            {/* Cidade + Estado */}
+                                            <div className="grid grid-cols-3 gap-3">
+                                                <div className="col-span-2 space-y-1">
+                                                    <Label className="text-xs text-muted-foreground">Cidade</Label>
+                                                    <Input
+                                                        readOnly
+                                                        value={form.city}
+                                                        className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label className="text-xs text-muted-foreground">Estado</Label>
+                                                    <Input
+                                                        readOnly
+                                                        value={form.state}
+                                                        className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Coords not found warning */}
+                                            {coordsNotFound && (
+                                                <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2">
+                                                    ⚠️ Coordenadas não encontradas. Preencha latitude e longitude manualmente.
+                                                </p>
+                                            )}
+                                            {coordsAutoFilled && (
+                                                <p className="text-xs text-emerald-600">
+                                                    ✅ Latitude e longitude preenchidas automaticamente.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
 
@@ -511,7 +762,7 @@ export default function LojaPage() {
                             <div>
                                 <Label>Localização da Loja</Label>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Acesse maps.google.com, clique com botão direito na loja e copie as coordenadas.
+                                    Preenchido automaticamente pelo CEP, ou insira manualmente via Google Maps.
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -523,9 +774,15 @@ export default function LojaPage() {
                                             type="number"
                                             step="any"
                                             placeholder="-23.5505"
-                                            className="glass border-none"
+                                            className={cn(
+                                                "glass border-none",
+                                                coordsAutoFilled && "ring-2 ring-emerald-400",
+                                            )}
                                             value={form.latitude}
-                                            onChange={(e) => setField("latitude", e.target.value)}
+                                            onChange={(e) => {
+                                                setField("latitude", e.target.value);
+                                                setCoordsAutoFilled(false);
+                                            }}
                                         />
                                     )}
                                 </div>
@@ -537,9 +794,15 @@ export default function LojaPage() {
                                             type="number"
                                             step="any"
                                             placeholder="-46.6333"
-                                            className="glass border-none"
+                                            className={cn(
+                                                "glass border-none",
+                                                coordsAutoFilled && "ring-2 ring-emerald-400",
+                                            )}
                                             value={form.longitude}
-                                            onChange={(e) => setField("longitude", e.target.value)}
+                                            onChange={(e) => {
+                                                setField("longitude", e.target.value);
+                                                setCoordsAutoFilled(false);
+                                            }}
                                         />
                                     )}
                                 </div>
