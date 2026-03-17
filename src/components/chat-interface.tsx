@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { escapeLike, truncate, validateQuantity, LIMITS } from "@/lib/validators";
+import { logEvent, logError } from "@/lib/logger";
 
 type Stage =
     | "collecting_name"
@@ -230,10 +231,20 @@ export function ChatInterface({ onOrderCreated }: { onOrderCreated?: () => void 
 
             if (error) throw error;
 
+            logEvent({
+                event_type: "order_created",
+                actor_type: "client",
+                actor_id: clientId,
+                resource_type: "order",
+                resource_id: nextId,
+                metadata: { product_count: data.products.length, channel: "chat" },
+            });
             setStage("done");
             botSay(`Pedido #${nextId} criado com sucesso! Já aparece na fila como "Novo".`, { isSuccess: true });
             onOrderCreated?.();
-        } catch {
+        } catch (err) {
+            logError("order_creation_chat", err);
+            logEvent({ event_type: "order_failed", actor_type: "client", metadata: { channel: "chat" } });
             setStage("confirming");
             botSay("Erro ao salvar o pedido. Tente confirmar novamente.");
         } finally {

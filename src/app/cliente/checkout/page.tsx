@@ -15,6 +15,7 @@ import { useCart } from "@/context/CartContext";
 import { calculateDistance } from "@/lib/haversine";
 import type { ClientSession } from "@/lib/auth-context";
 import { sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS } from "@/lib/validators";
+import { logEvent, logError } from "@/lib/logger";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -329,12 +330,19 @@ export default function CheckoutPage() {
             .single();
 
         if (error || !orderData) {
+            logError("order_checkout", error ?? "no order data");
+            logEvent({
+                event_type: "order_failed",
+                actor_type: "client",
+                actor_id: session.clientId,
+                metadata: { channel: "checkout" },
+            });
             setToast({ type: "error", message: "Erro ao criar pedido. Tente novamente." });
             setPlacing(false);
             return;
         }
 
-        await supabase.from("order_items").insert(
+        const { error: itemsError } = await supabase.from("order_items").insert(
             items.map((i) => ({
                 order_id:     orderData.id,
                 product_id:   i.product_id,
@@ -344,7 +352,16 @@ export default function CheckoutPage() {
                 unit_price:   i.price,
             }))
         );
+        if (itemsError) logError("order_items_insert", itemsError);
 
+        logEvent({
+            event_type: "order_created",
+            actor_type: "client",
+            actor_id: session.clientId,
+            resource_type: "order",
+            resource_id: orderData.id,
+            metadata: { item_count: items.length, channel: "checkout" },
+        });
         clearCart();
         router.push(`/cliente/pedido/${orderData.id}`);
     }

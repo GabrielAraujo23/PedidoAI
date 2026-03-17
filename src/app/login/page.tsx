@@ -15,6 +15,7 @@ import type { ClientSession } from "@/lib/auth-context";
 import {
     validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS,
 } from "@/lib/validators";
+import { logEvent, logError } from "@/lib/logger";
 
 type Step = "phone" | "returning" | "new_client";
 
@@ -182,6 +183,7 @@ export default function LoginPage() {
         setLoading(false);
 
         if (clients && clients.length > 0) {
+            logEvent({ event_type: "client_login", actor_type: "client", actor_id: (clients[0] as Client).id });
             setFoundClient(clients[0] as Client);
             setStep("returning");
         } else {
@@ -226,11 +228,14 @@ export default function LoginPage() {
         const { error } = await supabase.from("clients").insert(newClient);
 
         if (error) {
+            logError("client_registration", error);
+            logEvent({ event_type: "client_registration_failed", actor_type: "client", metadata: { error_code: (error as { code?: string }).code } });
             setError("Erro ao cadastrar. Tente novamente.");
             setLoading(false);
             return;
         }
 
+        logEvent({ event_type: "client_registered", actor_type: "client", actor_id: clientId });
         saveSessionAndRedirect(newClient);
     }
 

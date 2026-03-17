@@ -19,6 +19,7 @@ import {
     validateLatitude, validateLongitude, validateCategory, validateBusinessHours,
     sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS,
 } from "@/lib/validators";
+import { logEvent, logError } from "@/lib/logger";
 
 // ── Input masks ────────────────────────────────────────────────────────────
 
@@ -391,13 +392,15 @@ export default function LojaPage() {
             : await supabase.from("store_settings").insert(payload).select("id").single();
 
         if (error) {
-            console.error("store_settings save error:", error);
+            logError("store_settings_save", error);
+            logEvent({ event_type: "store_settings_failed", actor_type: "admin", metadata: { error_code: error.code } });
             const detail = error.code === "42P01"
                 ? "Tabela não encontrada. Execute a migration 005 no Supabase."
                 : error.message ?? "Erro desconhecido.";
             setToast({ type: "error", message: `Erro ao salvar: ${detail}` });
         } else {
             if (!settingId && data) setSettingId(data.id);
+            logEvent({ event_type: "store_settings_saved", actor_type: "admin", resource_type: "store_settings", resource_id: settingId ?? (data as { id: string } | null)?.id ?? undefined });
             setDirty(false);
             setToast({ type: "success", message: "Configurações salvas com sucesso!" });
         }

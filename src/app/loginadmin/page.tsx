@@ -9,6 +9,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { hashPassword, verifyPassword } from "@/lib/crypto";
 import { generateSecureToken, validateEmail, validatePassword } from "@/lib/validators";
+import { logEvent, logError } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,7 @@ export default function LoginAdminPage() {
             .single();
 
         if (!admin || !admin.password_hash) {
+            logEvent({ event_type: "admin_login_failure", actor_type: "admin", metadata: { reason: "email_not_found" } });
             setError("Email não encontrado.");
             setLoading(false);
             return;
@@ -86,11 +88,13 @@ export default function LoginAdminPage() {
 
         const valid = await verifyPassword(password, admin.password_hash);
         if (!valid) {
+            logEvent({ event_type: "admin_login_failure", actor_type: "admin", actor_id: admin.id, metadata: { reason: "wrong_password" } });
             setError("Senha incorreta.");
             setLoading(false);
             return;
         }
 
+        logEvent({ event_type: "admin_login_success", actor_type: "admin", actor_id: admin.id });
         saveSession(admin.id, admin.email);
         router.push("/");
     }
@@ -115,12 +119,14 @@ export default function LoginAdminPage() {
             .single();
 
         if (!existing) {
+            logEvent({ event_type: "admin_unauthorized_signup", actor_type: "admin" });
             setError("Email não autorizado. Contate o administrador do sistema.");
             setLoading(false);
             return;
         }
 
         if (existing.password_hash) {
+            logEvent({ event_type: "admin_unauthorized_signup", actor_type: "admin", actor_id: existing.id, metadata: { reason: "already_has_password" } });
             setError("Este email já possui uma senha cadastrada. Use a opção de login.");
             setLoading(false);
             return;
@@ -134,11 +140,13 @@ export default function LoginAdminPage() {
             .eq("id", existing.id);
 
         if (updateError) {
+            logError("admin_signup", updateError);
             setError("Erro ao definir senha. Tente novamente.");
             setLoading(false);
             return;
         }
 
+        logEvent({ event_type: "admin_signup_completed", actor_type: "admin", actor_id: existing.id });
         saveSession(existing.id, existing.email);
         router.push("/");
     }
@@ -156,7 +164,7 @@ export default function LoginAdminPage() {
             .single();
 
         if (!admin) {
-            // Don't reveal whether email exists
+            // Don't reveal whether email exists — log silently
             setGeneratedCode("");
             setMode("forgot_code");
             setLoading(false);
@@ -171,6 +179,7 @@ export default function LoginAdminPage() {
             .update({ reset_token: code, reset_expires: expires })
             .eq("email", resetEmail.trim().toLowerCase());
 
+        logEvent({ event_type: "admin_password_reset_requested", actor_type: "admin", actor_id: admin.id });
         setGeneratedCode(code);
         setMode("forgot_code");
         setLoading(false);
@@ -193,6 +202,7 @@ export default function LoginAdminPage() {
             admin.reset_token !== resetCode.trim() ||
             new Date(admin.reset_expires) < new Date()
         ) {
+            logEvent({ event_type: "admin_password_reset_code_failed", actor_type: "admin" });
             setError("Código inválido ou expirado.");
             setLoading(false);
             return;
@@ -221,11 +231,13 @@ export default function LoginAdminPage() {
             .eq("email", resetEmail.trim().toLowerCase());
 
         if (updateError) {
+            logError("admin_password_reset", updateError);
             setError("Erro ao atualizar senha. Tente novamente.");
             setLoading(false);
             return;
         }
 
+        logEvent({ event_type: "admin_password_reset_completed", actor_type: "admin" });
         // Return to sign in with pre-filled email and success message
         setEmail(resetEmail);
         setPassword("");

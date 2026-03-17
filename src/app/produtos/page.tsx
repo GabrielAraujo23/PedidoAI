@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { validateProductName, validatePrice, validateDescription, truncate, LIMITS } from "@/lib/validators";
+import { logEvent, logError } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,13 +189,21 @@ export default function ProdutosPage() {
             updated_at: new Date().toISOString(),
         };
 
-        const { error } = editingId
-            ? await supabase.from("products").update(payload).eq("id", editingId)
-            : await supabase.from("products").insert(payload);
+        const { data: savedData, error } = editingId
+            ? await supabase.from("products").update(payload).eq("id", editingId).select("id").single()
+            : await supabase.from("products").insert(payload).select("id").single();
 
         if (error) {
+            logError("product_save", error);
             setFormError(`Erro: ${error.message}`);
         } else {
+            logEvent({
+                event_type: editingId ? "product_updated" : "product_created",
+                actor_type: "admin",
+                resource_type: "product",
+                resource_id: editingId ?? (savedData as { id: string } | null)?.id,
+                metadata: { category: form.category },
+            });
             setShowModal(false);
             setToast({ type: "success", message: editingId ? "Produto atualizado!" : "Produto criado com sucesso!" });
             await fetchProducts();
@@ -203,7 +212,12 @@ export default function ProdutosPage() {
     }
 
     async function handleToggleActive(p: Product) {
-        await supabase.from("products").update({ active: !p.active }).eq("id", p.id);
+        const { error } = await supabase.from("products").update({ active: !p.active }).eq("id", p.id);
+        if (error) {
+            logError("product_toggle", error);
+            return;
+        }
+        logEvent({ event_type: "product_toggled", actor_type: "admin", resource_type: "product", resource_id: p.id, metadata: { active: !p.active } });
         setProducts((prev) =>
             prev.map((x) => x.id === p.id ? { ...x, active: !p.active } : x)
         );
@@ -214,8 +228,10 @@ export default function ProdutosPage() {
         setDeleting(true);
         const { error } = await supabase.from("products").delete().eq("id", deleteId);
         if (error) {
+            logError("product_delete", error);
             setToast({ type: "error", message: "Erro ao excluir produto." });
         } else {
+            logEvent({ event_type: "product_deleted", actor_type: "admin", resource_type: "product", resource_id: deleteId });
             setProducts((prev) => prev.filter((p) => p.id !== deleteId));
             setToast({ type: "success", message: "Produto excluído." });
         }
