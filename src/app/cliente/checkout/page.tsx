@@ -80,7 +80,7 @@ export default function CheckoutPage() {
     const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [distanceKm, setDistanceKm] = useState<number | null>(null);
     const [deliveryFee, setDeliveryFee] = useState(0);
-    const [deliveryStatus, setDeliveryStatus] = useState<"idle" | "ok" | "too_far">("idle");
+    const [deliveryStatus, setDeliveryStatus] = useState<"idle" | "ok">("idle");
 
     const router = useRouter();
     const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
@@ -107,7 +107,7 @@ export default function CheckoutPage() {
                         lat,
                         lng,
                         radius: parseFloat(data?.delivery_radius_km ?? "20") || 20,
-                        rate: parseFloat(data?.delivery_rate_per_km ?? "0") || 0,
+                        rate: parseFloat(data?.delivery_rate_per_km ?? "3") || 3,
                     });
                 }
             });
@@ -130,13 +130,9 @@ export default function CheckoutPage() {
         );
         const rounded = Math.round(dist * 10) / 10;
         setDistanceKm(rounded);
-        if (rounded <= storeCoords.radius) {
-            setDeliveryStatus("ok");
-            setDeliveryFee(Math.round(rounded * storeCoords.rate * 100) / 100);
-        } else {
-            setDeliveryStatus("too_far");
-            setDeliveryFee(0);
-        }
+        const chargedKm = Math.max(0, rounded - storeCoords.radius);
+        setDeliveryFee(Math.round(chargedKm * storeCoords.rate * 100) / 100);
+        setDeliveryStatus("ok");
     }, [customerCoords, storeCoords]);
 
     // Toast auto-dismiss
@@ -292,8 +288,7 @@ export default function CheckoutPage() {
     const canPlaceOrder =
         items.length > 0 &&
         cepStatus === "ok" &&
-        addrForm.number.trim() !== "" &&
-        deliveryStatus !== "too_far";
+        addrForm.number.trim() !== "";
 
     if (!mounted || !session) return null;
 
@@ -420,14 +415,13 @@ export default function CheckoutPage() {
 
                                 {/* Delivery coverage feedback */}
                                 {deliveryStatus === "ok" && distanceKm !== null && (
-                                    <p className="text-xs text-green-600 font-medium">
-                                        ✅ Entrega disponível para sua região! (~{distanceKm.toFixed(1)} km da loja)
-                                    </p>
-                                )}
-                                {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
-                                    <p className="text-xs text-red-500 font-medium">
-                                        ❌ Infelizmente não entregamos nessa região. Nossa entrega cobre até {storeCoords.radius} km de distância.
-                                    </p>
+                                    deliveryFee === 0
+                                        ? <p className="text-xs text-green-600 font-medium">
+                                            ✅ Entrega grátis para sua região! (~{distanceKm.toFixed(1)} km da loja)
+                                          </p>
+                                        : <p className="text-xs text-orange-500 font-medium">
+                                            🛵 Frete: {formatCurrency(deliveryFee)} (~{distanceKm.toFixed(1)} km da loja)
+                                          </p>
                                 )}
                             </div>
 
@@ -535,13 +529,15 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="flex justify-between text-[#6B7280]">
                                     <span>Taxa de Entrega</span>
-                                    {deliveryFee > 0 ? (
-                                        <span>
-                                            {formatCurrency(deliveryFee)}
-                                            {distanceKm !== null && (
-                                                <span className="text-[10px] text-[#9CA3AF] ml-1">(~{distanceKm.toFixed(1)} km)</span>
-                                            )}
-                                        </span>
+                                    {deliveryStatus === "ok" ? (
+                                        deliveryFee === 0
+                                            ? <span className="text-green-600 font-medium">Grátis</span>
+                                            : <span>
+                                                {formatCurrency(deliveryFee)}
+                                                {distanceKm !== null && (
+                                                    <span className="text-[10px] text-[#9CA3AF] ml-1">(~{distanceKm.toFixed(1)} km)</span>
+                                                )}
+                                              </span>
                                     ) : (
                                         <span className="text-[#F97316] font-medium">A calcular</span>
                                     )}
@@ -601,9 +597,7 @@ export default function CheckoutPage() {
                                         ? "Preencha o CEP para continuar."
                                         : addrForm.number.trim() === ""
                                             ? "Informe o número do endereço."
-                                            : deliveryStatus === "too_far"
-                                                ? "Entrega indisponível para sua região."
-                                                : ""}
+                                            : ""}
                                 </p>
                             )}
 
