@@ -60,6 +60,7 @@ export default function LoginAdminPage() {
     function saveSession(adminId: string, email: string) {
         const session = { adminId, email };
         localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+        document.cookie = "pedidoai_admin=1; path=/; SameSite=Strict; Max-Age=86400";
         setAdminSession(session);
     }
 
@@ -105,33 +106,40 @@ export default function LoginAdminPage() {
 
         setLoading(true);
 
+        // Email must already exist in `admins` (pre-approved by a superadmin)
+        // but must not yet have a password set.
         const { data: existing } = await supabase
             .from("admins")
-            .select("id")
+            .select("id, email, password_hash")
             .eq("email", email.trim().toLowerCase())
             .single();
 
-        if (existing) {
-            setError("Este email já está cadastrado.");
+        if (!existing) {
+            setError("Email não autorizado. Contate o administrador do sistema.");
+            setLoading(false);
+            return;
+        }
+
+        if (existing.password_hash) {
+            setError("Este email já possui uma senha cadastrada. Use a opção de login.");
             setLoading(false);
             return;
         }
 
         const password_hash = await hashPassword(password);
 
-        const { data: newAdmin, error: insertError } = await supabase
+        const { error: updateError } = await supabase
             .from("admins")
-            .insert({ email: email.trim().toLowerCase(), password_hash })
-            .select("id, email")
-            .single();
+            .update({ password_hash })
+            .eq("id", existing.id);
 
-        if (insertError || !newAdmin) {
-            setError("Erro ao criar conta. Tente novamente.");
+        if (updateError) {
+            setError("Erro ao definir senha. Tente novamente.");
             setLoading(false);
             return;
         }
 
-        saveSession(newAdmin.id, newAdmin.email);
+        saveSession(existing.id, existing.email);
         router.push("/");
     }
 
@@ -326,7 +334,7 @@ export default function LoginAdminPage() {
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-lg text-white">Novo Administrador</CardTitle>
                                 <CardDescription className="text-slate-400">
-                                    Crie um acesso administrativo. Senha armazenada de forma criptografada.
+                                    Defina a senha para um email pré-autorizado pelo administrador do sistema.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>

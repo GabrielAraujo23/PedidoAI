@@ -75,13 +75,15 @@ export default function OrderTrackingPage() {
         setMounted(true);
         const raw = localStorage.getItem("pedidoai_client_session");
         if (!raw) { router.push("/login"); return; }
-        setSession(JSON.parse(raw) as ClientSession);
+        const sess = JSON.parse(raw) as ClientSession;
+        setSession(sess);
 
         async function fetchOrder() {
             const { data: orderData } = await supabase
                 .from("orders")
                 .select("*")
                 .eq("id", id)
+                .eq("client_id", sess.clientId)
                 .single();
 
             if (!orderData) { setLoading(false); return; }

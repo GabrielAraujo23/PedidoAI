@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     function signOut() {
         localStorage.removeItem(ADMIN_SESSION_KEY);
+        document.cookie = "pedidoai_admin=; path=/; SameSite=Strict; Max-Age=0";
         setAdminSession(null);
         router.push("/loginadmin");
     }
