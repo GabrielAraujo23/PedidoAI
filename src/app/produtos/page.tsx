@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { validateProductName, validatePrice, validateDescription, truncate, LIMITS } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -165,16 +166,20 @@ export default function ProdutosPage() {
 
     async function handleSave() {
         setFormError("");
-        if (!form.name.trim()) { setFormError("Nome é obrigatório."); return; }
+        const nameVal = validateProductName(form.name);
+        if (!nameVal.ok) { setFormError(nameVal.error); return; }
         if (!form.price) { setFormError("Preço é obrigatório."); return; }
+        const priceVal = validatePrice(form.price);
+        if (!priceVal.ok) { setFormError(priceVal.error); return; }
+        const descVal = validateDescription(form.description);
+        if (!descVal.ok) { setFormError(descVal.error); return; }
 
         const priceNum = parseFloat(form.price.replace(/\./g, "").replace(",", "."));
-        if (isNaN(priceNum) || priceNum <= 0) { setFormError("Preço inválido."); return; }
 
         setSaving(true);
         const payload = {
-            name: form.name.trim(),
-            description: form.description.trim() || null,
+            name: truncate(form.name.trim(), LIMITS.product_name),
+            description: form.description.trim() ? truncate(form.description.trim(), LIMITS.description) : null,
             category: form.category,
             subcategory: form.subcategory.trim() || null,
             unit: form.unit,
@@ -420,6 +425,7 @@ export default function ProdutosPage() {
                                 onChange={(e) => setField("name", e.target.value)}
                                 placeholder="Ex: Telha Ondulada 2,13m"
                                 className="mt-1"
+                                maxLength={LIMITS.product_name}
                             />
                         </div>
 
@@ -480,6 +486,7 @@ export default function ProdutosPage() {
                                 onChange={(e) => setField("description", e.target.value)}
                                 placeholder="Descrição opcional"
                                 className="mt-1"
+                                maxLength={LIMITS.description}
                             />
                         </div>
 

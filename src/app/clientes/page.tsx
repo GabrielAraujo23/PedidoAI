@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Client, Order, Status } from "@/lib/types";
+import { validateName, validatePhone, truncate, LIMITS } from "@/lib/validators";
 
 const STATUS_LABELS: Record<Status, string> = {
     novo: "Novo",
@@ -109,7 +110,10 @@ export default function ClientesPage() {
     }
 
     async function handleAddClient() {
-        if (!newName.trim()) return;
+        const nameVal = validateName(newName);
+        if (!nameVal.ok) return;
+        const phoneVal = validatePhone(newPhone);
+        if (!phoneVal.ok) return;
         setCreating(true);
 
         const { data: allClients } = await supabase.from("clients").select("id");
@@ -119,9 +123,9 @@ export default function ClientesPage() {
 
         const newClient: Client = {
             id: nextId,
-            name: newName.trim(),
-            phone: newPhone.trim() || null,
-            address: newAddress.trim() || null,
+            name: truncate(newName.trim(), LIMITS.name),
+            phone: newPhone.trim() ? truncate(newPhone.trim(), LIMITS.phone) : null,
+            address: newAddress.trim() ? truncate(newAddress.trim(), 255) : null,
         };
 
         const { error } = await supabase.from("clients").insert(newClient);
@@ -406,15 +410,15 @@ export default function ClientesPage() {
                     <div className="flex flex-col gap-4 py-2">
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="name">Nome *</Label>
-                            <Input id="name" placeholder="Nome completo" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                            <Input id="name" placeholder="Nome completo" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={LIMITS.name} />
                         </div>
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="phone">Telefone</Label>
-                            <Input id="phone" placeholder="(11) 99999-9999" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                            <Input id="phone" placeholder="(11) 99999-9999" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} maxLength={LIMITS.phone} />
                         </div>
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="address">Endereço</Label>
-                            <Input id="address" placeholder="Rua, número, bairro" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} />
+                            <Input id="address" placeholder="Rua, número, bairro" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} maxLength={255} />
                         </div>
                     </div>
                     <DialogFooter>

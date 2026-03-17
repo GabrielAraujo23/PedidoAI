@@ -12,6 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Client } from "@/lib/types";
 import type { ClientSession } from "@/lib/auth-context";
+import {
+    validateName, validatePhone, sanitizeExternalCoords, truncate, LIMITS,
+} from "@/lib/validators";
 
 type Step = "phone" | "returning" | "new_client";
 
@@ -124,7 +127,8 @@ export default function LoginPage() {
 
             if (fetchedCepRef.current !== digits) return;
             if (geoData[0]) {
-                setCustomerCoords({ lat: parseFloat(geoData[0].lat), lng: parseFloat(geoData[0].lon) });
+                const coords = sanitizeExternalCoords(geoData[0].lat, geoData[0].lon);
+                if (coords) setCustomerCoords(coords);
             }
         } catch {
             if (fetchedCepRef.current === digits) {
@@ -164,7 +168,8 @@ export default function LoginPage() {
 
     async function handlePhoneContinue(e: React.FormEvent) {
         e.preventDefault();
-        if (!phone.trim()) return;
+        const phoneVal = validatePhone(phone, true);
+        if (!phoneVal.ok) { setError(phoneVal.error); return; }
         setLoading(true);
         setError("");
 
@@ -196,7 +201,8 @@ export default function LoginPage() {
 
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
-        if (!name.trim()) return;
+        const nameVal = validateName(name);
+        if (!nameVal.ok) { setError(nameVal.error); return; }
         setLoading(true);
         setError("");
 
@@ -212,9 +218,9 @@ export default function LoginPage() {
 
         const newClient: Client = {
             id: clientId,
-            name: name.trim(),
-            phone: phone.trim(),
-            address: fullAddress || null,
+            name: truncate(name.trim(), LIMITS.name),
+            phone: truncate(phone.trim(), LIMITS.phone),
+            address: fullAddress ? truncate(fullAddress, 255) : null,
         };
 
         const { error } = await supabase.from("clients").insert(newClient);
@@ -282,6 +288,7 @@ export default function LoginPage() {
                                                 autoComplete="tel"
                                                 autoFocus
                                                 disabled={loading}
+                                                maxLength={LIMITS.phone}
                                             />
                                         </div>
                                     </div>
@@ -372,6 +379,7 @@ export default function LoginPage() {
                                                 autoComplete="name"
                                                 autoFocus
                                                 disabled={loading}
+                                                maxLength={LIMITS.name}
                                             />
                                         </div>
                                     </div>
@@ -451,6 +459,7 @@ export default function LoginPage() {
                                                         value={numberField}
                                                         onChange={(e) => setNumberField(e.target.value)}
                                                         disabled={loading}
+                                                        maxLength={LIMITS.address_number}
                                                         className="w-full h-9 px-3 rounded-lg border border-input text-sm text-[#111827] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                                                     />
                                                 </div>

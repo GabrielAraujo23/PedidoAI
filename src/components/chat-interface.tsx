@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { escapeLike, truncate, validateQuantity, LIMITS } from "@/lib/validators";
 
 type Stage =
     | "collecting_name"
@@ -69,14 +70,23 @@ const PLACEHOLDERS: Record<Stage, string> = {
 
 function parseProducts(text: string): ParsedProduct[] {
     return text
+        .slice(0, 500) // limit raw input
         .split(/[,+&]| e /)
         .map((p) => p.trim())
         .filter(Boolean)
         .reduce<ParsedProduct[]>((acc, part) => {
             const m1 = part.match(/^(\d+)\s+(.+)$/);
-            if (m1) return [...acc, { quantity: parseInt(m1[1]), name: m1[2].trim() }];
+            if (m1) {
+                const qty = Math.min(Math.max(1, parseInt(m1[1], 10)), 9_999);
+                const name = m1[2].trim().slice(0, 120);
+                if (validateQuantity(qty).ok) return [...acc, { quantity: qty, name }];
+            }
             const m2 = part.match(/^(.+)\s+x\s*(\d+)$/i);
-            if (m2) return [...acc, { quantity: parseInt(m2[2]), name: m2[1].trim() }];
+            if (m2) {
+                const qty = Math.min(Math.max(1, parseInt(m2[2], 10)), 9_999);
+                const name = m2[1].trim().slice(0, 120);
+                if (validateQuantity(qty).ok) return [...acc, { quantity: qty, name }];
+            }
             return acc;
         }, []);
 }
@@ -182,7 +192,7 @@ export function ChatInterface({ onOrderCreated }: { onOrderCreated?: () => void 
             const { data: found } = await supabase
                 .from("clients")
                 .select("id")
-                .ilike("name", data.name)
+                .ilike("name", escapeLike(data.name))
                 .limit(1);
 
             if (found && found.length > 0) {
@@ -195,9 +205,9 @@ export function ChatInterface({ onOrderCreated }: { onOrderCreated?: () => void 
 
                 await supabase.from("clients").insert({
                     id: clientId,
-                    name: data.name,
-                    phone: data.phone || null,
-                    address: data.address || null,
+                    name: truncate(data.name, LIMITS.name),
+                    phone: data.phone ? truncate(data.phone, LIMITS.phone) : null,
+                    address: data.address ? truncate(data.address, 255) : null,
                 });
             }
 
@@ -397,6 +407,7 @@ export function ChatInterface({ onOrderCreated }: { onOrderCreated?: () => void 
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && canType && handleSend()}
                         disabled={!canType}
+                        maxLength={LIMITS.chat_message}
                     />
                     <Button
                         onClick={handleSend}

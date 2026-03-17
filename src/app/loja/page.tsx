@@ -14,6 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { ADMIN_SESSION_KEY } from "@/lib/auth-context";
+import {
+    validateStoreName, validatePhone, validateDeliveryRate, validateDeliveryRadius,
+    validateLatitude, validateLongitude, validateCategory, validateBusinessHours,
+    sanitizeExternalCoords, truncate, LIMITS,
+} from "@/lib/validators";
 
 // ── Input masks ────────────────────────────────────────────────────────────
 
@@ -94,13 +99,32 @@ type ToastState = { type: "success" | "error"; message: string } | null;
 
 function validate(f: FormState): Record<string, string> {
     const e: Record<string, string> = {};
-    if (!f.storeName.trim()) e.storeName = "Nome da loja é obrigatório.";
+    const sn = validateStoreName(f.storeName);
+    if (!sn.ok) e.storeName = sn.error;
     if (f.cnpj && !/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(f.cnpj))
         e.cnpj = "Formato inválido: 00.000.000/0000-00";
-    if (f.phone && !/^\(\d{2}\) \d{4,5}-\d{4}$/.test(f.phone))
-        e.phone = "Formato inválido: (00) 00000-0000";
-    if (f.deliveryRate !== "" && (isNaN(parseFloat(f.deliveryRate)) || parseFloat(f.deliveryRate) < 0))
-        e.deliveryRate = "Deve ser um número positivo.";
+    const ph = validatePhone(f.phone);
+    if (!ph.ok) e.phone = ph.error;
+    if (f.deliveryRate !== "") {
+        const dr = validateDeliveryRate(f.deliveryRate);
+        if (!dr.ok) e.deliveryRate = dr.error;
+    }
+    if (f.deliveryRadius !== "") {
+        const radius = validateDeliveryRadius(f.deliveryRadius);
+        if (!radius.ok) e.deliveryRadius = radius.error;
+    }
+    if (f.latitude !== "") {
+        const lat = validateLatitude(f.latitude);
+        if (!lat.ok) e.latitude = lat.error;
+    }
+    if (f.longitude !== "") {
+        const lng = validateLongitude(f.longitude);
+        if (!lng.ok) e.longitude = lng.error;
+    }
+    if (f.businessHours !== "") {
+        const bh = validateBusinessHours(f.businessHours);
+        if (!bh.ok) e.businessHours = bh.error;
+    }
     return e;
 }
 
@@ -254,9 +278,10 @@ export default function LojaPage() {
             const brasilLat = data.location?.coordinates?.latitude;
             const brasilLng = data.location?.coordinates?.longitude;
 
-            if (brasilLat && brasilLng) {
-                lat = String(brasilLat);
-                lng = String(brasilLng);
+            const brasilCoords = sanitizeExternalCoords(brasilLat, brasilLng);
+            if (brasilCoords) {
+                lat = String(brasilCoords.lat);
+                lng = String(brasilCoords.lng);
             } else {
                 // Fallback: AwesomeAPI
                 try {
@@ -264,9 +289,10 @@ export default function LojaPage() {
                     if (fetchedCepRef.current !== digits) return; // stale
                     if (awRes.ok) {
                         const awData = await awRes.json();
-                        if (awData.lat && awData.lng) {
-                            lat = String(awData.lat);
-                            lng = String(awData.lng);
+                        const awCoords = sanitizeExternalCoords(awData.lat, awData.lng);
+                        if (awCoords) {
+                            lat = String(awCoords.lat);
+                            lng = String(awCoords.lng);
                         }
                     }
                 } catch { /* ignore fallback errors */ }
@@ -337,26 +363,26 @@ export default function LojaPage() {
         setSaving(true);
         const payload = {
             admin_id: adminId.current,
-            store_name: form.storeName || null,
-            cnpj: form.cnpj || null,
-            address: formattedAddress || null,
-            cep: form.cep || null,
-            street: form.street || null,
-            number: form.number || null,
-            complement: form.complement || null,
-            neighborhood: form.neighborhood || null,
-            city: form.city || null,
-            state: form.state || null,
-            phone: form.phone || null,
-            business_hours: form.businessHours || null,
-            delivery_rate_per_km: form.deliveryRate ? parseFloat(form.deliveryRate) : null,
-            delivery_radius_km: form.deliveryRadius ? parseFloat(form.deliveryRadius) : null,
-            latitude: form.latitude ? parseFloat(form.latitude) : null,
-            longitude: form.longitude ? parseFloat(form.longitude) : null,
-            tax_regime: form.taxRegime || null,
-            state_registration: form.stateRegistration || null,
-            product_categories: form.categories,
-            logo_url: form.logoUrl || null,
+            store_name:           form.storeName     ? truncate(form.storeName, LIMITS.store_name)       : null,
+            cnpj:                 form.cnpj          || null,
+            address:              formattedAddress   ? truncate(formattedAddress, 255)                   : null,
+            cep:                  form.cep           || null,
+            street:               form.street        ? truncate(form.street, LIMITS.street)              : null,
+            number:               form.number        ? truncate(form.number, LIMITS.address_number)      : null,
+            complement:           form.complement    ? truncate(form.complement, LIMITS.complement)      : null,
+            neighborhood:         form.neighborhood  ? truncate(form.neighborhood, LIMITS.neighborhood)  : null,
+            city:                 form.city          ? truncate(form.city, LIMITS.city)                  : null,
+            state:                form.state         ? truncate(form.state, LIMITS.state)                : null,
+            phone:                form.phone         || null,
+            business_hours:       form.businessHours ? truncate(form.businessHours, LIMITS.business_hours) : null,
+            delivery_rate_per_km: form.deliveryRate  ? parseFloat(form.deliveryRate)  : null,
+            delivery_radius_km:   form.deliveryRadius ? parseFloat(form.deliveryRadius) : null,
+            latitude:             form.latitude      ? parseFloat(form.latitude)      : null,
+            longitude:            form.longitude     ? parseFloat(form.longitude)     : null,
+            tax_regime:           form.taxRegime     || null,
+            state_registration:   form.stateRegistration || null,
+            product_categories:   form.categories.map((c) => truncate(c, LIMITS.category)),
+            logo_url:             form.logoUrl       || null,
             updated_at: new Date().toISOString(),
         };
 
@@ -382,7 +408,8 @@ export default function LojaPage() {
 
     function addCategory() {
         const t = newCategory.trim();
-        if (t && !form.categories.includes(t)) setField("categories", [...form.categories, t]);
+        const catVal = validateCategory(t);
+        if (catVal.ok && !form.categories.includes(t)) setField("categories", [...form.categories, t]);
         setNewCategory("");
         setAddingCategory(false);
     }

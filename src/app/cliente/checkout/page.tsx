@@ -14,6 +14,7 @@ import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
 import { calculateDistance } from "@/lib/haversine";
 import type { ClientSession } from "@/lib/auth-context";
+import { sanitizeExternalCoords, truncate, LIMITS } from "@/lib/validators";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -222,21 +223,22 @@ export default function CheckoutPage() {
             if (fetchedCepRef.current !== digits) return;
 
             if (geoData[0]) {
-                const lat = parseFloat(geoData[0].lat);
-                const lng = parseFloat(geoData[0].lon);
-                setCustomerCoords({ lat, lng });
+                const coords = sanitizeExternalCoords(geoData[0].lat, geoData[0].lon);
+                if (coords) {
+                    setCustomerCoords(coords);
 
-                // Persist address + coordinates to client record immediately
-                if (sessionRef.current) {
-                    await supabase.from("clients").update({
-                        cep:          digits,
-                        street:       viaData.logradouro ?? "",
-                        neighborhood: viaData.bairro     ?? "",
-                        city:         viaData.localidade ?? "",
-                        state:        viaData.uf         ?? "",
-                        latitude:     lat,
-                        longitude:    lng,
-                    }).eq("id", sessionRef.current.clientId);
+                    // Persist address + coordinates to client record immediately
+                    if (sessionRef.current) {
+                        await supabase.from("clients").update({
+                            cep:          digits,
+                            street:       truncate(viaData.logradouro ?? "", LIMITS.street),
+                            neighborhood: truncate(viaData.bairro     ?? "", LIMITS.neighborhood),
+                            city:         truncate(viaData.localidade ?? "", LIMITS.city),
+                            state:        truncate(viaData.uf         ?? "", LIMITS.state),
+                            latitude:     coords.lat,
+                            longitude:    coords.lng,
+                        }).eq("id", sessionRef.current.clientId);
+                    }
                 }
             }
         } catch {
@@ -308,18 +310,18 @@ export default function CheckoutPage() {
             .from("orders")
             .insert({
                 id:           nextId,
-                client:       session.name,
+                client:       truncate(session.name, LIMITS.name),
                 client_id:    session.clientId,
                 products:     productsStr,
                 status:       "novo",
                 position:     novoCount,
                 cep:          addrForm.cep.replace(/\D/g, "") || null,
-                street:       addrForm.street       || null,
-                number:       addrForm.number       || null,
-                complement:   addrForm.complement   || null,
-                neighborhood: addrForm.neighborhood || null,
-                city:         addrForm.city         || null,
-                state:        addrForm.state        || null,
+                street:       addrForm.street       ? truncate(addrForm.street, LIMITS.street)             : null,
+                number:       addrForm.number       ? truncate(addrForm.number, LIMITS.address_number)     : null,
+                complement:   addrForm.complement   ? truncate(addrForm.complement, LIMITS.complement)     : null,
+                neighborhood: addrForm.neighborhood ? truncate(addrForm.neighborhood, LIMITS.neighborhood) : null,
+                city:         addrForm.city         ? truncate(addrForm.city, LIMITS.city)                 : null,
+                state:        addrForm.state        ? truncate(addrForm.state, LIMITS.state)               : null,
                 distance_km:  distanceKm,
                 delivery_fee: deliveryStatus === "ok" ? deliveryFee : null,
             })
@@ -488,6 +490,7 @@ export default function CheckoutPage() {
                                                 placeholder="123"
                                                 value={addrForm.number}
                                                 onChange={(e) => setAddrForm((prev) => ({ ...prev, number: e.target.value }))}
+                                                maxLength={LIMITS.address_number}
                                                 className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
                                             />
                                         </div>
@@ -613,6 +616,7 @@ export default function CheckoutPage() {
                                                         placeholder="123"
                                                         value={addrForm.number}
                                                         onChange={(e) => setAddrForm((prev) => ({ ...prev, number: e.target.value }))}
+                                                        maxLength={LIMITS.address_number}
                                                         className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
                                                     />
                                                 </div>
@@ -627,6 +631,7 @@ export default function CheckoutPage() {
                                                         placeholder="Apto 42, Bloco B"
                                                         value={addrForm.complement}
                                                         onChange={(e) => setAddrForm((prev) => ({ ...prev, complement: e.target.value }))}
+                                                        maxLength={LIMITS.complement}
                                                         className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
                                                     />
                                                 </div>

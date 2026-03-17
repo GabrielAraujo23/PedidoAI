@@ -7,7 +7,8 @@ import {
     ArrowLeft, KeyRound, Eye, EyeOff,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { hashPassword, verifyPassword, generateResetToken } from "@/lib/crypto";
+import { hashPassword, verifyPassword } from "@/lib/crypto";
+import { generateSecureToken, validateEmail, validatePassword } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +66,8 @@ export default function LoginAdminPage() {
     // ── Sign In ───────────────────────────────────────────────────────────────
     async function handleSignIn(e: React.FormEvent) {
         e.preventDefault();
+        const emailVal = validateEmail(email);
+        if (!emailVal.ok) { setError(emailVal.error); return; }
         setLoading(true);
         setError("");
 
@@ -97,7 +100,8 @@ export default function LoginAdminPage() {
         setError("");
 
         if (password !== confirm) { setError("As senhas não coincidem."); return; }
-        if (password.length < 6) { setError("A senha deve ter pelo menos 6 caracteres."); return; }
+        const pwdVal = validatePassword(password);
+        if (!pwdVal.ok) { setError(pwdVal.error); return; }
 
         setLoading(true);
 
@@ -151,7 +155,7 @@ export default function LoginAdminPage() {
             return;
         }
 
-        const code = generateResetToken();
+        const code = generateSecureToken();
         const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1h
 
         await supabase
@@ -196,7 +200,8 @@ export default function LoginAdminPage() {
         setError("");
 
         if (newPass !== newPassConfirm) { setError("As senhas não coincidem."); return; }
-        if (newPass.length < 6) { setError("A senha deve ter pelo menos 6 caracteres."); return; }
+        const pwdVal = validatePassword(newPass);
+        if (!pwdVal.ok) { setError(pwdVal.error); return; }
 
         setLoading(true);
 
@@ -401,7 +406,7 @@ export default function LoginAdminPage() {
                                             <p className="text-xs text-amber-400 font-medium mb-1">
                                                 Código gerado (protótipo)
                                             </p>
-                                            <p className="text-3xl font-bold text-amber-300 tracking-[0.4em]">
+                                            <p className="text-sm font-mono font-bold text-amber-300 break-all">
                                                 {generatedCode}
                                             </p>
                                             <p className="text-[11px] text-amber-500 mt-1">
@@ -410,22 +415,22 @@ export default function LoginAdminPage() {
                                         </div>
                                     )}
                                     <div className="space-y-2">
-                                        <Label className="text-slate-300">Código de 6 dígitos</Label>
+                                        <Label className="text-slate-300">Código de recuperação</Label>
                                         <div className="relative">
                                             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                             <Input
-                                                type="text" inputMode="numeric" placeholder="000000"
+                                                type="text" placeholder="Cole o código aqui"
                                                 value={resetCode}
-                                                onChange={(e) => setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                                                className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500 h-11 text-center tracking-[0.5em] text-xl font-bold focus-visible:ring-primary"
-                                                maxLength={6} autoFocus disabled={loading}
+                                                onChange={(e) => setResetCode(e.target.value.trim().slice(0, 64))}
+                                                className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-slate-500 h-11 font-mono text-sm focus-visible:ring-primary"
+                                                maxLength={64} autoFocus disabled={loading}
                                             />
                                         </div>
                                     </div>
                                     {error && <ErrorMsg text={error} />}
                                     <Button
                                         type="submit"
-                                        disabled={loading || resetCode.length !== 6}
+                                        disabled={loading || resetCode.length < 16}
                                         className="w-full h-11 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
                                     >
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verificar Código"}
