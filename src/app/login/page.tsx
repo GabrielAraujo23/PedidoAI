@@ -34,6 +34,17 @@ function maskCep(v: string): string {
     return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+function maskPhone(v: string): string {
+    // Remove tudo que não for dígito e descarta prefixo +55 se presente
+    let d = v.replace(/\D/g, "");
+    if (d.startsWith("55") && d.length > 11) d = d.slice(2);
+    d = d.slice(0, 11);
+    if (d.length === 0) return "";
+    if (d.length <= 2)  return `(${d}`;
+    if (d.length <= 7)  return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
 function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -288,12 +299,12 @@ export default function LoginPage() {
                                                 type="tel"
                                                 placeholder="(11) 99999-9999"
                                                 value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
+                                                onChange={(e) => setPhone(maskPhone(e.target.value))}
+                                                maxLength={15}
                                                 className="pl-10 glass border-none h-11"
                                                 autoComplete="tel"
                                                 autoFocus
                                                 disabled={loading}
-                                                maxLength={LIMITS.phone}
                                             />
                                         </div>
                                     </div>
