@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
     Mail, Lock, AlertCircle, Loader2, ShieldCheck,
     ArrowLeft, KeyRound, Eye, EyeOff,
@@ -56,8 +55,6 @@ export default function AcessoPage() {
     const [error, setError] = useState("");
     const [info, setInfo] = useState("");
 
-    const router = useRouter();
-
     function saveSession(adminId: string, email: string) {
         const session = { adminId, email };
         localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
@@ -96,7 +93,7 @@ export default function AcessoPage() {
 
         logEvent({ event_type: "admin_login_success", actor_type: "admin", actor_id: admin.id });
         saveSession(admin.id, admin.email);
-        router.push("/");
+        // Navegação para "/" é feita pelo auth-provider após confirmar adminSession no estado
     }
 
     // ── Sign Up ───────────────────────────────────────────────────────────────
@@ -148,7 +145,7 @@ export default function AcessoPage() {
 
         logEvent({ event_type: "admin_signup_completed", actor_type: "admin", actor_id: existing.id });
         saveSession(existing.id, existing.email);
-        router.push("/");
+        // Navegação para "/" é feita pelo auth-provider após confirmar adminSession no estado
     }
 
     // ── Forgot: request code ─────────────────────────────────────────────────
