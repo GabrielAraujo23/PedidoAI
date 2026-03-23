@@ -9,7 +9,7 @@ import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 
 const NAV = [
-    { label: "Cardápio", href: "/cliente/chat" },
+    { label: "Produtos", href: "/cliente/chat" },
     { label: "Meus Pedidos", href: "/cliente/perfil" },
     { label: "Ajuda", href: "#ajuda" },
 ];
