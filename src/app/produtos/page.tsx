@@ -189,19 +189,26 @@ export default function ProdutosPage() {
             updated_at: new Date().toISOString(),
         };
 
-        const { data: savedData, error } = editingId
-            ? await supabase.from("products").update(payload).eq("id", editingId).select("id").single()
-            : await supabase.from("products").insert(payload).select("id").single();
+        let savedId: string | undefined = editingId ?? undefined;
+        let error;
+
+        if (editingId) {
+            ({ error } = await supabase.from("products").update(payload).eq("id", editingId));
+        } else {
+            const result = await supabase.from("products").insert(payload).select("id").single();
+            error = result.error;
+            if (result.data) savedId = (result.data as { id: string }).id;
+        }
 
         if (error) {
             logError("product_save", error);
-            setFormError(`Erro: ${error.message}`);
+            setFormError(`Erro: ${(error as { message?: string }).message ?? "Erro desconhecido."}`);
         } else {
             logEvent({
                 event_type: editingId ? "product_updated" : "product_created",
                 actor_type: "admin",
                 resource_type: "product",
-                resource_id: editingId ?? (savedData as { id: string } | null)?.id,
+                resource_id: savedId,
                 metadata: { category: form.category },
             });
             setShowModal(false);
