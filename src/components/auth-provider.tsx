@@ -7,7 +7,7 @@ import { NavSidebar } from "@/components/nav-sidebar";
 import { AuthContext, AdminSession, ADMIN_SESSION_KEY } from "@/lib/auth-context";
 
 // Public paths: no admin session required
-const PUBLIC_PREFIXES = ["/login", "/loginadmin", "/cliente/"];
+const PUBLIC_PREFIXES = ["/login", "/acesso", "/cliente/"];
 
 function isPublicPath(pathname: string) {
     return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
@@ -37,9 +37,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (loading) return;
         if (!isPublic && !adminSession) {
-            router.push("/loginadmin");
+            // Redireciona para /login sem revelar a URL admin oculta
+            router.push("/login");
         }
-        if (pathname === "/loginadmin" && adminSession) {
+        if (pathname === "/acesso" && adminSession) {
             router.push("/");
         }
     }, [loading, isPublic, adminSession, router, pathname]);
@@ -48,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(ADMIN_SESSION_KEY);
         document.cookie = "pedidoai_admin=; path=/; SameSite=Strict; Max-Age=0";
         setAdminSession(null);
-        router.push("/loginadmin");
+        router.push("/login");
     }
 
     // Loading spinner while checking session on admin routes

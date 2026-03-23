@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Paths that don't require admin authentication
-const PUBLIC_PREFIXES = ["/login", "/loginadmin", "/cliente/", "/_next/", "/favicon", "/api/"];
+const PUBLIC_PREFIXES = ["/login", "/acesso", "/cliente/", "/_next/", "/favicon", "/api/"];
 
 function isPublicPath(pathname: string): boolean {
     return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
@@ -14,7 +14,8 @@ export function middleware(request: NextRequest) {
 
     const adminCookie = request.cookies.get("pedidoai_admin");
     if (!adminCookie?.value) {
-        const loginUrl = new URL("/loginadmin", request.url);
+        // Redireciona para /login (URL principal pública) sem revelar a URL admin
+        const loginUrl = new URL("/login", request.url);
         return NextResponse.redirect(loginUrl);
     }
 
