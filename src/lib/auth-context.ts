@@ -9,6 +9,7 @@ export interface ClientSession {
     clientId: string;
     name: string;
     phone: string;
+    adminId: string;
 }
 
 export interface AuthContextValue {

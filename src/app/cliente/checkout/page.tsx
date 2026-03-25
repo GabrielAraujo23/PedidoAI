@@ -104,7 +104,7 @@ export default function CheckoutPage() {
         supabase
             .from("store_settings")
             .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
-            .limit(1)
+            .eq("admin_id", sess.adminId)
             .single()
             .then(({ data }) => {
                 const lat = data?.latitude ? parseFloat(data.latitude) : 0;
@@ -325,6 +325,7 @@ export default function CheckoutPage() {
                 state:        addrForm.state        ? truncate(addrForm.state, LIMITS.state)               : null,
                 distance_km:  distanceKm,
                 delivery_fee: deliveryStatus === "ok" ? deliveryFee : null,
+                admin_id:     session.adminId || null,
             })
             .select("id")
             .single();

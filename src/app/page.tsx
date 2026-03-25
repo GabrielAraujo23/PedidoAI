@@ -37,6 +37,7 @@ import {
 } from "recharts";
 import { supabase } from "@/lib/supabase";
 import { Order, Status } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
 
 const STATUS_COLORS: Record<Status, string> = {
     novo: "bg-blue-100 text-blue-700",
@@ -71,6 +72,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+    const { adminSession } = useAuth();
     const [stats, setStats] = useState<DashboardStats>({
         totalOrders: 0,
         totalClients: 0,
@@ -80,10 +82,11 @@ export default function DashboardPage() {
     });
 
     useEffect(() => {
+        if (!adminSession) return;
         async function load() {
             const [{ data: orders }, { data: clients }] = await Promise.all([
-                supabase.from("orders").select("id, client, products, status"),
-                supabase.from("clients").select("id"),
+                supabase.from("orders").select("id, client, products, status").eq("admin_id", adminSession!.adminId),
+                supabase.from("clients").select("id").eq("admin_id", adminSession!.adminId),
             ]);
 
             if (orders) {
@@ -101,7 +104,7 @@ export default function DashboardPage() {
         }
 
         load();
-    }, []);
+    }, [adminSession]);
 
     const statCards = [
         {

@@ -35,6 +35,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { Order, Status } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
 
 const STATUS_LABELS: Record<Status, string> = {
     novo: "Novo",
@@ -51,6 +52,7 @@ const STATUS_COLORS: Record<Status, string> = {
 };
 
 export default function PedidosPage() {
+    const { adminSession } = useAuth();
     const [view, setView] = useState<"hybrid" | "kanban" | "list">("hybrid");
     const [orders, setOrders] = useState<Order[]>([]);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -61,14 +63,16 @@ export default function PedidosPage() {
     const [search, setSearch] = useState("");
 
     useEffect(() => {
+        if (!adminSession) return;
         supabase
             .from("orders")
             .select("*")
+            .eq("admin_id", adminSession.adminId)
             .order("position", { ascending: true })
             .then(({ data }) => {
                 if (data) setOrders(data as Order[]);
             });
-    }, []);
+    }, [adminSession]);
 
     const filteredOrders = orders.filter((o) => {
         if (!search) return true;
@@ -94,7 +98,7 @@ export default function PedidosPage() {
             position,
         };
 
-        const { error } = await supabase.from("orders").insert(newOrder);
+        const { error } = await supabase.from("orders").insert({ ...newOrder, admin_id: adminSession!.adminId });
 
         if (!error) {
             setOrders((prev) => [...prev, newOrder]);

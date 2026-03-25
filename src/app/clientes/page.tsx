@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Client, Order, Status } from "@/lib/types";
 import { validateName, validatePhone, truncate, LIMITS } from "@/lib/validators";
+import { useAuth } from "@/lib/auth-context";
 
 const STATUS_LABELS: Record<Status, string> = {
     novo: "Novo",
@@ -47,6 +48,7 @@ interface LastOrderMap {
 }
 
 export default function ClientesPage() {
+    const { adminSession } = useAuth();
     const [clients, setClients] = useState<Client[]>([]);
     const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
     const [lastOrders, setLastOrders] = useState<LastOrderMap>({});
@@ -63,14 +65,14 @@ export default function ClientesPage() {
     const [newPhone, setNewPhone] = useState("");
     const [newAddress, setNewAddress] = useState("");
 
-    useEffect(() => { loadAll(); }, []);
+    useEffect(() => { if (adminSession) loadAll(); }, [adminSession]);
 
     async function loadAll() {
         setLoading(true);
 
         const [{ data: clientsData }, { data: ordersData }] = await Promise.all([
-            supabase.from("clients").select("*").order("created_at", { ascending: false }),
-            supabase.from("orders").select("client_id, created_at"),
+            supabase.from("clients").select("*").eq("admin_id", adminSession!.adminId).order("created_at", { ascending: false }),
+            supabase.from("orders").select("client_id, created_at").eq("admin_id", adminSession!.adminId),
         ]);
 
         const cl = (clientsData as Client[]) ?? [];
@@ -116,7 +118,7 @@ export default function ClientesPage() {
         if (!phoneVal.ok) return;
         setCreating(true);
 
-        const { data: allClients } = await supabase.from("clients").select("id");
+        const { data: allClients } = await supabase.from("clients").select("id").eq("admin_id", adminSession!.adminId);
         const ids = (allClients ?? []).map((c: { id: string }) => parseInt(c.id.replace("CL", ""), 10)).filter(Boolean);
         const nextNum = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         const nextId = `CL${String(nextNum).padStart(3, "0")}`;
@@ -128,7 +130,7 @@ export default function ClientesPage() {
             address: newAddress.trim() ? truncate(newAddress.trim(), 255) : null,
         };
 
-        const { error } = await supabase.from("clients").insert(newClient);
+        const { error } = await supabase.from("clients").insert({ ...newClient, admin_id: adminSession!.adminId });
 
         if (!error) {
             setClients((prev) => [newClient, ...prev]);
@@ -145,7 +147,7 @@ export default function ClientesPage() {
         setClientOrders([]);
         setHistoryOpen(true);
         const { data } = await supabase
-            .from("orders").select("*").eq("client_id", client.id)
+            .from("orders").select("*").eq("client_id", client.id).eq("admin_id", adminSession!.adminId)
             .order("created_at", { ascending: false });
         setClientOrders((data as Order[]) ?? []);
     }

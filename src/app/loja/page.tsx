@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
     Store, MapPin, Phone, FileText, Truck, Clock,
-    Save, Upload, Package, Plus, X, Loader2, Check, AlertCircle,
+    Save, Upload, Package, Plus, X, Loader2, Check, AlertCircle, Link2, Copy,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -441,6 +441,41 @@ export default function LojaPage() {
                         : <AlertCircle className="w-4 h-4 shrink-0" />}
                     {toast.message}
                 </div>
+            )}
+
+            {/* Link do cliente */}
+            {adminId.current && (
+                <Card className="border-primary/20 bg-primary/5">
+                    <CardContent className="pt-5 pb-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                <Link2 className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-secondary mb-0.5">Link para seus clientes</p>
+                                <p className="text-xs text-muted-foreground mb-2">Compartilhe este link para que seus clientes façam pedidos.</p>
+                                <div className="flex items-center gap-2">
+                                    <code className="text-xs bg-white/80 border border-primary/20 rounded-lg px-3 py-1.5 text-primary font-mono truncate flex-1">
+                                        {typeof window !== "undefined" ? `${window.location.origin}/login?admin=${adminId.current}` : ""}
+                                    </code>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="shrink-0 border-primary/30 hover:bg-primary/10"
+                                        onClick={() => {
+                                            if (typeof window !== "undefined") {
+                                                navigator.clipboard.writeText(`${window.location.origin}/login?admin=${adminId.current}`);
+                                                setToast({ type: "success", message: "Link copiado!" });
+                                            }
+                                        }}
+                                    >
+                                        <Copy className="w-3.5 h-3.5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             )}
 
             {/* Header */}

@@ -19,6 +19,12 @@ import { logEvent, logError } from "@/lib/logger";
 
 type Step = "phone" | "returning" | "new_client";
 
+// Reads ?admin= from URL without useSearchParams (avoids Suspense wrapper)
+function getAdminIdFromUrl(): string {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("admin") ?? "";
+}
+
 interface AddrFields {
     street: string;
     neighborhood: string;
@@ -58,6 +64,10 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const router = useRouter();
 
+    // Admin ID from URL param ?admin=
+    const [adminId, setAdminId] = useState("");
+    useEffect(() => { setAdminId(getAdminIdFromUrl()); }, []);
+
     // CEP / address state (new_client step)
     const [cep, setCep] = useState("");
     const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -71,12 +81,13 @@ export default function LoginPage() {
     const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [deliveryInfo, setDeliveryInfo] = useState<{ distanceKm: number; fee: number } | null>(null);
 
-    // Load store coords once on mount
+    // Load store coords once admin is known
     useEffect(() => {
+        if (!adminId) return;
         supabase
             .from("store_settings")
             .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
-            .limit(1)
+            .eq("admin_id", adminId)
             .single()
             .then(({ data }) => {
                 const lat = data?.latitude ? parseFloat(data.latitude) : 0;
@@ -90,7 +101,7 @@ export default function LoginPage() {
                     });
                 }
             });
-    }, []);
+    }, [adminId]);
 
     // Recalculate delivery estimate whenever customer or store coords arrive
     useEffect(() => {
@@ -207,6 +218,7 @@ export default function LoginPage() {
             clientId: client.id,
             name: client.name,
             phone: client.phone ?? "",
+            adminId,
         };
         localStorage.setItem("pedidoai_client_session", JSON.stringify(session));
         router.push("/cliente/chat");
@@ -236,7 +248,7 @@ export default function LoginPage() {
             address: fullAddress ? truncate(fullAddress, 255) : null,
         };
 
-        const { error } = await supabase.from("clients").insert(newClient);
+        const { error } = await supabase.from("clients").insert({ ...newClient, admin_id: adminId || null });
 
         if (error) {
             logError("client_registration", error);

@@ -70,12 +70,13 @@ export default function CatalogPage() {
         setMounted(true);
         const raw = localStorage.getItem("pedidoai_client_session");
         if (!raw) { router.push("/login"); return; }
-        setSession(JSON.parse(raw) as ClientSession);
-
+        const sess = JSON.parse(raw) as ClientSession;
+        setSession(sess);
         supabase
             .from("products")
             .select("*")
             .eq("active", true)
+            .eq("admin_id", sess.adminId)
             .order("category", { ascending: true })
             .order("name", { ascending: true })
             .then(({ data, error }) => {

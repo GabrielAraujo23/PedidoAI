@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { validateProductName, validatePrice, validateDescription, truncate, LIMITS } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,7 @@ function maskPrice(raw: string) {
 }
 
 export default function ProdutosPage() {
+    const { adminSession } = useAuth();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -102,8 +104,9 @@ export default function ProdutosPage() {
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (adminSession) fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [adminSession]);
 
     useEffect(() => {
         if (!toast) return;
@@ -116,6 +119,7 @@ export default function ProdutosPage() {
         const { data, error } = await supabase
             .from("products")
             .select("*")
+            .eq("admin_id", adminSession!.adminId)
             .order("category", { ascending: true })
             .order("name", { ascending: true });
         if (!error && data) setProducts(data as Product[]);
@@ -195,7 +199,7 @@ export default function ProdutosPage() {
         if (editingId) {
             ({ error } = await supabase.from("products").update(payload).eq("id", editingId));
         } else {
-            const result = await supabase.from("products").insert(payload).select("id").single();
+            const result = await supabase.from("products").insert({ ...payload, admin_id: adminSession!.adminId }).select("id").single();
             error = result.error;
             if (result.data) savedId = (result.data as { id: string }).id;
         }
