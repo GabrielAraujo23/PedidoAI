@@ -68,6 +68,9 @@ export default function LoginPage() {
     const [adminId, setAdminId] = useState("");
     useEffect(() => { setAdminId(getAdminIdFromUrl()); }, []);
 
+    // Stores the admin_id found on a returning client's DB record (fallback when URL has no ?admin=)
+    const foundAdminIdRef = useRef("");
+
     // CEP / address state (new_client step)
     const [cep, setCep] = useState("");
     const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -196,17 +199,19 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        const { data: clients } = await supabase
-            .from("clients")
-            .select("*")
-            .eq("phone", phone.trim())
-            .limit(1);
+        // Filter by adminId when available so a client only matches their store
+        let query = supabase.from("clients").select("*").eq("phone", phone.trim());
+        if (adminId) query = query.eq("admin_id", adminId);
+        const { data: clients } = await query.limit(1);
 
         setLoading(false);
 
         if (clients && clients.length > 0) {
-            logEvent({ event_type: "client_login", actor_type: "client", actor_id: (clients[0] as Client).id });
-            setFoundClient(clients[0] as Client);
+            const found = clients[0] as Client & { admin_id?: string };
+            // Cache the client's stored admin_id as fallback for saveSessionAndRedirect
+            foundAdminIdRef.current = found.admin_id ?? "";
+            logEvent({ event_type: "client_login", actor_type: "client", actor_id: found.id });
+            setFoundClient(found);
             setStep("returning");
         } else {
             setStep("new_client");
@@ -214,11 +219,13 @@ export default function LoginPage() {
     }
 
     function saveSessionAndRedirect(client: Client) {
+        // Prefer URL param; fall back to the admin_id stored on the client's DB record
+        const effectiveAdminId = adminId || foundAdminIdRef.current || "";
         const session: ClientSession = {
             clientId: client.id,
             name: client.name,
             phone: client.phone ?? "",
-            adminId,
+            adminId: effectiveAdminId,
         };
         localStorage.setItem("pedidoai_client_session", JSON.stringify(session));
         router.push("/cliente/chat");
@@ -226,6 +233,10 @@ export default function LoginPage() {
 
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
+        if (!adminId) {
+            setError("Acesse pelo link da sua loja para se cadastrar.");
+            return;
+        }
         const nameVal = validateName(name);
         if (!nameVal.ok) { setError(nameVal.error); return; }
         setLoading(true);
