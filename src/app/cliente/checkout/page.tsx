@@ -97,6 +97,11 @@ export default function CheckoutPage() {
         const raw = localStorage.getItem("pedidoai_client_session");
         if (!raw) { router.push("/login"); return; }
         const sess = JSON.parse(raw) as ClientSession;
+        if (!sess.adminId) {
+            localStorage.removeItem("pedidoai_client_session");
+            router.push("/login");
+            return;
+        }
         setSession(sess);
         sessionRef.current = sess;
 

@@ -71,6 +71,12 @@ export default function CatalogPage() {
         const raw = localStorage.getItem("pedidoai_client_session");
         if (!raw) { router.push("/login"); return; }
         const sess = JSON.parse(raw) as ClientSession;
+        // Sessão sem adminId é de versão anterior — força re-login via link da loja
+        if (!sess.adminId) {
+            localStorage.removeItem("pedidoai_client_session");
+            router.push("/login");
+            return;
+        }
         setSession(sess);
         supabase
             .from("products")
