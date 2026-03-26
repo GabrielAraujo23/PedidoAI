@@ -122,7 +122,8 @@ export default function ProdutosPage() {
             .eq("admin_id", adminSession!.adminId)
             .order("category", { ascending: true })
             .order("name", { ascending: true });
-        if (!error && data) setProducts(data as Product[]);
+        if (error) setToast({ type: "error", message: `Erro ao carregar: ${error.message}` });
+        else setProducts((data as Product[]) ?? []);
         setLoading(false);
     }
 
