@@ -17,27 +17,25 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Badge } from "@/components/ui/badge";
 import { KanbanItem } from "./kanban-item";
 import { supabase } from "@/lib/supabase";
 import { Order, Status } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const COLUMNS = [
-    { id: "novo", title: "Novo" },
-    { id: "confirmado", title: "Confirmado" },
-    { id: "rota", title: "Em Rota" },
-    { id: "entregue", title: "Entregue" },
-] as const;
+const COLUMNS: { id: Status; title: string; dot: string; badge: string }[] = [
+    { id: "novo",       title: "Novo",       dot: "bg-blue-500",   badge: "bg-blue-50 text-blue-600" },
+    { id: "confirmado", title: "Confirmado", dot: "bg-orange-400", badge: "bg-orange-50 text-orange-600" },
+    { id: "rota",       title: "Em Rota",    dot: "bg-purple-500", badge: "bg-purple-50 text-purple-600" },
+    { id: "entregue",   title: "Entregue",   dot: "bg-green-500",  badge: "bg-green-50 text-green-600" },
+];
 
-// Registers a column as a drop target so empty columns accept dropped cards
 function DroppableColumn({ id, children }: { id: string; children: React.ReactNode }) {
     const { setNodeRef, isOver } = useDroppable({ id });
     return (
         <div
             ref={setNodeRef}
             className={cn(
-                "flex-1 space-y-3 p-2 rounded-xl bg-slate-50/50 border border-slate-100 min-h-[500px] transition-colors duration-150",
+                "flex-1 space-y-3 p-2 rounded-xl bg-slate-50/60 border border-slate-100 min-h-[400px] transition-colors duration-150",
                 isOver && "bg-primary/5 border-primary/30"
             )}
         >
@@ -54,19 +52,15 @@ interface KanbanBoardProps {
 export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
     const sensors = useSensors(
         useSensor(PointerSensor),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     async function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
-
         if (!over) return;
 
         const activeId = active.id as string;
         const overId = over.id as string;
-
         const isColumn = COLUMNS.some((col) => col.id === overId);
 
         let updatedOrders: Order[] = [];
@@ -76,22 +70,13 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
             if (!activeOrder) return prev;
 
             let next: Order[];
-
             if (isColumn) {
-                // Dropped onto a column (including empty columns)
                 if (activeOrder.status === overId) return prev;
-                next = prev.map((o) =>
-                    o.id === activeId ? { ...o, status: overId as Status } : o
-                );
+                next = prev.map((o) => o.id === activeId ? { ...o, status: overId as Status } : o);
             } else {
-                // Dropped onto another card — reorder within target column
                 const overOrder = prev.find((o) => o.id === overId);
                 if (!overOrder) return prev;
-
-                const updated = prev.map((o) =>
-                    o.id === activeId ? { ...o, status: overOrder.status } : o
-                );
-
+                const updated = prev.map((o) => o.id === activeId ? { ...o, status: overOrder.status } : o);
                 const oldIndex = updated.findIndex((o) => o.id === activeId);
                 const newIndex = updated.findIndex((o) => o.id === overId);
                 next = arrayMove(updated, oldIndex, newIndex);
@@ -103,7 +88,6 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
 
         if (updatedOrders.length === 0) return;
 
-        // Persist only the cards whose status or position changed
         const updates = updatedOrders
             .filter((o) => {
                 const original = orders.find((orig) => orig.id === o.id);
@@ -116,51 +100,49 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
             });
 
         for (const u of updates) {
-            await supabase
-                .from("orders")
-                .update({ status: u.status, position: u.position })
-                .eq("id", u.id);
+            await supabase.from("orders").update({ status: u.status, position: u.position }).eq("id", u.id);
         }
     }
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragEnd={handleDragEnd}
-        >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 h-full">
-                {COLUMNS.map((col) => (
-                    <div key={col.id} className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="font-semibold text-secondary flex items-center gap-2">
-                                {col.title}
-                                <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-none">
-                                    {orders.filter((o) => o.status === col.id).length}
-                                </Badge>
-                            </h3>
-                        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-2 gap-3 h-full">
+                {COLUMNS.map((col) => {
+                    const colOrders = orders.filter((o) => o.status === col.id);
+                    return (
+                        <div key={col.id} className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2 px-1">
+                                <span className={cn("w-2 h-2 rounded-full", col.dot)} />
+                                <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{col.title}</span>
+                                <span className={cn("ml-auto text-xs font-semibold px-2 py-0.5 rounded-full", col.badge)}>
+                                    {String(colOrders.length).padStart(2, "0")}
+                                </span>
+                            </div>
 
-                        <SortableContext
-                            id={col.id}
-                            items={orders.filter((o) => o.status === col.id).map((o) => o.id)}
-                            strategy={verticalListSortingStrategy}
-                        >
-                            <DroppableColumn id={col.id}>
-                                {orders
-                                    .filter((o) => o.status === col.id)
-                                    .map((order) => (
+                            <SortableContext
+                                id={col.id}
+                                items={colOrders.map((o) => o.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <DroppableColumn id={col.id}>
+                                    {colOrders.map((order) => (
                                         <KanbanItem
                                             key={order.id}
                                             id={order.id}
                                             client={order.client}
                                             products={order.products}
+                                            status={order.status}
+                                            created_at={order.created_at}
                                         />
                                     ))}
-                            </DroppableColumn>
-                        </SortableContext>
-                    </div>
-                ))}
+                                    {colOrders.length === 0 && (
+                                        <p className="text-xs text-slate-400 text-center pt-6">Nenhum pedido</p>
+                                    )}
+                                </DroppableColumn>
+                            </SortableContext>
+                        </div>
+                    );
+                })}
             </div>
         </DndContext>
     );
