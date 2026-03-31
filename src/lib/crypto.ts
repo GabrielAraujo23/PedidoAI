@@ -59,5 +59,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 }
 
 export function generateResetToken(): string {
-    return String(Math.floor(100_000 + Math.random() * 900_000));
+    const bytes = (window.crypto ?? globalThis.crypto).getRandomValues(new Uint8Array(4));
+    const num = (new DataView(bytes.buffer).getUint32(0) % 900_000) + 100_000;
+    return String(num);
 }

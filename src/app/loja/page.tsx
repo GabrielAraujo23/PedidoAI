@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { ADMIN_SESSION_KEY } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import {
     validateStoreName, validatePhone, validateDeliveryRate, validateDeliveryRadius,
     validateLatitude, validateLongitude, validateCategory, validateBusinessHours,
@@ -132,6 +132,7 @@ function validate(f: FormState): Record<string, string> {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function LojaPage() {
+    const { adminSession } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -156,10 +157,7 @@ export default function LojaPage() {
     // ── Load ──────────────────────────────────────────────────────────────
 
     useEffect(() => {
-        try {
-            const s = localStorage.getItem(ADMIN_SESSION_KEY);
-            adminId.current = s ? JSON.parse(s).adminId : null;
-        } catch { adminId.current = null; }
+        adminId.current = adminSession?.adminId ?? null;
 
         if (!adminId.current) { setLoading(false); return; }
 

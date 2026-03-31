@@ -242,10 +242,12 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        const { data: allClients } = await supabase.from("clients").select("id");
-        const nums = (allClients || []).map((c: { id: string }) => parseInt(c.id.replace("CL", "")) || 0);
-        const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
-        const clientId = `CL${String(maxNum + 1).padStart(3, "0")}`;
+        // Random 8-char hex suffix — non-sequential, no DB query needed, no race condition.
+        // Collision probability with 10k clients: ~0.001% (birthday bound on 2^32 space).
+        const randomBytes = crypto.getRandomValues(new Uint8Array(4));
+        const clientId = "CL" + Array.from(randomBytes)
+            .map((b) => b.toString(16).padStart(2, "0").toUpperCase())
+            .join("");
 
         const fullAddress = cepStatus === "ok" && addrFields.street
             ? [addrFields.street, numberField.trim(), addrFields.neighborhood, `${addrFields.city}/${addrFields.state}`]

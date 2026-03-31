@@ -6,15 +6,13 @@ import {
     Mail, Lock, AlertCircle, Loader2, ShieldCheck,
     ArrowLeft, KeyRound, Eye, EyeOff,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { hashPassword, verifyPassword } from "@/lib/crypto";
-import { generateSecureToken, validateEmail, validatePassword } from "@/lib/validators";
+import { validateEmail, validatePassword } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ADMIN_SESSION_KEY, useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context";
 
 type Mode = "signin" | "signup" | "forgot_email" | "forgot_code" | "forgot_newpass";
 
@@ -48,7 +46,6 @@ export default function AcessoPage() {
     // Forgot password fields
     const [resetEmail, setResetEmail] = useState("");
     const [resetCode, setResetCode] = useState("");
-    const [generatedCode, setGeneratedCode] = useState("");
     const [newPass, setNewPass] = useState("");
     const [newPassConfirm, setNewPassConfirm] = useState("");
 
@@ -58,11 +55,9 @@ export default function AcessoPage() {
 
     const router = useRouter();
 
+    // Cookie is set server-side by /api/auth/admin — just update React state here
     function saveSession(adminId: string, email: string) {
-        const session = { adminId, email };
-        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
-        document.cookie = "pedidoai_admin=1; path=/; SameSite=Strict; Max-Age=86400";
-        setAdminSession(session);
+        setAdminSession({ adminId, email });
     }
 
     // ── Sign In ───────────────────────────────────────────────────────────────
@@ -73,30 +68,28 @@ export default function AcessoPage() {
         setLoading(true);
         setError("");
 
-        const { data: admin } = await supabase
-            .from("admins")
-            .select("id, email, password_hash")
-            .eq("email", email.trim().toLowerCase())
-            .single();
+        try {
+            const res = await fetch("/api/auth/admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "signin", email, password }),
+            });
+            const data = await res.json();
 
-        if (!admin || !admin.password_hash) {
-            logEvent({ event_type: "admin_login_failure", actor_type: "admin", metadata: { reason: "email_not_found" } });
-            setError("Email não encontrado.");
+            if (!res.ok) {
+                logEvent({ event_type: "admin_login_failure", actor_type: "admin" });
+                setError(data.error ?? "Credenciais inválidas.");
+                setLoading(false);
+                return;
+            }
+
+            logEvent({ event_type: "admin_login_success", actor_type: "admin", actor_id: data.adminId });
+            saveSession(data.adminId, data.email);
+            router.push("/");
+        } catch {
+            setError("Erro de conexão. Tente novamente.");
             setLoading(false);
-            return;
         }
-
-        const valid = await verifyPassword(password, admin.password_hash);
-        if (!valid) {
-            logEvent({ event_type: "admin_login_failure", actor_type: "admin", actor_id: admin.id, metadata: { reason: "wrong_password" } });
-            setError("Senha incorreta.");
-            setLoading(false);
-            return;
-        }
-
-        logEvent({ event_type: "admin_login_success", actor_type: "admin", actor_id: admin.id });
-        saveSession(admin.id, admin.email);
-        router.push("/");
     }
 
     // ── Sign Up ───────────────────────────────────────────────────────────────
@@ -110,45 +103,29 @@ export default function AcessoPage() {
 
         setLoading(true);
 
-        // Email must already exist in `admins` (pre-approved by a superadmin)
-        // but must not yet have a password set.
-        const { data: existing } = await supabase
-            .from("admins")
-            .select("id, email, password_hash")
-            .eq("email", email.trim().toLowerCase())
-            .single();
+        try {
+            const res = await fetch("/api/auth/admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "signup", email, password }),
+            });
+            const data = await res.json();
 
-        if (!existing) {
-            logEvent({ event_type: "admin_unauthorized_signup", actor_type: "admin" });
-            setError("Email não autorizado. Contate o administrador do sistema.");
+            if (!res.ok) {
+                if (res.status === 403) logEvent({ event_type: "admin_unauthorized_signup", actor_type: "admin" });
+                else logError("admin_signup", data.error);
+                setError(data.error ?? "Erro ao criar conta.");
+                setLoading(false);
+                return;
+            }
+
+            logEvent({ event_type: "admin_signup_completed", actor_type: "admin", actor_id: data.adminId });
+            saveSession(data.adminId, data.email);
+            router.push("/");
+        } catch {
+            setError("Erro de conexão. Tente novamente.");
             setLoading(false);
-            return;
         }
-
-        if (existing.password_hash) {
-            logEvent({ event_type: "admin_unauthorized_signup", actor_type: "admin", actor_id: existing.id, metadata: { reason: "already_has_password" } });
-            setError("Este email já possui uma senha cadastrada. Use a opção de login.");
-            setLoading(false);
-            return;
-        }
-
-        const password_hash = await hashPassword(password);
-
-        const { error: updateError } = await supabase
-            .from("admins")
-            .update({ password_hash })
-            .eq("id", existing.id);
-
-        if (updateError) {
-            logError("admin_signup", updateError);
-            setError("Erro ao definir senha. Tente novamente.");
-            setLoading(false);
-            return;
-        }
-
-        logEvent({ event_type: "admin_signup_completed", actor_type: "admin", actor_id: existing.id });
-        saveSession(existing.id, existing.email);
-        router.push("/");
     }
 
     // ── Forgot: request code ─────────────────────────────────────────────────
@@ -157,32 +134,21 @@ export default function AcessoPage() {
         setLoading(true);
         setError("");
 
-        const { data: admin } = await supabase
-            .from("admins")
-            .select("id")
-            .eq("email", resetEmail.trim().toLowerCase())
-            .single();
-
-        if (!admin) {
-            // Don't reveal whether email exists — log silently
-            setGeneratedCode("");
+        try {
+            await fetch("/api/auth/admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "forgot_request", email: resetEmail }),
+            });
+            // Always advance regardless of response — prevents email enumeration
+            logEvent({ event_type: "admin_password_reset_requested", actor_type: "admin" });
             setMode("forgot_code");
+        } catch {
+            // Advance silently on network error too
+            setMode("forgot_code");
+        } finally {
             setLoading(false);
-            return;
         }
-
-        const code = generateSecureToken();
-        const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1h
-
-        await supabase
-            .from("admins")
-            .update({ reset_token: code, reset_expires: expires })
-            .eq("email", resetEmail.trim().toLowerCase());
-
-        logEvent({ event_type: "admin_password_reset_requested", actor_type: "admin", actor_id: admin.id });
-        setGeneratedCode(code);
-        setMode("forgot_code");
-        setLoading(false);
     }
 
     // ── Forgot: verify code ──────────────────────────────────────────────────
@@ -191,25 +157,27 @@ export default function AcessoPage() {
         setLoading(true);
         setError("");
 
-        const { data: admin } = await supabase
-            .from("admins")
-            .select("reset_token, reset_expires")
-            .eq("email", resetEmail.trim().toLowerCase())
-            .single();
+        try {
+            const res = await fetch("/api/auth/admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "forgot_verify", email: resetEmail, code: resetCode }),
+            });
+            const data = await res.json();
 
-        if (
-            !admin ||
-            admin.reset_token !== resetCode.trim() ||
-            new Date(admin.reset_expires) < new Date()
-        ) {
-            logEvent({ event_type: "admin_password_reset_code_failed", actor_type: "admin" });
-            setError("Código inválido ou expirado.");
+            if (!res.ok) {
+                logEvent({ event_type: "admin_password_reset_code_failed", actor_type: "admin" });
+                setError(data.error ?? "Código inválido ou expirado.");
+                setLoading(false);
+                return;
+            }
+
+            setMode("forgot_newpass");
+        } catch {
+            setError("Erro de conexão. Tente novamente.");
+        } finally {
             setLoading(false);
-            return;
         }
-
-        setMode("forgot_newpass");
-        setLoading(false);
     }
 
     // ── Forgot: set new password ─────────────────────────────────────────────
@@ -223,32 +191,35 @@ export default function AcessoPage() {
 
         setLoading(true);
 
-        const password_hash = await hashPassword(newPass);
+        try {
+            const res = await fetch("/api/auth/admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "forgot_reset", email: resetEmail, code: resetCode, password: newPass }),
+            });
+            const data = await res.json();
 
-        const { error: updateError } = await supabase
-            .from("admins")
-            .update({ password_hash, reset_token: null, reset_expires: null })
-            .eq("email", resetEmail.trim().toLowerCase());
+            if (!res.ok) {
+                logError("admin_password_reset", data.error);
+                setError(data.error ?? "Erro ao atualizar senha. Tente novamente.");
+                setLoading(false);
+                return;
+            }
 
-        if (updateError) {
-            logError("admin_password_reset", updateError);
-            setError("Erro ao atualizar senha. Tente novamente.");
+            logEvent({ event_type: "admin_password_reset_completed", actor_type: "admin" });
+            setEmail(resetEmail);
+            setPassword("");
+            setResetEmail("");
+            setResetCode("");
+            setNewPass("");
+            setNewPassConfirm("");
+            setMode("signin");
+            setInfo("Senha redefinida com sucesso! Faça login.");
+        } catch {
+            setError("Erro de conexão. Tente novamente.");
+        } finally {
             setLoading(false);
-            return;
         }
-
-        logEvent({ event_type: "admin_password_reset_completed", actor_type: "admin" });
-        // Return to sign in with pre-filled email and success message
-        setEmail(resetEmail);
-        setPassword("");
-        setResetEmail("");
-        setResetCode("");
-        setGeneratedCode("");
-        setNewPass("");
-        setNewPassConfirm("");
-        setMode("signin");
-        setInfo("Senha redefinida com sucesso! Faça login.");
-        setLoading(false);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -331,7 +302,7 @@ export default function AcessoPage() {
                                     <button
                                         type="button"
                                         className="w-full text-center text-sm text-slate-500 hover:text-slate-300 transition-colors pt-1"
-                                        onClick={() => { setResetEmail(""); setGeneratedCode(""); switchMode("forgot_email"); }}
+                                        onClick={() => { setResetEmail(""); switchMode("forgot_email"); }}
                                     >
                                         Esqueci minha senha
                                     </button>
@@ -420,20 +391,14 @@ export default function AcessoPage() {
                             </CardHeader>
                             <CardContent>
                                 <form onSubmit={handleVerifyCode} className="space-y-4">
-                                    {/* Prototype: show code on screen */}
-                                    {generatedCode && (
-                                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-center">
-                                            <p className="text-xs text-amber-400 font-medium mb-1">
-                                                Código gerado (protótipo)
-                                            </p>
-                                            <p className="text-sm font-mono font-bold text-amber-300 break-all">
-                                                {generatedCode}
-                                            </p>
-                                            <p className="text-[11px] text-amber-500 mt-1">
-                                                Em produção seria enviado para {resetEmail}
-                                            </p>
-                                        </div>
-                                    )}
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
+                                        <p className="text-sm text-slate-300">
+                                            Se este email estiver cadastrado, você receberá um código de recuperação.
+                                        </p>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            Verifique sua caixa de entrada e spam.
+                                        </p>
+                                    </div>
                                     <div className="space-y-2">
                                         <Label className="text-slate-300">Código de recuperação</Label>
                                         <div className="relative">

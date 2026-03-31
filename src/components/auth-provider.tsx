@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { NavSidebar } from "@/components/nav-sidebar";
-import { AuthContext, AdminSession, ADMIN_SESSION_KEY } from "@/lib/auth-context";
+import { AuthContext, AdminSession } from "@/lib/auth-context";
 
 // Public paths: no admin session required
 const PUBLIC_PREFIXES = ["/login", "/acesso", "/cliente/"];
@@ -21,16 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const isPublic = isPublicPath(pathname);
 
-    // Read admin session from localStorage on mount
+    // Read admin session from httpOnly cookie via server API on mount
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem(ADMIN_SESSION_KEY);
-            if (stored) setAdminSession(JSON.parse(stored));
-        } catch {
-            localStorage.removeItem(ADMIN_SESSION_KEY);
-        } finally {
-            setLoading(false);
-        }
+        fetch("/api/auth/session")
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => { if (data?.adminId) setAdminSession(data as AdminSession); })
+            .catch(() => {})
+            .finally(() => setLoading(false));
     }, []);
 
     // Route protection
@@ -46,8 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [loading, isPublic, adminSession, router, pathname]);
 
     function signOut() {
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-        document.cookie = "pedidoai_admin=; path=/; SameSite=Strict; Max-Age=0";
+        fetch("/api/auth/session", { method: "DELETE" }).catch(() => {});
         setAdminSession(null);
         router.push("/login");
     }
