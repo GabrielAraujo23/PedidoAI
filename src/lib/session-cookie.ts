@@ -37,9 +37,9 @@ function fromBase64url(str: string): Uint8Array {
 }
 
 export async function signSession(data: SessionPayload): Promise<string> {
-    const payload = toBase64url(new TextEncoder().encode(JSON.stringify(data)));
+    const payload = toBase64url(new TextEncoder().encode(JSON.stringify(data)).buffer as ArrayBuffer);
     const key     = await getKey("sign");
-    const sig     = await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+    const sig     = await globalThis.crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload).buffer as ArrayBuffer);
     return `${payload}.${toBase64url(sig)}`;
 }
 
@@ -53,7 +53,7 @@ export async function verifySession(cookie: string): Promise<SessionPayload | nu
     try {
         const key   = await getKey("verify");
         const valid = await globalThis.crypto.subtle.verify(
-            "HMAC", key, fromBase64url(sig), new TextEncoder().encode(payload)
+            "HMAC", key, fromBase64url(sig).buffer as ArrayBuffer, new TextEncoder().encode(payload).buffer as ArrayBuffer
         );
         if (!valid) return null;
         return JSON.parse(new TextDecoder().decode(fromBase64url(payload))) as SessionPayload;
