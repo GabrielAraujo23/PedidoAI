@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { hashPasswordServer, verifyPasswordServer, generateSecureTokenServer, safeCompareStrings } from "@/lib/server-crypto";
 import { signSession, sessionCookieOptions, SESSION_COOKIE } from "@/lib/session-cookie";
 import { rateLimit, getClientIP, LIMITS } from "@/lib/rate-limit";
+import { checkOrigin } from "@/lib/csrf";
 
 /**
  * Server-side admin authentication.
@@ -49,6 +50,8 @@ function isValidPassword(password: unknown): password is string {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+    if (!checkOrigin(request)) return err("Forbidden", 403);
+
     let body: unknown;
     try {
         body = await request.json();
@@ -144,6 +147,11 @@ async function handleForgotRequest({ email }: Record<string, unknown>, ip: strin
     if (!rl.allowed) return tooMany(rl.resetAt);
 
     if (!isValidEmail(email)) return ok({ ok: true }); // Always 200 — no enumeration
+
+    // Per-email rate limit (prevents targeting a specific account repeatedly)
+    const emailKey = email.trim().toLowerCase();
+    const rlEmail = rateLimit(`forgot_req_email:${emailKey}`, 3, 60 * 60 * 1000);
+    if (!rlEmail.allowed) return ok({ ok: true }); // Silent — no enumeration
 
     const { data: admin } = await supabaseServer
         .from("admins")

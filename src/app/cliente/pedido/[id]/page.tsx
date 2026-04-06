@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
     CheckCircle, Clock, Truck, Star,
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
-import type { ClientSession } from "@/lib/auth-context";
+import { useClientSession } from "@/lib/client-session";
 import type { Status } from "@/lib/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -63,32 +63,23 @@ function formatDate(iso: string) {
 
 export default function OrderTrackingPage() {
     const { id } = useParams<{ id: string }>();
-    const [session, setSession] = useState<ClientSession | null>(null);
+    const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
     const [order, setOrder] = useState<OrderData | null>(null);
     const [items, setItems] = useState<OrderItem[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const router = useRouter();
+    useEffect(() => { setMounted(true); }, []);
 
     useEffect(() => {
-        setMounted(true);
-        const raw = localStorage.getItem("pedidoai_client_session");
-        if (!raw) { router.push("/login"); return; }
-        const sess = JSON.parse(raw) as ClientSession;
-        if (!sess.adminId) {
-            localStorage.removeItem("pedidoai_client_session");
-            router.push("/login");
-            return;
-        }
-        setSession(sess);
+        if (!session) return;
 
         async function fetchOrder() {
             const { data: orderData } = await supabase
                 .from("orders")
                 .select("*")
                 .eq("id", id)
-                .eq("client_id", sess.clientId)
+                .eq("client_id", session!.clientId)
                 .single();
 
             if (!orderData) { setLoading(false); return; }
@@ -105,10 +96,9 @@ export default function OrderTrackingPage() {
         }
 
         fetchOrder();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [session, id]);
 
-    if (!mounted || !session) return null;
+    if (!mounted || sessionLoading || !session) return null;
 
     const currentStepIndex = order ? STATUS_ORDER[order.status] : -1;
     const totalValue = items.length > 0
@@ -123,7 +113,7 @@ export default function OrderTrackingPage() {
 
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
-            <ClientHeader />
+            <ClientHeader session={session} />
 
             <div className="max-w-[1280px] mx-auto px-4 py-6">
                 {loading ? (

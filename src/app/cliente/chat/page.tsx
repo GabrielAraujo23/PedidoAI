@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
-import type { ClientSession } from "@/lib/auth-context";
+import { useClientSession } from "@/lib/client-session";
 import type { LucideIcon } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ function formatCurrency(v: number) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function CatalogPage() {
-    const [session, setSession] = useState<ClientSession | null>(null);
+    const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
     const [products, setProducts] = useState<Product[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(true);
@@ -79,22 +79,15 @@ export default function CatalogPage() {
     // Derive quantity map for O(1) lookups in the render loop
     const quantityMap = Object.fromEntries(items.map((i) => [i.product_id, i.quantity]));
 
+    useEffect(() => { setMounted(true); }, []);
+
     useEffect(() => {
-        setMounted(true);
-        const raw = localStorage.getItem("pedidoai_client_session");
-        if (!raw) { router.push("/login"); return; }
-        const sess = JSON.parse(raw) as ClientSession;
-        if (!sess.adminId) {
-            localStorage.removeItem("pedidoai_client_session");
-            router.push("/login");
-            return;
-        }
-        setSession(sess);
+        if (!session) return;
         supabase
             .from("products")
             .select("*")
             .eq("active", true)
-            .eq("admin_id", sess.adminId)
+            .eq("admin_id", session.adminId)
             .order("category", { ascending: true })
             .order("name", { ascending: true })
             .then(({ data, error }) => {
@@ -102,8 +95,7 @@ export default function CatalogPage() {
                 else setProducts((data as Product[]) ?? []);
                 setLoadingProducts(false);
             });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [session]);
 
     useEffect(() => {
         if (!toast) return;
@@ -130,7 +122,7 @@ export default function CatalogPage() {
         return acc;
     }, {});
 
-    if (!mounted || !session) return null;
+    if (!mounted || sessionLoading || !session) return null;
 
     // Header height: 3px accent + 60px bar = 63px
     const headerH = "63px";
@@ -160,7 +152,7 @@ export default function CatalogPage() {
                 )}
             </AnimatePresence>
 
-            <ClientHeader searchValue={search} onSearchChange={setSearch} />
+            <ClientHeader session={session} searchValue={search} onSearchChange={setSearch} />
 
             {/* ── Hero welcome ─────────────────────────────────────────── */}
             <div className="relative bg-[#1C1917] overflow-hidden">

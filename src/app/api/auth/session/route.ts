@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, sessionCookieOptions, verifySession } from "@/lib/session-cookie";
+import { checkOrigin } from "@/lib/csrf";
 
 /** GET /api/auth/session — read and verify the httpOnly session cookie */
 export async function GET(request: NextRequest) {
@@ -20,7 +21,10 @@ export async function GET(request: NextRequest) {
 }
 
 /** DELETE /api/auth/session — clear the session cookie (logout) */
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
+    if (!checkOrigin(request)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const res = NextResponse.json({ ok: true });
     res.cookies.set(SESSION_COOKIE, "", { ...sessionCookieOptions(), maxAge: 0 });
     return res;

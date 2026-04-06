@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     User, Package, MapPin, Settings,
@@ -13,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
-import type { ClientSession } from "@/lib/auth-context";
+import { useClientSession } from "@/lib/client-session";
 import type { Status } from "@/lib/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -70,7 +69,7 @@ const NAV_ITEMS: { id: NavItem; label: string; Icon: typeof User }[] = [
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-    const [session, setSession] = useState<ClientSession | null>(null);
+    const { session, loading: sessionLoading, logout } = useClientSession();
     const [mounted, setMounted] = useState(false);
     const [client, setClient] = useState<ClientData | null>(null);
     const [orders, setOrders] = useState<OrderSummary[]>([]);
@@ -79,22 +78,18 @@ export default function ProfilePage() {
     const [notifications, setNotifications] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
 
-    const router = useRouter();
     const { clearCart } = useCart();
 
-    useEffect(() => {
-        setMounted(true);
-        const raw = localStorage.getItem("pedidoai_client_session");
-        if (!raw) { router.push("/login"); return; }
+    useEffect(() => { setMounted(true); }, []);
 
-        const sess = JSON.parse(raw) as ClientSession;
-        setSession(sess);
+    useEffect(() => {
+        if (!session) return;
 
         // Fetch client data
         supabase
             .from("clients")
             .select("id, name, phone, address, created_at")
-            .eq("id", sess.clientId)
+            .eq("id", session.clientId)
             .single()
             .then(({ data }) => {
                 if (data) setClient(data as ClientData);
@@ -104,23 +99,21 @@ export default function ProfilePage() {
         supabase
             .from("orders")
             .select("id, products, status, created_at")
-            .eq("client_id", sess.clientId)
+            .eq("client_id", session.clientId)
             .order("created_at", { ascending: false })
             .limit(6)
             .then(({ data }) => {
                 setOrders((data as OrderSummary[]) ?? []);
                 setLoadingOrders(false);
             });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [session]);
 
-    function handleLogout() {
-        localStorage.removeItem("pedidoai_client_session");
+    async function handleLogout() {
         clearCart();
-        router.push("/login");
+        await logout();
     }
 
-    if (!mounted || !session) return null;
+    if (!mounted || sessionLoading || !session) return null;
 
     const memberSince = client?.created_at ? formatDate(client.created_at) : "—";
     const initials = session.name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -132,7 +125,7 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
-            <ClientHeader />
+            <ClientHeader session={session} />
 
             <div className="max-w-[1280px] mx-auto px-4 py-6">
                 <div className="flex flex-col lg:flex-row gap-6">

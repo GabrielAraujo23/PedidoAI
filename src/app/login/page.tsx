@@ -11,11 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Client } from "@/lib/types";
-import type { ClientSession } from "@/lib/auth-context";
 import {
-    validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS,
+    validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, LIMITS,
 } from "@/lib/validators";
-import { logEvent, logError } from "@/lib/logger";
+import { logEvent } from "@/lib/logger";
 
 type Step = "phone" | "returning" | "new_client";
 
@@ -125,8 +124,11 @@ export default function LoginPage() {
         setCustomerCoords(null);
         setDeliveryInfo(null);
 
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(), 8_000);
+
         try {
-            const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+            const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: ac.signal });
             const data = await res.json();
 
             if (fetchedCepRef.current !== digits) return;
@@ -145,22 +147,29 @@ export default function LoginPage() {
             });
             setCepStatus("ok");
 
-            // Geocode for distance estimate
-            const geoRes = await fetch(
-                `https://nominatim.openstreetmap.org/search?postalcode=${digits}&country=BR&format=json`
-            );
-            const geoData = await geoRes.json();
+            // Geocode for distance estimate (best-effort, separate abort controller)
+            const geoAc = new AbortController();
+            const geoTimer = setTimeout(() => geoAc.abort(), 5_000);
+            try {
+                const geoRes  = await fetch(
+                    `https://nominatim.openstreetmap.org/search?postalcode=${digits}&country=BR&format=json`,
+                    { signal: geoAc.signal, headers: { "User-Agent": "PedidoAI/1.0" } }
+                );
+                const geoData = await geoRes.json();
+                if (fetchedCepRef.current === digits && geoData[0]) {
+                    const coords = sanitizeExternalCoords(geoData[0].lat, geoData[0].lon);
+                    if (coords) setCustomerCoords(coords);
+                }
+            } catch { /* geocode failure is non-fatal */ }
+            finally { clearTimeout(geoTimer); }
 
-            if (fetchedCepRef.current !== digits) return;
-            if (geoData[0]) {
-                const coords = sanitizeExternalCoords(geoData[0].lat, geoData[0].lon);
-                if (coords) setCustomerCoords(coords);
-            }
         } catch {
             if (fetchedCepRef.current === digits) {
                 setCepStatus("error");
                 setCepError("CEP não encontrado. Verifique e tente novamente.");
             }
+        } finally {
+            clearTimeout(timer);
         }
     }
 
@@ -218,17 +227,23 @@ export default function LoginPage() {
         }
     }
 
-    function saveSessionAndRedirect(client: Client) {
+    async function saveSessionAndRedirect(client: Client) {
         // Prefer URL param; fall back to the admin_id stored on the client's DB record
         const effectiveAdminId = adminId || foundAdminIdRef.current || "";
-        const session: ClientSession = {
-            clientId: client.id,
-            name: client.name,
-            phone: client.phone ?? "",
-            adminId: effectiveAdminId,
-        };
-        localStorage.setItem("pedidoai_client_session", JSON.stringify(session));
-        router.push("/cliente/chat");
+        setLoading(true);
+        setError("");
+        try {
+            const res = await fetch("/api/auth/client", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "login", phone: client.phone, adminId: effectiveAdminId }),
+            });
+            if (!res.ok) throw new Error("auth failed");
+            router.push("/cliente/chat");
+        } catch {
+            setError("Erro ao entrar. Tente novamente.");
+            setLoading(false);
+        }
     }
 
     async function handleRegister(e: React.FormEvent) {
@@ -242,37 +257,35 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        // Random 8-char hex suffix — non-sequential, no DB query needed, no race condition.
-        // Collision probability with 10k clients: ~0.001% (birthday bound on 2^32 space).
-        const randomBytes = crypto.getRandomValues(new Uint8Array(4));
-        const clientId = "CL" + Array.from(randomBytes)
-            .map((b) => b.toString(16).padStart(2, "0").toUpperCase())
-            .join("");
-
         const fullAddress = cepStatus === "ok" && addrFields.street
             ? [addrFields.street, numberField.trim(), addrFields.neighborhood, `${addrFields.city}/${addrFields.state}`]
                 .filter(Boolean).join(", ")
             : "";
 
-        const newClient: Client = {
-            id: clientId,
-            name: truncate(name.trim(), LIMITS.name),
-            phone: truncate(phone.trim(), LIMITS.phone),
-            address: fullAddress ? truncate(fullAddress, 255) : null,
-        };
-
-        const { error } = await supabase.from("clients").insert({ ...newClient, admin_id: adminId || null });
-
-        if (error) {
-            logError("client_registration", error);
-            logEvent({ event_type: "client_registration_failed", actor_type: "client", metadata: { error_code: (error as { code?: string }).code } });
+        try {
+            const res = await fetch("/api/auth/client", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action:   "register",
+                    phone:    phone.trim(),
+                    name:     name.trim(),
+                    adminId,
+                    address:  fullAddress || null,
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({})) as { error?: string };
+                setError(data.error || "Erro ao cadastrar. Tente novamente.");
+                setLoading(false);
+                return;
+            }
+            logEvent({ event_type: "client_registered", actor_type: "client" });
+            router.push("/cliente/chat");
+        } catch {
             setError("Erro ao cadastrar. Tente novamente.");
             setLoading(false);
-            return;
         }
-
-        logEvent({ event_type: "client_registered", actor_type: "client", actor_id: clientId });
-        saveSessionAndRedirect(newClient);
     }
 
     function resetNewClientStep() {

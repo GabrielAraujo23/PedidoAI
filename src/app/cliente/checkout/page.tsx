@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
 import { calculateDistance } from "@/lib/haversine";
-import type { ClientSession } from "@/lib/auth-context";
+import { useClientSession } from "@/lib/client-session";
 import { sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
 
@@ -64,8 +64,8 @@ function maskCep(v: string): string {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function CheckoutPage() {
-    const [session, setSession] = useState<ClientSession | null>(null);
-    const sessionRef = useRef<ClientSession | null>(null);
+    const { session, loading: sessionLoading } = useClientSession();
+    const sessionRef = useRef(session);
     const [mounted, setMounted] = useState(false);
     const [payment, setPayment] = useState<PaymentMethod>("pix");
     const [coupon, setCoupon] = useState("");
@@ -90,26 +90,21 @@ export default function CheckoutPage() {
     const router = useRouter();
     const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
 
-    // ── Mount ──────────────────────────────────────────────────────────────────
+    useEffect(() => { setMounted(true); }, []);
+
+    // Keep ref in sync so order-submit handler always has the latest session
+    useEffect(() => { sessionRef.current = session; }, [session]);
+
+    // ── Data loading once session is available ─────────────────────────────────
 
     useEffect(() => {
-        setMounted(true);
-        const raw = localStorage.getItem("pedidoai_client_session");
-        if (!raw) { router.push("/login"); return; }
-        const sess = JSON.parse(raw) as ClientSession;
-        if (!sess.adminId) {
-            localStorage.removeItem("pedidoai_client_session");
-            router.push("/login");
-            return;
-        }
-        setSession(sess);
-        sessionRef.current = sess;
+        if (!session) return;
 
         // Load store settings (parallel with client fetch)
         supabase
             .from("store_settings")
             .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
-            .eq("admin_id", sess.adminId)
+            .eq("admin_id", session.adminId)
             .single()
             .then(({ data }) => {
                 const lat = data?.latitude ? parseFloat(data.latitude) : 0;
@@ -128,7 +123,7 @@ export default function CheckoutPage() {
         supabase
             .from("clients")
             .select("*")
-            .eq("id", sess.clientId)
+            .eq("id", session.clientId)
             .single()
             .then(({ data }) => {
                 if (data?.cep && data?.street) {
@@ -154,8 +149,7 @@ export default function CheckoutPage() {
                     setAddrLoadState("none");
                 }
             });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [session]);
 
     // Redirect to catalog if cart is empty (but not while placing an order)
     useEffect(() => {
@@ -387,7 +381,7 @@ export default function CheckoutPage() {
 
     // ── Loading state ──────────────────────────────────────────────────────────
 
-    if (!mounted || !session || addrLoadState === "loading") {
+    if (!mounted || sessionLoading || !session || addrLoadState === "loading") {
         return (
             <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-[#F97316]" />
@@ -411,7 +405,7 @@ export default function CheckoutPage() {
                 </div>
             )}
 
-            <ClientHeader />
+            <ClientHeader session={session} />
 
             <div className="max-w-[1280px] mx-auto px-4 py-6">
 

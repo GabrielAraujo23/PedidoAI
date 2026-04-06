@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Search, X, ShoppingBag } from "lucide-react";
@@ -15,6 +14,7 @@ const NAV = [
 ];
 
 interface ClientHeaderProps {
+    session?: ClientSession | null;
     searchValue?: string;
     onSearchChange?: (v: string) => void;
 }
@@ -23,19 +23,13 @@ function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function ClientHeader({ searchValue = "", onSearchChange }: ClientHeaderProps) {
-    const [session, setSession] = useState<ClientSession | null>(null);
+export function ClientHeader({ session = null, searchValue = "", onSearchChange }: ClientHeaderProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { clearCart, totalItems, totalPrice } = useCart();
 
-    useEffect(() => {
-        const raw = localStorage.getItem("pedidoai_client_session");
-        if (raw) setSession(JSON.parse(raw) as ClientSession);
-    }, []);
-
-    function handleLogout() {
-        localStorage.removeItem("pedidoai_client_session");
+    async function handleLogout() {
+        await fetch("/api/auth/client", { method: "DELETE" }).catch(() => {});
         clearCart();
         router.push("/login");
     }
