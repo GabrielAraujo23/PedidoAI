@@ -70,12 +70,24 @@ export async function POST(request: NextRequest) {
 // ── Login ─────────────────────────────────────────────────────────────────────
 
 async function getDefaultAdminId(): Promise<string | null> {
-    const { data } = await supabaseServer
+    const { data: admins, error: adminsErr } = await supabaseServer
         .from("admins")
         .select("id")
         .order("created_at", { ascending: true })
         .limit(1);
-    return data?.[0]?.id ?? null;
+    if (adminsErr) console.error("[getDefaultAdminId] admins query error:", adminsErr.message);
+    if (admins?.[0]?.id) return admins[0].id;
+
+    // Fallback: derive admin from store_settings (covers cases where admins
+    // table is locked by RLS or empty but a store is configured)
+    const { data: stores, error: storesErr } = await supabaseServer
+        .from("store_settings")
+        .select("admin_id")
+        .not("admin_id", "is", null)
+        .order("created_at", { ascending: true })
+        .limit(1);
+    if (storesErr) console.error("[getDefaultAdminId] store_settings query error:", storesErr.message);
+    return stores?.[0]?.admin_id ?? null;
 }
 
 async function handleLogin({ phone, adminId }: Record<string, unknown>) {
