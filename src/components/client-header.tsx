@@ -44,11 +44,8 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
             <div className="max-w-[1320px] mx-auto px-5 sm:px-8 h-[64px] flex items-center gap-4">
 
                 {/* Logo */}
-                <Link href="/cliente/catalogo" className="flex items-center gap-2.5 shrink-0 group">
-                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="w-7 h-7 object-contain transition-transform group-hover:rotate-3" />
-                    <span className="hidden sm:block text-[14px] font-semibold tracking-tight text-stone-900">
-                        PedidoAI
-                    </span>
+                <Link href="/cliente/catalogo" className="flex items-center shrink-0 group">
+                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-9 w-auto object-contain transition-transform group-hover:scale-105" />
                 </Link>
 
                 {/* Nav */}

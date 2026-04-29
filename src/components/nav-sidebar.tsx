@@ -43,14 +43,8 @@ export function NavSidebar() {
             }}
         >
             {/* Brand */}
-            <Link href="/" className="mb-10 flex items-center gap-2.5 group">
-                <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="w-8 h-8 object-contain transition-transform group-hover:rotate-3" />
-                <div className="leading-none">
-                    <h1 className="text-[15px] font-semibold text-stone-900 tracking-tight">PedidoAI</h1>
-                    <p className="text-[9px] uppercase tracking-[0.22em] text-stone-500 font-semibold mt-1">
-                        Admin Console
-                    </p>
-                </div>
+            <Link href="/" className="mb-10 flex items-center group">
+                <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Section label */}
