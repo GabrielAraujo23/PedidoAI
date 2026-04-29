@@ -319,9 +319,7 @@ export default function LoginPage() {
             {/* Top brand bar */}
             <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-md bg-stone-900 flex items-center justify-center">
-                        <span className="text-white text-[11px] font-bold tracking-tighter" style={{ fontFamily: "var(--font-display)" }}>P</span>
-                    </div>
+                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="w-7 h-7 object-contain" />
                     <span className="text-[13px] font-semibold tracking-tight text-stone-900">PedidoAI</span>
                 </div>
                 <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500 hidden sm:block">

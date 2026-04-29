@@ -45,14 +45,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
 
                 {/* Logo */}
                 <Link href="/cliente/catalogo" className="flex items-center gap-2.5 shrink-0 group">
-                    <div className="w-7 h-7 rounded-md bg-stone-900 flex items-center justify-center transition-transform group-hover:rotate-3">
-                        <span
-                            className="text-white text-[12px] font-bold tracking-tighter"
-                            style={{ fontFamily: "var(--font-display)" }}
-                        >
-                            P
-                        </span>
-                    </div>
+                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="w-7 h-7 object-contain transition-transform group-hover:rotate-3" />
                     <span className="hidden sm:block text-[14px] font-semibold tracking-tight text-stone-900">
                         PedidoAI
                     </span>

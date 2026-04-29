@@ -44,14 +44,7 @@ export function NavSidebar() {
         >
             {/* Brand */}
             <Link href="/" className="mb-10 flex items-center gap-2.5 group">
-                <div className="w-8 h-8 rounded-md bg-stone-900 flex items-center justify-center transition-transform group-hover:rotate-3">
-                    <span
-                        className="text-white text-[13px] font-bold tracking-tighter"
-                        style={{ fontFamily: "var(--font-display)" }}
-                    >
-                        P
-                    </span>
-                </div>
+                <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="w-8 h-8 object-contain transition-transform group-hover:rotate-3" />
                 <div className="leading-none">
                     <h1 className="text-[15px] font-semibold text-stone-900 tracking-tight">PedidoAI</h1>
                     <p className="text-[9px] uppercase tracking-[0.22em] text-stone-500 font-semibold mt-1">

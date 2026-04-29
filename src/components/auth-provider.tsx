@@ -53,14 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return (
             <div className="h-screen flex items-center justify-center bg-warm">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-stone-900 flex items-center justify-center">
-                        <span
-                            className="text-white text-[16px] font-bold tracking-tighter"
-                            style={{ fontFamily: "var(--font-display)" }}
-                        >
-                            P
-                        </span>
-                    </div>
+                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="w-10 h-10 object-contain" />
                     <Loader2 className="w-4 h-4 text-stone-700 animate-spin" />
                 </div>
             </div>
