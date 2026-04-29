@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-    ChevronRight, ShoppingCart, MapPin, QrCode,
+    ChevronRight, MapPin, QrCode,
     CreditCard, Banknote, UtensilsCrossed, Trash2,
-    Rocket, Minus, Plus, AlertCircle, Check, Loader2, Pencil,
+    Minus, Plus, AlertCircle, Check, Loader2, Pencil, ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -16,8 +16,6 @@ import { calculateDistance } from "@/lib/haversine";
 import { useClientSession } from "@/lib/client-session";
 import { sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
-
-// ── Types ──────────────────────────────────────────────────────────────────────
 
 type PaymentMethod = "pix" | "cartao" | "dinheiro" | "vr";
 
@@ -34,8 +32,8 @@ interface AddrForm {
 interface StoreCoords {
     lat: number;
     lng: number;
-    radius: number; // km
-    rate: number;   // R$/km
+    radius: number;
+    rate: number;
 }
 
 const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; Icon: typeof QrCode }[] = [
@@ -49,19 +47,20 @@ const EMPTY_ADDR: AddrForm = {
     cep: "", street: "", neighborhood: "", city: "", state: "", number: "", complement: "",
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
 function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function maskCep(v: string): string {
     const d = v.replace(/\D/g, "").slice(0, 8);
-    if (d.length <= 5) return d;
-    return `${d.slice(0, 5)}-${d.slice(5)}`;
+    return d.length <= 5 ? d : `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-// ── Component ──────────────────────────────────────────────────────────────────
+const inputClass =
+    "w-full h-10 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50";
+
+const eyebrowClass =
+    "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
 
 export default function CheckoutPage() {
     const { session, loading: sessionLoading } = useClientSession();
@@ -72,7 +71,6 @@ export default function CheckoutPage() {
     const [placing, setPlacing] = useState(false);
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-    // Address state
     const [addrForm, setAddrForm] = useState<AddrForm>(EMPTY_ADDR);
     const [addrLoadState, setAddrLoadState] = useState<"loading" | "found" | "none">("loading");
     const [editingAddress, setEditingAddress] = useState(false);
@@ -80,7 +78,6 @@ export default function CheckoutPage() {
     const [cepError, setCepError] = useState("");
     const fetchedCepRef = useRef("");
 
-    // Delivery distance
     const [storeCoords, setStoreCoords] = useState<StoreCoords | null>(null);
     const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [distanceKm, setDistanceKm] = useState<number | null>(null);
@@ -91,16 +88,11 @@ export default function CheckoutPage() {
     const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
 
     useEffect(() => { setMounted(true); }, []);
-
-    // Keep ref in sync so order-submit handler always has the latest session
     useEffect(() => { sessionRef.current = session; }, [session]);
-
-    // ── Data loading once session is available ─────────────────────────────────
 
     useEffect(() => {
         if (!session) return;
 
-        // Load store settings (parallel with client fetch)
         supabase
             .from("store_settings")
             .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
@@ -111,15 +103,13 @@ export default function CheckoutPage() {
                 const lng = data?.longitude ? parseFloat(data.longitude) : 0;
                 if (lat && lng) {
                     setStoreCoords({
-                        lat,
-                        lng,
+                        lat, lng,
                         radius: parseFloat(data?.delivery_radius_km ?? "20") || 20,
                         rate:   parseFloat(data?.delivery_rate_per_km ?? "3")  || 3,
                     });
                 }
             });
 
-        // Fetch client's saved address
         supabase
             .from("clients")
             .select("*")
@@ -138,7 +128,6 @@ export default function CheckoutPage() {
                     });
                     setCepStatus("ok");
                     setAddrLoadState("found");
-                    // If coordinates are saved → trigger delivery calculation
                     if (data.latitude && data.longitude) {
                         setCustomerCoords({
                             lat: parseFloat(String(data.latitude)),
@@ -151,14 +140,12 @@ export default function CheckoutPage() {
             });
     }, [session]);
 
-    // Redirect to catalog if cart is empty (but not while placing an order)
     useEffect(() => {
         if (mounted && totalItems === 0 && !placing) {
             router.push("/cliente/catalogo");
         }
     }, [mounted, totalItems, placing, router]);
 
-    // Recalculate distance whenever customer or store coords change
     useEffect(() => {
         if (!customerCoords || !storeCoords) return;
         const dist = calculateDistance(
@@ -176,14 +163,11 @@ export default function CheckoutPage() {
         }
     }, [customerCoords, storeCoords]);
 
-    // Toast auto-dismiss
     useEffect(() => {
         if (!toast) return;
         const t = setTimeout(() => setToast(null), 5000);
         return () => clearTimeout(t);
     }, [toast]);
-
-    // ── CEP logic ──────────────────────────────────────────────────────────────
 
     async function fetchCep(digits: string) {
         setCepStatus("loading");
@@ -196,12 +180,11 @@ export default function CheckoutPage() {
         try {
             const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
             const viaData = await res.json();
-
             if (fetchedCepRef.current !== digits) return;
 
             if (viaData.erro) {
                 setCepStatus("error");
-                setCepError("CEP não encontrado. Verifique e tente novamente.");
+                setCepError("CEP não encontrado.");
                 return;
             }
 
@@ -214,20 +197,16 @@ export default function CheckoutPage() {
             }));
             setCepStatus("ok");
 
-            // Geocode via Nominatim for distance calculation
             const geoRes = await fetch(
                 `https://nominatim.openstreetmap.org/search?postalcode=${digits}&country=BR&format=json`
             );
             const geoData = await geoRes.json();
-
             if (fetchedCepRef.current !== digits) return;
 
             if (geoData[0]) {
                 const coords = sanitizeExternalCoords(geoData[0].lat, geoData[0].lon);
                 if (coords) {
                     setCustomerCoords(coords);
-
-                    // Persist address + coordinates to client record immediately
                     if (sessionRef.current) {
                         await supabase.from("clients").update({
                             cep:          digits,
@@ -244,7 +223,7 @@ export default function CheckoutPage() {
         } catch {
             if (fetchedCepRef.current === digits) {
                 setCepStatus("error");
-                setCepError("CEP não encontrado. Verifique e tente novamente.");
+                setCepError("CEP não encontrado.");
             }
         }
     }
@@ -288,13 +267,10 @@ export default function CheckoutPage() {
         fetchedCepRef.current = "";
     }
 
-    // ── Order placement ────────────────────────────────────────────────────────
-
     async function handlePlaceOrder() {
         if (!session || items.length === 0) return;
         setPlacing(true);
 
-        // Update number + complement on client record
         await supabase.from("clients").update({
             number:     addrForm.number     || null,
             complement: addrForm.complement || null,
@@ -366,141 +342,194 @@ export default function CheckoutPage() {
         router.push(`/cliente/pedido/${orderData.id}`);
     }
 
-    // ── Derived ────────────────────────────────────────────────────────────────
-
     const orderTotal = totalPrice + deliveryFee;
-
     const canPlaceOrder =
         items.length > 0 &&
         cepStatus === "ok" &&
         addrForm.number.trim() !== "" &&
         deliveryStatus !== "too_far";
-
     const showSavedCard = addrLoadState === "found" && !editingAddress;
     const showCepInput  = addrLoadState === "none"  || editingAddress;
 
-    // ── Loading state ──────────────────────────────────────────────────────────
-
     if (!mounted || sessionLoading || !session || addrLoadState === "loading") {
         return (
-            <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#F97316]" />
+            <div className="min-h-screen flex items-center justify-center" style={{ background: "#F7F2EA" }}>
+                <Loader2 className="w-7 h-7 animate-spin text-stone-700" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB]">
+        <div
+            className="min-h-screen relative"
+            style={{ background: "#F7F2EA", fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
+        >
+            {/* Background grain */}
+            <div aria-hidden className="fixed inset-0 pointer-events-none z-0">
+                <svg className="absolute inset-0 w-full h-full opacity-[0.13] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                    <filter id="grain-checkout">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
+                        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" />
+                    </filter>
+                    <rect width="100%" height="100%" filter="url(#grain-checkout)" />
+                </svg>
+            </div>
 
             {/* Toast */}
             {toast && (
                 <div className={cn(
-                    "fixed top-20 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium",
-                    toast.type === "success" ? "bg-[#22C55E] text-white" : "bg-red-500 text-white"
+                    "fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-xl text-[13px] font-semibold",
+                    toast.type === "success"
+                        ? "bg-emerald-700 text-white"
+                        : "bg-red-700 text-white"
                 )}>
-                    {toast.type === "success"
-                        ? <Check className="w-4 h-4 shrink-0" />
-                        : <AlertCircle className="w-4 h-4 shrink-0" />}
+                    {toast.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                     {toast.message}
                 </div>
             )}
 
             <ClientHeader session={session} />
 
-            <div className="max-w-[1280px] mx-auto px-4 py-6">
+            <main className="relative z-10 max-w-[1280px] mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-24">
 
                 {/* Breadcrumb */}
-                <div className="flex items-center gap-1 text-sm mb-6">
-                    <Link href="/cliente/catalogo" className="text-[#6B7280] hover:text-[#111827]">Carrinho</Link>
-                    <ChevronRight className="w-4 h-4 text-[#6B7280]" />
-                    <span className="text-[#F97316] font-semibold">Checkout</span>
-                </div>
+                <nav className="flex items-center gap-1.5 text-[12px] mb-8" aria-label="breadcrumb">
+                    <Link href="/cliente/catalogo" className="text-stone-500 hover:text-stone-900 transition-colors">
+                        Catálogo
+                    </Link>
+                    <ChevronRight className="w-3 h-3 text-stone-400" />
+                    <span className="text-stone-900 font-semibold">Checkout</span>
+                </nav>
 
-                <div className="flex flex-col lg:flex-row gap-6">
+                {/* Page heading */}
+                <header className="mb-10 max-w-[820px]">
+                    <p className={cn(eyebrowClass, "mb-3")}>Última etapa</p>
+                    <h1
+                        className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-stone-900"
+                        style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                    >
+                        Confirme e{" "}
+                        <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                            finalize
+                        </em>{" "}
+                        seu pedido.
+                    </h1>
+                </header>
 
-                    {/* ── Left column ──────────────────────────────────────── */}
-                    <div className="flex-1 space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
+
+                    {/* ── Left column ─────────────────────────────────────── */}
+                    <div className="space-y-6">
 
                         {/* Cart items */}
-                        <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 shadow-sm">
-                            <h2 className="font-bold text-[#111827] flex items-center gap-2 mb-4">
-                                <ShoppingCart className="w-5 h-5 text-[#F97316]" />
-                                Itens no Carrinho
-                            </h2>
+                        <section className="bg-white rounded-2xl border border-stone-200/70 overflow-hidden">
+                            <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-stone-100">
+                                <div>
+                                    <p className={eyebrowClass}>Carrinho</p>
+                                    <h2
+                                        className="text-[20px] tracking-tight text-stone-900 mt-0.5"
+                                        style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                                    >
+                                        {totalItems} {totalItems === 1 ? "item" : "itens"}
+                                    </h2>
+                                </div>
+                                <span className="text-[12px] text-stone-500 tabular-nums">
+                                    {formatCurrency(totalPrice)}
+                                </span>
+                            </header>
 
                             {items.length === 0 ? (
-                                <p className="text-sm text-[#6B7280] text-center py-6">Carrinho vazio.</p>
+                                <p className="text-[13px] text-stone-500 text-center py-10">Carrinho vazio.</p>
                             ) : (
-                                <div className="space-y-3">
+                                <ul className="divide-y divide-stone-100">
                                     {items.map((item) => (
-                                        <div key={item.product_id} className="flex items-center gap-3 py-3 border-b border-[#E5E7EB] last:border-0">
+                                        <li key={item.product_id} className="flex items-center gap-4 px-6 py-4 hover:bg-stone-50/50 transition-colors">
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-sm text-[#111827]">{item.name}</p>
-                                                <p className="text-xs text-[#6B7280]">{item.unit}</p>
+                                                <p className="text-[14px] font-semibold text-stone-900 truncate">{item.name}</p>
+                                                <p className="text-[11px] text-stone-500 mt-0.5 uppercase tracking-wider">
+                                                    {item.unit} · {formatCurrency(item.price)}/un
+                                                </p>
                                             </div>
-                                            <div className="flex items-center border border-[#E5E7EB] rounded-lg overflow-hidden shrink-0">
+
+                                            <div className="flex items-center bg-stone-100 rounded-lg overflow-hidden shrink-0">
                                                 <button
                                                     onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                                                    className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:bg-gray-100 transition-colors"
+                                                    className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"
                                                 >
                                                     <Minus className="w-3 h-3" />
                                                 </button>
-                                                <span className="w-8 text-center text-sm font-semibold text-[#111827]">{item.quantity}</span>
+                                                <span className="w-7 text-center text-[12px] font-bold text-stone-900 tabular-nums">{item.quantity}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                                                    className="w-7 h-7 flex items-center justify-center text-[#6B7280] hover:bg-gray-100 transition-colors"
+                                                    className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"
                                                 >
                                                     <Plus className="w-3 h-3" />
                                                 </button>
                                             </div>
-                                            <p className="text-sm font-bold text-[#F97316] w-20 text-right shrink-0">
+
+                                            <p
+                                                className="text-stone-900 tabular-nums w-24 text-right shrink-0 leading-none"
+                                                style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "16px" }}
+                                            >
                                                 {formatCurrency(item.quantity * item.price)}
                                             </p>
+
                                             <button
                                                 onClick={() => removeItem(item.product_id)}
-                                                className="p-1.5 text-[#6B7280] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                                className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                                title="Remover"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
-                                        </div>
+                                        </li>
                                     ))}
-                                </div>
+                                </ul>
                             )}
-                        </div>
+                        </section>
 
                         {/* Delivery address */}
-                        <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 shadow-sm">
-                            <h2 className="font-bold text-[#111827] flex items-center gap-2 mb-4">
-                                <MapPin className="w-5 h-5 text-[#F97316]" />
-                                Endereço de Entrega
-                            </h2>
+                        <section className="bg-white rounded-2xl border border-stone-200/70 p-6">
+                            <div className="flex items-center justify-between mb-5">
+                                <div>
+                                    <p className={eyebrowClass}>Entrega</p>
+                                    <h2
+                                        className="text-[20px] tracking-tight text-stone-900 mt-0.5"
+                                        style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                                    >
+                                        Endereço de entrega
+                                    </h2>
+                                </div>
+                                <MapPin className="w-5 h-5 text-stone-400" />
+                            </div>
 
-                            {/* ── Saved address card ── */}
+                            {/* Saved address */}
                             {showSavedCard && (
-                                <div className="space-y-3">
-                                    <div className="flex items-start justify-between gap-3 p-3 bg-green-50 border border-green-200 rounded-xl">
-                                        <div className="flex items-start gap-2">
-                                            <MapPin className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                                            <p className="text-sm text-green-700 leading-relaxed">
-                                                📍 {addrForm.street}{addrForm.number ? `, ${addrForm.number}` : ""}{" "}
-                                                — {addrForm.neighborhood}, {addrForm.city} — {addrForm.state},{" "}
-                                                {addrForm.cep}
+                                <div className="space-y-4">
+                                    <div className="flex items-start justify-between gap-3 p-4 bg-stone-50/80 border border-stone-200/60 rounded-xl">
+                                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                                            <p className="text-[13px] text-stone-700 leading-relaxed">
+                                                {addrForm.street}{addrForm.number ? `, ${addrForm.number}` : ""}
+                                                {addrForm.complement ? ` · ${addrForm.complement}` : ""}
+                                                <br />
+                                                <span className="text-stone-500">
+                                                    {addrForm.neighborhood} · {addrForm.city}/{addrForm.state} · {addrForm.cep}
+                                                </span>
                                             </p>
                                         </div>
                                         <button
                                             onClick={handleEditAddress}
-                                            className="flex items-center gap-1 text-xs text-[#F97316] hover:underline shrink-0 font-medium"
+                                            className="flex items-center gap-1 text-[11px] text-stone-700 hover:text-stone-900 font-semibold uppercase tracking-wider shrink-0"
                                         >
                                             <Pencil className="w-3 h-3" />
-                                            Alterar endereço
+                                            Alterar
                                         </button>
                                     </div>
 
-                                    {/* Number field — only if missing from saved address */}
                                     {!addrForm.number.trim() && (
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-[#374151]">
-                                                Número <span className="text-red-400">*</span>
+                                        <div className="space-y-1.5">
+                                            <label className={eyebrowClass}>
+                                                Número <span className="text-red-500 normal-case tracking-normal">*</span>
                                             </label>
                                             <input
                                                 type="text"
@@ -508,31 +537,35 @@ export default function CheckoutPage() {
                                                 value={addrForm.number}
                                                 onChange={(e) => setAddrForm((prev) => ({ ...prev, number: e.target.value }))}
                                                 maxLength={LIMITS.address_number}
-                                                className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
+                                                className={inputClass}
                                             />
                                         </div>
                                     )}
 
-                                    {/* Delivery status for saved address */}
                                     {deliveryStatus === "ok" && distanceKm !== null && (
-                                        <p className="text-xs text-green-600 font-medium">
-                                            ✅ Entrega disponível (~{distanceKm.toFixed(1)} km da loja)
-                                        </p>
+                                        <div className="flex items-center gap-2 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3.5 py-2.5">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                            <span>
+                                                <span className="font-semibold">Entrega disponível</span> · {distanceKm.toFixed(1)} km da loja
+                                            </span>
+                                        </div>
                                     )}
                                     {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
-                                        <p className="text-xs text-red-500 font-medium">
-                                            ❌ Fora da área de entrega. Cobrimos até {storeCoords.radius} km.
-                                        </p>
+                                        <div className="flex items-center gap-2 text-[12px] text-red-700 bg-red-50/80 border border-red-200/60 rounded-xl px-3.5 py-2.5">
+                                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                            <span>
+                                                <span className="font-semibold">Fora da área.</span> Cobrimos até {storeCoords.radius} km.
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* ── CEP input flow ── */}
+                            {/* CEP input flow */}
                             {showCepInput && (
-                                <>
-                                    {/* CEP field — always visible */}
-                                    <div className="space-y-1 mb-3">
-                                        <label className="text-xs font-semibold text-[#374151]">CEP</label>
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className={eyebrowClass}>CEP</label>
                                         <div className="relative">
                                             <input
                                                 type="text"
@@ -543,90 +576,42 @@ export default function CheckoutPage() {
                                                 onChange={(e) => handleCepChange(e.target.value)}
                                                 onBlur={handleCepBlur}
                                                 className={cn(
-                                                    "w-full h-10 px-3 pr-9 rounded-lg border text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 transition-colors",
-                                                    cepStatus === "error" && "border-red-400 bg-red-50 focus:border-red-400",
-                                                    cepStatus === "ok"    && "border-green-400 focus:border-green-400",
-                                                    cepStatus !== "error" && cepStatus !== "ok" && "border-[#E5E7EB] focus:border-[#F97316]"
+                                                    inputClass, "pr-9",
+                                                    cepStatus === "error" && "border-red-300 focus:border-red-500 focus:ring-red-500/10",
+                                                    cepStatus === "ok"    && "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10",
                                                 )}
                                             />
                                             {cepStatus === "loading" && (
-                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#F97316] animate-spin" />
+                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
                                             )}
                                             {cepStatus === "ok" && (
-                                                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                                                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
                                             )}
                                         </div>
-
-                                        {/* CEP inline error */}
                                         {cepError && (
-                                            <p className="flex items-center gap-1 text-xs text-red-500">
-                                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                            <p className="flex items-center gap-1 text-[12px] text-red-600 pt-0.5">
+                                                <AlertCircle className="w-3 h-3" />
                                                 {cepError}
-                                            </p>
-                                        )}
-
-                                        {/* Delivery coverage feedback */}
-                                        {deliveryStatus === "ok" && distanceKm !== null && (
-                                            <p className="text-xs text-green-600 font-medium">
-                                                ✅ Entrega disponível (~{distanceKm.toFixed(1)} km da loja)
-                                            </p>
-                                        )}
-                                        {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
-                                            <p className="text-xs text-red-500 font-medium">
-                                                ❌ Fora da área de entrega. Cobrimos até {storeCoords.radius} km.
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* Address fields — shown after CEP is ok */}
                                     {cepStatus === "ok" && (
-                                        <div className="space-y-3">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                                                {/* Street — read-only */}
-                                                <div className="sm:col-span-2 space-y-1">
-                                                    <label className="text-xs font-semibold text-[#374151]">Rua / Logradouro</label>
-                                                    <input
-                                                        readOnly
-                                                        value={addrForm.street}
-                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="grid grid-cols-3 gap-3 p-3.5 bg-stone-50/60 border border-stone-200/50 rounded-xl">
+                                                <div className="col-span-3">
+                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Endereço</p>
+                                                    <p className="text-[13px] text-stone-700 leading-snug mt-0.5">
+                                                        {addrForm.street}, <span className="text-stone-500">{addrForm.neighborhood}</span>
+                                                    </p>
+                                                    <p className="text-[12px] text-stone-500">{addrForm.city}/{addrForm.state}</p>
                                                 </div>
+                                            </div>
 
-                                                {/* Neighborhood — read-only */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs font-semibold text-[#374151]">Bairro</label>
-                                                    <input
-                                                        readOnly
-                                                        value={addrForm.neighborhood}
-                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
-                                                </div>
-
-                                                {/* City — read-only */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs font-semibold text-[#374151]">Cidade</label>
-                                                    <input
-                                                        readOnly
-                                                        value={addrForm.city}
-                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
-                                                </div>
-
-                                                {/* State — read-only */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs font-semibold text-[#374151]">Estado</label>
-                                                    <input
-                                                        readOnly
-                                                        value={addrForm.state}
-                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
-                                                </div>
-
-                                                {/* Number — required, editable */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs font-semibold text-[#374151]">
-                                                        Número <span className="text-red-400">*</span>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-1.5">
+                                                    <label className={cn(eyebrowClass)}>
+                                                        Número <span className="text-red-500 normal-case tracking-normal">*</span>
                                                     </label>
                                                     <input
                                                         type="text"
@@ -634,122 +619,154 @@ export default function CheckoutPage() {
                                                         value={addrForm.number}
                                                         onChange={(e) => setAddrForm((prev) => ({ ...prev, number: e.target.value }))}
                                                         maxLength={LIMITS.address_number}
-                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
+                                                        className={inputClass}
                                                     />
                                                 </div>
-
-                                                {/* Complement — optional, editable */}
-                                                <div className="sm:col-span-2 space-y-1">
-                                                    <label className="text-xs font-semibold text-[#374151]">
-                                                        Complemento <span className="text-[#9CA3AF] font-normal">(opcional)</span>
+                                                <div className="space-y-1.5">
+                                                    <label className={eyebrowClass}>
+                                                        Complemento <span className="text-stone-400 normal-case tracking-normal">(opcional)</span>
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        placeholder="Apto 42, Bloco B"
+                                                        placeholder="Apto, bloco, ref."
                                                         value={addrForm.complement}
                                                         onChange={(e) => setAddrForm((prev) => ({ ...prev, complement: e.target.value }))}
                                                         maxLength={LIMITS.complement}
-                                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-colors"
+                                                        className={inputClass}
                                                     />
                                                 </div>
                                             </div>
 
-                                            {/* Confirmed address summary */}
-                                            {addrForm.number.trim() && (
-                                                <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                                    <MapPin className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                                                    <p className="text-xs text-green-700 leading-relaxed">
-                                                        {addrForm.street}, {addrForm.number}
-                                                        {addrForm.complement ? `, ${addrForm.complement}` : ""}{" "}
-                                                        — {addrForm.neighborhood}, {addrForm.city}/{addrForm.state}
-                                                    </p>
+                                            {deliveryStatus === "ok" && distanceKm !== null && (
+                                                <div className="flex items-center gap-2 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3.5 py-2.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                    <span>
+                                                        <span className="font-semibold">Entrega disponível</span> · {distanceKm.toFixed(1)} km da loja
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
+                                                <div className="flex items-center gap-2 text-[12px] text-red-700 bg-red-50/80 border border-red-200/60 rounded-xl px-3.5 py-2.5">
+                                                    <AlertCircle className="w-3.5 h-3.5" />
+                                                    <span>
+                                                        <span className="font-semibold">Fora da área.</span> Cobrimos até {storeCoords.radius} km.
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
                                     )}
-                                </>
+                                </div>
                             )}
-                        </div>
-                    </div>
+                        </section>
 
-                    {/* ── Right sidebar ─────────────────────────────────────── */}
-                    <div className="w-full lg:w-80 shrink-0 space-y-4">
-
-                        {/* Order summary */}
-                        <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 shadow-sm sticky top-20">
-                            <h2 className="font-bold text-[#111827] mb-4">Resumo do Pedido</h2>
-
-                            <div className="space-y-2 text-sm mb-4">
-                                <div className="flex justify-between text-[#6B7280]">
-                                    <span>Subtotal</span>
-                                    <span>{formatCurrency(totalPrice)}</span>
-                                </div>
-                                <div className="flex justify-between text-[#6B7280]">
-                                    <span>Taxa de Entrega</span>
-                                    {deliveryStatus === "ok" ? (
-                                        <span>
-                                            {formatCurrency(deliveryFee)}
-                                            {distanceKm !== null && (
-                                                <span className="text-[10px] text-[#9CA3AF] ml-1">(~{distanceKm.toFixed(1)} km)</span>
-                                            )}
-                                        </span>
-                                    ) : deliveryStatus === "too_far" ? (
-                                        <span className="text-red-500 font-medium text-xs">Fora da área</span>
-                                    ) : (
-                                        <span className="text-[#F97316] font-medium">A calcular</span>
-                                    )}
-                                </div>
-                                <div className="border-t border-[#E5E7EB] pt-2 flex justify-between font-bold text-base">
-                                    <span className="text-[#111827]">Total</span>
-                                    <span className="text-[#F97316] text-lg">{formatCurrency(orderTotal)}</span>
-                                </div>
+                        {/* Payment method */}
+                        <section className="bg-white rounded-2xl border border-stone-200/70 p-6">
+                            <div className="mb-5">
+                                <p className={eyebrowClass}>Pagamento</p>
+                                <h2
+                                    className="text-[20px] tracking-tight text-stone-900 mt-0.5"
+                                    style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                                >
+                                    Como prefere pagar?
+                                </h2>
                             </div>
 
-                            {/* Payment method */}
-                            <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mb-2">FORMA DE PAGAMENTO</p>
-                            <div className="grid grid-cols-2 gap-2 mb-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                                 {PAYMENT_OPTIONS.map(({ id, label, Icon }) => (
                                     <button
                                         key={id}
                                         onClick={() => setPayment(id)}
                                         className={cn(
-                                            "flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-sm font-medium",
+                                            "flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200 text-[12.5px] font-semibold",
                                             payment === id
-                                                ? "border-[#F97316] bg-[#F97316]/5 text-[#F97316]"
-                                                : "border-[#E5E7EB] text-[#6B7280] hover:border-[#F97316]/40"
+                                                ? "border-stone-900 bg-stone-50 text-stone-900"
+                                                : "border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-800"
                                         )}
                                     >
-                                        <Icon className="w-5 h-5" />
+                                        <Icon className={cn("w-5 h-5", payment === id ? "text-orange-700" : "text-stone-500")} />
                                         {label}
                                     </button>
                                 ))}
                             </div>
 
-                            {/* PIX QR placeholder */}
                             {payment === "pix" && (
-                                <div className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-4 flex flex-col items-center gap-2 mb-4">
-                                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-                                        <QrCode className="w-10 h-10 text-gray-300" />
+                                <div className="mt-4 border border-dashed border-stone-300 rounded-xl p-4 flex items-center gap-4 bg-stone-50/40">
+                                    <div className="w-14 h-14 bg-white border border-stone-200 rounded-lg flex items-center justify-center shrink-0">
+                                        <QrCode className="w-7 h-7 text-stone-400" />
                                     </div>
-                                    <p className="text-xs text-[#6B7280] text-center">
-                                        O QR Code será gerado após clicar no botão de pedido.
+                                    <p className="text-[12px] text-stone-600 leading-relaxed">
+                                        O QR Code do PIX será gerado quando você finalizar o pedido.
                                     </p>
                                 </div>
                             )}
+                        </section>
+                    </div>
 
-                            {/* Place order button */}
+                    {/* ── Right column — Order summary ─────────────────────── */}
+                    <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+
+                        <div className="bg-white rounded-2xl border border-stone-200/70 p-6">
+                            <p className={eyebrowClass}>Resumo</p>
+                            <h2
+                                className="text-[22px] tracking-tight text-stone-900 mt-0.5 mb-5"
+                                style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                            >
+                                Seu pedido
+                            </h2>
+
+                            <dl className="space-y-2.5 text-[13px] mb-5">
+                                <div className="flex justify-between">
+                                    <dt className="text-stone-500">Subtotal</dt>
+                                    <dd className="text-stone-900 tabular-nums">{formatCurrency(totalPrice)}</dd>
+                                </div>
+                                <div className="flex justify-between items-baseline">
+                                    <dt className="text-stone-500">Entrega</dt>
+                                    <dd className="text-right">
+                                        {deliveryStatus === "ok" ? (
+                                            <span className="text-stone-900 tabular-nums">
+                                                {formatCurrency(deliveryFee)}
+                                                {distanceKm !== null && (
+                                                    <span className="block text-[10px] text-stone-400 uppercase tracking-wider mt-0.5">
+                                                        ~{distanceKm.toFixed(1)} km
+                                                    </span>
+                                                )}
+                                            </span>
+                                        ) : deliveryStatus === "too_far" ? (
+                                            <span className="text-red-600 text-[12px] font-medium">Fora da área</span>
+                                        ) : (
+                                            <span className="text-stone-400 text-[12px] italic">A calcular</span>
+                                        )}
+                                    </dd>
+                                </div>
+
+                                <div className="border-t border-stone-200 pt-3 mt-3 flex justify-between items-baseline">
+                                    <dt className={eyebrowClass}>Total</dt>
+                                    <dd
+                                        className="text-stone-900 tabular-nums leading-none"
+                                        style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "28px" }}
+                                    >
+                                        {formatCurrency(orderTotal)}
+                                    </dd>
+                                </div>
+                            </dl>
+
                             <button
                                 onClick={handlePlaceOrder}
                                 disabled={placing || !canPlaceOrder}
-                                className="w-full h-11 bg-[#F97316] text-white rounded-full font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#F97316]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                             >
-                                <Rocket className="w-4 h-4" />
-                                {placing ? "Processando..." : "Fazer Pedido"}
+                                {placing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        Finalizar pedido
+                                        <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                                    </>
+                                )}
                             </button>
 
-                            {/* Helper hint when button is disabled */}
                             {!canPlaceOrder && !placing && (
-                                <p className="text-[11px] text-[#9CA3AF] text-center mt-2">
+                                <p className="text-[11px] text-stone-500 text-center mt-3 leading-relaxed">
                                     {cepStatus !== "ok"
                                         ? "Preencha o CEP para continuar."
                                         : addrForm.number.trim() === ""
@@ -760,34 +777,40 @@ export default function CheckoutPage() {
                                 </p>
                             )}
 
-                            <p className="text-[11px] text-[#6B7280] text-center mt-2">
-                                Ao finalizar seu pedido você concorda com nossos{" "}
-                                <span className="text-[#F97316] cursor-pointer hover:underline">Termos de Serviço</span>.
+                            <p className="text-[10px] text-stone-400 text-center mt-3 leading-relaxed">
+                                Ao finalizar, você concorda com os{" "}
+                                <span className="text-stone-700 cursor-pointer hover:underline">Termos de Serviço</span>.
                             </p>
                         </div>
 
-                        {/* Coupon */}
-                        <div className="bg-[#F97316] rounded-xl p-4">
-                            <div className="flex items-center gap-2 text-white mb-2">
-                                <span className="text-lg">🎁</span>
-                                <p className="font-bold text-sm">Tem um cupom?</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={coupon}
-                                    onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-                                    placeholder="CÓDIGO"
-                                    className="flex-1 h-8 px-3 rounded-lg text-xs font-semibold text-[#111827] outline-none"
-                                />
-                                <button className="bg-white text-[#F97316] px-3 rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors">
-                                    APLICAR
-                                </button>
+                        {/* Coupon — minimal */}
+                        <div className="bg-stone-900 rounded-2xl p-5 relative overflow-hidden">
+                            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-orange-700/20 blur-2xl pointer-events-none" />
+                            <div className="relative">
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400 mb-1 font-semibold">Cupom</p>
+                                <p
+                                    className="text-white text-[18px] mb-3"
+                                    style={{ fontFamily: "var(--font-display)", fontWeight: 500 }}
+                                >
+                                    Tem um <em style={{ fontStyle: "italic" }} className="text-orange-300">desconto?</em>
+                                </p>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={coupon}
+                                        onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                                        placeholder="CÓDIGO"
+                                        className="flex-1 h-9 px-3 rounded-lg bg-white/10 text-white placeholder:text-white/30 text-[12px] font-semibold outline-none focus:bg-white/15 focus:ring-2 focus:ring-white/20 transition-all"
+                                    />
+                                    <button className="bg-white text-stone-900 px-3.5 h-9 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-stone-100 transition-colors">
+                                        Aplicar
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </aside>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }
