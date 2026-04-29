@@ -248,10 +248,6 @@ export default function LoginPage() {
 
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
-        if (!adminId) {
-            setError("Acesse pelo link da sua loja para se cadastrar.");
-            return;
-        }
         const nameVal = validateName(name);
         if (!nameVal.ok) { setError(nameVal.error); return; }
         setLoading(true);
@@ -270,7 +266,7 @@ export default function LoginPage() {
                     action:   "register",
                     phone:    phone.trim(),
                     name:     name.trim(),
-                    adminId,
+                    adminId:  adminId || "",
                     address:  fullAddress || null,
                 }),
             });

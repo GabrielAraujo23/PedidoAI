@@ -69,17 +69,28 @@ export async function POST(request: NextRequest) {
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
+async function getDefaultAdminId(): Promise<string | null> {
+    const { data } = await supabaseServer
+        .from("admins")
+        .select("id")
+        .order("created_at", { ascending: true })
+        .limit(1);
+    return data?.[0]?.id ?? null;
+}
+
 async function handleLogin({ phone, adminId }: Record<string, unknown>) {
     const phoneVal = validatePhone(typeof phone === "string" ? phone : "", true);
     if (!phoneVal.ok) return err(phoneVal.error, 400);
-    if (typeof adminId !== "string" || !adminId) return err("adminId obrigatório", 400);
 
-    const { data: clients } = await supabaseServer
+    const cleanPhone = (phone as string).trim();
+    let query = supabaseServer
         .from("clients")
         .select("id, name, phone, admin_id")
-        .eq("phone", (phone as string).trim())
-        .eq("admin_id", adminId)
+        .eq("phone", cleanPhone)
         .limit(1);
+    if (typeof adminId === "string" && adminId) query = query.eq("admin_id", adminId);
+
+    const { data: clients } = await query;
 
     if (!clients?.length) return err("Cliente não encontrado.", 404);
 
@@ -107,7 +118,12 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
     const nameVal = validateName(typeof name === "string" ? name : "");
     if (!nameVal.ok) return err(nameVal.error, 400);
 
-    if (typeof adminId !== "string" || !adminId) return err("adminId obrigatório", 400);
+    let resolvedAdminId = typeof adminId === "string" && adminId ? adminId : "";
+    if (!resolvedAdminId) {
+        const fallback = await getDefaultAdminId();
+        if (!fallback) return err("Nenhuma loja disponível para cadastro.", 503);
+        resolvedAdminId = fallback;
+    }
 
     const cleanPhone   = truncate((phone as string).trim(), LIMITS.phone);
     const cleanName    = truncate((name as string).trim(), LIMITS.name);
@@ -120,7 +136,7 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
         .from("clients")
         .select("id, name, phone, admin_id")
         .eq("phone", cleanPhone)
-        .eq("admin_id", adminId)
+        .eq("admin_id", resolvedAdminId)
         .limit(1);
 
     if (existing?.length) {
@@ -139,14 +155,14 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
 
     const { error: insertError } = await supabaseServer
         .from("clients")
-        .insert({ id: clientId, name: cleanName, phone: cleanPhone, address: cleanAddress, admin_id: adminId });
+        .insert({ id: clientId, name: cleanName, phone: cleanPhone, address: cleanAddress, admin_id: resolvedAdminId });
 
     if (insertError) {
         // Duplicate key race — retry read
         if (insertError.code === "23505") {
             const { data: retry } = await supabaseServer
                 .from("clients").select("id, name, phone, admin_id")
-                .eq("phone", cleanPhone).eq("admin_id", adminId).limit(1);
+                .eq("phone", cleanPhone).eq("admin_id", resolvedAdminId).limit(1);
             if (retry?.length) {
                 const c = retry[0];
                 const payload: ClientSessionPayload = {
@@ -159,7 +175,7 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
     }
 
     const payload: ClientSessionPayload = {
-        clientId, name: cleanName, phone: cleanPhone, adminId,
+        clientId, name: cleanName, phone: cleanPhone, adminId: resolvedAdminId,
     };
 
     return withCookie(ok(payload), payload);
