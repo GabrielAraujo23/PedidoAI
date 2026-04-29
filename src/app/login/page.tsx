@@ -2,14 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Phone, User, MapPin, Loader2, ArrowLeft, MessageSquare, CheckCircle, AlertCircle, Check } from "lucide-react";
+import { Phone, User, MapPin, Loader2, ArrowLeft, AlertCircle, Check, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { calculateDistance } from "@/lib/haversine";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Client } from "@/lib/types";
 import {
     validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, LIMITS,
@@ -18,7 +14,6 @@ import { logEvent } from "@/lib/logger";
 
 type Step = "phone" | "returning" | "new_client";
 
-// Reads ?admin= from URL without useSearchParams (avoids Suspense wrapper)
 function getAdminIdFromUrl(): string {
     if (typeof window === "undefined") return "";
     return new URLSearchParams(window.location.search).get("admin") ?? "";
@@ -35,24 +30,52 @@ const EMPTY_ADDR: AddrFields = { street: "", neighborhood: "", city: "", state: 
 
 function maskCep(v: string): string {
     const d = v.replace(/\D/g, "").slice(0, 8);
-    if (d.length <= 5) return d;
-    return `${d.slice(0, 5)}-${d.slice(5)}`;
+    return d.length <= 5 ? d : `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
 function maskPhone(v: string): string {
-    // Remove tudo que não for dígito e descarta prefixo +55 se presente
     let d = v.replace(/\D/g, "");
     if (d.startsWith("55") && d.length > 11) d = d.slice(2);
     d = d.slice(0, 11);
     if (d.length === 0) return "";
-    if (d.length <= 2)  return `(${d}`;
-    if (d.length <= 7)  return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 2) return `(${d}`;
+    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
 function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+
+/* ─── Refined Input — flat with bottom-line focus ──────────────────────── */
+interface FieldProps {
+    icon?: React.ElementType;
+    label: string;
+    optional?: boolean;
+    error?: string;
+    children: React.ReactNode;
+}
+function Field({ icon: Icon, label, optional, error, children }: FieldProps) {
+    return (
+        <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500">
+                {Icon && <Icon className="w-3 h-3" />}
+                {label}
+                {optional && <span className="text-stone-400 text-[10px] normal-case tracking-normal font-normal">(opcional)</span>}
+            </label>
+            {children}
+            {error && (
+                <p className="flex items-start gap-1 text-xs text-red-600 pt-0.5">
+                    <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                </p>
+            )}
+        </div>
+    );
+}
+
+const inputClass =
+    "w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[15px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50 disabled:text-stone-500";
 
 export default function LoginPage() {
     const [step, setStep] = useState<Step>("phone");
@@ -63,14 +86,10 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const router = useRouter();
 
-    // Admin ID from URL param ?admin=
     const [adminId, setAdminId] = useState("");
     useEffect(() => { setAdminId(getAdminIdFromUrl()); }, []);
-
-    // Stores the admin_id found on a returning client's DB record (fallback when URL has no ?admin=)
     const foundAdminIdRef = useRef("");
 
-    // CEP / address state (new_client step)
     const [cep, setCep] = useState("");
     const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
     const [cepError, setCepError] = useState("");
@@ -78,12 +97,10 @@ export default function LoginPage() {
     const [numberField, setNumberField] = useState("");
     const fetchedCepRef = useRef("");
 
-    // Delivery estimate
     const [storeCoords, setStoreCoords] = useState<{ lat: number; lng: number; radius: number; rate: number } | null>(null);
     const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [deliveryInfo, setDeliveryInfo] = useState<{ distanceKm: number; fee: number } | null>(null);
 
-    // Load store coords once admin is known
     useEffect(() => {
         if (!adminId) return;
         supabase
@@ -96,8 +113,7 @@ export default function LoginPage() {
                 const lng = data?.longitude ? parseFloat(data.longitude) : 0;
                 if (lat && lng) {
                     setStoreCoords({
-                        lat,
-                        lng,
+                        lat, lng,
                         radius: parseFloat(data?.delivery_radius_km ?? "20") || 20,
                         rate: parseFloat(data?.delivery_rate_per_km ?? "3") || 3,
                     });
@@ -105,7 +121,6 @@ export default function LoginPage() {
             });
     }, [adminId]);
 
-    // Recalculate delivery estimate whenever customer or store coords arrive
     useEffect(() => {
         if (!customerCoords || !storeCoords) return;
         const dist = Math.round(
@@ -115,8 +130,6 @@ export default function LoginPage() {
         const fee = Math.round(chargedKm * storeCoords.rate * 100) / 100;
         setDeliveryInfo({ distanceKm: dist, fee });
     }, [customerCoords, storeCoords]);
-
-    // ── CEP helpers ─────────────────────────────────────────────────────────────
 
     async function fetchCep(digits: string) {
         setCepStatus("loading");
@@ -128,14 +141,13 @@ export default function LoginPage() {
         const timer = setTimeout(() => ac.abort(), 8_000);
 
         try {
-            const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: ac.signal });
+            const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: ac.signal });
             const data = await res.json();
-
             if (fetchedCepRef.current !== digits) return;
 
             if (data.erro) {
                 setCepStatus("error");
-                setCepError("CEP não encontrado. Verifique e tente novamente.");
+                setCepError("CEP não encontrado.");
                 return;
             }
 
@@ -147,11 +159,10 @@ export default function LoginPage() {
             });
             setCepStatus("ok");
 
-            // Geocode for distance estimate (best-effort, separate abort controller)
             const geoAc = new AbortController();
             const geoTimer = setTimeout(() => geoAc.abort(), 5_000);
             try {
-                const geoRes  = await fetch(
+                const geoRes = await fetch(
                     `https://nominatim.openstreetmap.org/search?postalcode=${digits}&country=BR&format=json`,
                     { signal: geoAc.signal, headers: { "User-Agent": "PedidoAI/1.0" } }
                 );
@@ -160,13 +171,12 @@ export default function LoginPage() {
                     const coords = sanitizeExternalCoords(geoData[0].lat, geoData[0].lon);
                     if (coords) setCustomerCoords(coords);
                 }
-            } catch { /* geocode failure is non-fatal */ }
+            } catch { /* non-fatal */ }
             finally { clearTimeout(geoTimer); }
-
         } catch {
             if (fetchedCepRef.current === digits) {
                 setCepStatus("error");
-                setCepError("CEP não encontrado. Verifique e tente novamente.");
+                setCepError("CEP não encontrado.");
             }
         } finally {
             clearTimeout(timer);
@@ -199,8 +209,6 @@ export default function LoginPage() {
         }
     }
 
-    // ── Auth handlers ────────────────────────────────────────────────────────────
-
     async function handlePhoneContinue(e: React.FormEvent) {
         e.preventDefault();
         const phoneVal = validatePhone(phone, true);
@@ -208,7 +216,6 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        // Filter by adminId when available so a client only matches their store
         let query = supabase.from("clients").select("*").eq("phone", phone.trim());
         if (adminId) query = query.eq("admin_id", adminId);
         const { data: clients } = await query.limit(1);
@@ -217,7 +224,6 @@ export default function LoginPage() {
 
         if (clients && clients.length > 0) {
             const found = clients[0] as Client & { admin_id?: string };
-            // Cache the client's stored admin_id as fallback for saveSessionAndRedirect
             foundAdminIdRef.current = found.admin_id ?? "";
             logEvent({ event_type: "client_login", actor_type: "client", actor_id: found.id });
             setFoundClient(found);
@@ -228,7 +234,6 @@ export default function LoginPage() {
     }
 
     async function saveSessionAndRedirect(client: Client) {
-        // Prefer URL param; fall back to the admin_id stored on the client's DB record
         const effectiveAdminId = adminId || foundAdminIdRef.current || "";
         setLoading(true);
         setError("");
@@ -263,11 +268,11 @@ export default function LoginPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    action:   "register",
-                    phone:    phone.trim(),
-                    name:     name.trim(),
-                    adminId:  adminId || "",
-                    address:  fullAddress || null,
+                    action: "register",
+                    phone: phone.trim(),
+                    name: name.trim(),
+                    adminId: adminId || "",
+                    address: fullAddress || null,
                 }),
             });
             if (!res.ok) {
@@ -299,267 +304,319 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-orange-50/30 to-slate-100">
-            <div className="w-full max-w-md space-y-8">
-                {/* Logo */}
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-16 h-16 bg-primary rounded-3xl flex items-center justify-center shadow-xl shadow-primary/30">
-                        <MessageSquare className="w-8 h-8 text-white" />
+        <div
+            className="min-h-screen relative overflow-hidden"
+            style={{
+                background: "#F7F2EA",
+                fontFamily: "var(--font-body), ui-sans-serif, system-ui",
+            }}
+        >
+            {/* Background — soft warm gradients + grain */}
+            <div aria-hidden className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full opacity-50 blur-3xl"
+                     style={{ background: "radial-gradient(circle at 30% 30%, #F0BC8E 0%, transparent 65%)" }} />
+                <div className="absolute -bottom-32 -right-20 w-[420px] h-[420px] rounded-full opacity-40 blur-3xl"
+                     style={{ background: "radial-gradient(circle at 50% 50%, #D89B7A 0%, transparent 60%)" }} />
+                {/* SVG grain noise */}
+                <svg className="absolute inset-0 w-full h-full opacity-[0.18] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
+                    <filter id="noise">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
+                        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0" />
+                    </filter>
+                    <rect width="100%" height="100%" filter="url(#noise)" />
+                </svg>
+            </div>
+
+            {/* Top brand bar */}
+            <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-md bg-stone-900 flex items-center justify-center">
+                        <span className="text-white text-[11px] font-bold tracking-tighter" style={{ fontFamily: "var(--font-display)" }}>P</span>
                     </div>
-                    <div className="text-center">
-                        <h1 className="text-2xl font-bold text-secondary">PedidoAI</h1>
-                        <p className="text-muted-foreground text-sm">Faça seu pedido agora</p>
-                    </div>
+                    <span className="text-[13px] font-semibold tracking-tight text-stone-900">PedidoAI</span>
                 </div>
+                <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500 hidden sm:block">
+                    Loja Aberta
+                </span>
+            </header>
 
-                <Card className="glass border-none shadow-2xl">
-                    {/* Step 1: Phone entry */}
+            {/* Main */}
+            <main className="relative z-10 flex items-center justify-center px-6 py-10 sm:py-16">
+                <div className="w-full max-w-[440px]">
+
+                    {/* Step indicator dots */}
+                    <div className="flex items-center justify-center gap-1.5 mb-8">
+                        {(["phone", step === "returning" ? "returning" : "new_client"] as const).map((s, i) => (
+                            <div
+                                key={i}
+                                className={cn(
+                                    "h-1 rounded-full transition-all duration-500",
+                                    step === s || (i === 0)
+                                        ? "w-6 bg-stone-900"
+                                        : "w-1.5 bg-stone-300",
+                                    i === 0 && step !== "phone" && "bg-stone-400 w-3",
+                                )}
+                            />
+                        ))}
+                    </div>
+
+                    {/* ── STEP: phone ── */}
                     {step === "phone" && (
-                        <>
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-xl text-secondary">Bem-vindo!</CardTitle>
-                                <CardDescription>
-                                    Digite seu número de telefone para continuar.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={handlePhoneContinue} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="phone">Telefone</Label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                            <Input
-                                                id="phone"
-                                                type="tel"
-                                                placeholder="(11) 99999-9999"
-                                                value={phone}
-                                                onChange={(e) => setPhone(maskPhone(e.target.value))}
-                                                maxLength={15}
-                                                className="pl-10 glass border-none h-11"
-                                                autoComplete="tel"
-                                                autoFocus
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        className="w-full h-11 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
-                                        disabled={loading || !phone.trim()}
-                                    >
-                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continuar"}
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </>
+                        <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+                            <div className="text-center mb-8">
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Bem-vindo</p>
+                                <h1
+                                    className="text-[44px] sm:text-[52px] leading-[0.95] tracking-tight text-stone-900"
+                                    style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                                >
+                                    Faça seu pedido <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>agora.</em>
+                                </h1>
+                                <p className="text-[14px] text-stone-600 mt-4 max-w-[320px] mx-auto leading-relaxed">
+                                    Digite seu telefone para começar. Tudo rapidinho, sem cadastro chato.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handlePhoneContinue} className="space-y-5">
+                                <Field icon={Phone} label="Telefone">
+                                    <input
+                                        type="tel"
+                                        placeholder="(11) 99999-9999"
+                                        value={phone}
+                                        onChange={(e) => setPhone(maskPhone(e.target.value))}
+                                        maxLength={15}
+                                        autoComplete="tel"
+                                        autoFocus
+                                        disabled={loading}
+                                        className={cn(inputClass, "text-[16px] font-medium tracking-wide")}
+                                    />
+                                </Field>
+
+                                {error && (
+                                    <p className="flex items-start gap-1.5 text-xs text-red-600">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                        <span>{error}</span>
+                                    </p>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading || !phone.trim()}
+                                    className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            Continuar
+                                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+
+                            <p className="text-center text-[11px] text-stone-500 mt-8 leading-relaxed">
+                                Ao continuar, você concorda com receber pedidos via WhatsApp.
+                            </p>
+                        </section>
                     )}
 
-                    {/* Step 2a: Returning client */}
+                    {/* ── STEP: returning ── */}
                     {step === "returning" && foundClient && (
-                        <>
-                            <CardHeader className="pb-4 items-center text-center">
-                                <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mb-2">
-                                    <CheckCircle className="w-8 h-8 text-green-600" />
-                                </div>
-                                <CardTitle className="text-xl text-secondary">
-                                    Olá, {foundClient.name}!
-                                </CardTitle>
-                                <CardDescription>
-                                    Seja bem-vindo de volta. Pronto para fazer um pedido?
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button
-                                    className="w-full h-11 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
+                        <section className="animate-in fade-in slide-in-from-bottom-3 duration-500 text-center">
+                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 ring-8 ring-emerald-50 mb-6">
+                                <Check className="w-7 h-7 text-emerald-700" strokeWidth={2.5} />
+                            </div>
+                            <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Que bom te ver</p>
+                            <h1
+                                className="text-[40px] sm:text-[48px] leading-[1.0] tracking-tight text-stone-900"
+                                style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                            >
+                                Olá,{" "}
+                                <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                                    {foundClient.name.split(" ")[0]}
+                                </em>
+                            </h1>
+                            <p className="text-[14px] text-stone-600 mt-4 max-w-[320px] mx-auto leading-relaxed">
+                                Pronto pra montar mais um pedido?
+                            </p>
+
+                            <div className="space-y-3 mt-8">
+                                <button
                                     onClick={() => saveSessionAndRedirect(foundClient)}
+                                    disabled={loading}
+                                    className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
-                                    Entrar e Pedir
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    className="w-full gap-2 text-muted-foreground"
-                                    onClick={() => {
-                                        setStep("phone");
-                                        setFoundClient(null);
-                                        setPhone("");
-                                    }}
+                                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                        <>Entrar e pedir <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => { setStep("phone"); setFoundClient(null); setPhone(""); }}
+                                    className="w-full h-10 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center justify-center gap-1.5 transition-colors"
                                 >
-                                    <ArrowLeft className="w-4 h-4" /> Não sou eu
-                                </Button>
-                            </CardContent>
-                        </>
+                                    <ArrowLeft className="w-3.5 h-3.5" /> Não sou eu
+                                </button>
+                            </div>
+                        </section>
                     )}
 
-                    {/* Step 2b: New client registration */}
+                    {/* ── STEP: new_client ── */}
                     {step === "new_client" && (
-                        <>
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-xl text-secondary">Primeiro acesso</CardTitle>
-                                <CardDescription>
-                                    Número não encontrado. Complete seu cadastro para continuar.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={handleRegister} className="space-y-4">
-                                    {/* Phone — read-only, pre-filled */}
-                                    <div className="space-y-2">
-                                        <Label>Telefone</Label>
-                                        <div className="relative">
-                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                            <Input
-                                                value={phone}
-                                                className="pl-10 glass border-none h-11 text-muted-foreground"
-                                                disabled
-                                                readOnly
-                                            />
-                                        </div>
-                                    </div>
+                        <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
+                            <div className="text-center mb-8">
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Primeiro acesso</p>
+                                <h1
+                                    className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-stone-900"
+                                    style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
+                                >
+                                    Vamos te <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>conhecer</em>.
+                                </h1>
+                                <p className="text-[14px] text-stone-600 mt-4 max-w-[340px] mx-auto leading-relaxed">
+                                    Só uns dados rápidos para conseguirmos entregar direitinho na sua casa.
+                                </p>
+                            </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Nome completo *</Label>
-                                        <div className="relative">
-                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                            <Input
-                                                id="name"
-                                                type="text"
-                                                placeholder="Seu nome completo"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                className="pl-10 glass border-none h-11"
-                                                autoComplete="name"
-                                                autoFocus
-                                                disabled={loading}
-                                                maxLength={LIMITS.name}
-                                            />
-                                        </div>
-                                    </div>
+                            <form onSubmit={handleRegister} className="space-y-5">
+                                <Field icon={Phone} label="Telefone">
+                                    <input
+                                        value={phone}
+                                        disabled
+                                        readOnly
+                                        className={cn(inputClass, "bg-stone-50 text-stone-500 font-medium")}
+                                    />
+                                </Field>
 
-                                    {/* CEP field */}
-                                    <div className="space-y-1">
-                                        <Label htmlFor="cep">
-                                            CEP <span className="text-muted-foreground font-normal text-xs">(opcional)</span>
-                                        </Label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                            <input
-                                                id="cep"
-                                                type="text"
-                                                inputMode="numeric"
-                                                placeholder="00000-000"
-                                                maxLength={9}
-                                                value={cep}
-                                                onChange={(e) => handleCepChange(e.target.value)}
-                                                onBlur={handleCepBlur}
-                                                disabled={loading}
-                                                className={cn(
-                                                    "w-full h-11 pl-10 pr-9 rounded-lg border text-sm text-[#111827] outline-none focus:ring-2 transition-colors bg-white/60",
-                                                    cepStatus === "error" && "border-red-400 bg-red-50 focus:border-red-400",
-                                                    cepStatus === "ok"    && "border-green-400 focus:border-green-400",
-                                                    cepStatus !== "error" && cepStatus !== "ok" && "border-input focus:border-primary focus:ring-primary/20"
-                                                )}
-                                            />
-                                            {cepStatus === "loading" && (
-                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+                                <Field icon={User} label="Nome completo">
+                                    <input
+                                        type="text"
+                                        placeholder="Como posso te chamar?"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        autoComplete="name"
+                                        autoFocus
+                                        disabled={loading}
+                                        maxLength={LIMITS.name}
+                                        className={inputClass}
+                                    />
+                                </Field>
+
+                                <Field icon={MapPin} label="CEP" optional error={cepError}>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="00000-000"
+                                            maxLength={9}
+                                            value={cep}
+                                            onChange={(e) => handleCepChange(e.target.value)}
+                                            onBlur={handleCepBlur}
+                                            disabled={loading}
+                                            className={cn(
+                                                inputClass, "pr-9",
+                                                cepStatus === "error" && "border-red-300 focus:border-red-500 focus:ring-red-500/10",
+                                                cepStatus === "ok"    && "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10",
                                             )}
-                                            {cepStatus === "ok" && (
-                                                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
-                                            )}
-                                        </div>
-                                        {cepError && (
-                                            <p className="flex items-center gap-1 text-xs text-red-500">
-                                                <AlertCircle className="w-3 h-3 shrink-0" />
-                                                {cepError}
-                                            </p>
+                                        />
+                                        {cepStatus === "loading" && (
+                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                                        )}
+                                        {cepStatus === "ok" && (
+                                            <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
                                         )}
                                     </div>
+                                </Field>
 
-                                    {/* Auto-filled address fields — shown after CEP ok */}
-                                    {cepStatus === "ok" && (
-                                        <div className="space-y-3">
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <div className="col-span-2 space-y-1">
-                                                    <Label className="text-xs">Rua / Logradouro</Label>
-                                                    <input
-                                                        readOnly
-                                                        value={addrFields.street}
-                                                        className="w-full h-9 px-3 rounded-lg border border-input text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs">Bairro</Label>
-                                                    <input
-                                                        readOnly
-                                                        value={addrFields.neighborhood}
-                                                        className="w-full h-9 px-3 rounded-lg border border-input text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs">Cidade/UF</Label>
-                                                    <input
-                                                        readOnly
-                                                        value={`${addrFields.city}/${addrFields.state}`}
-                                                        className="w-full h-9 px-3 rounded-lg border border-input text-sm text-[#111827] bg-[#F9FAFB] outline-none"
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs">Número</Label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="123"
-                                                        value={numberField}
-                                                        onChange={(e) => setNumberField(e.target.value)}
-                                                        disabled={loading}
-                                                        maxLength={LIMITS.address_number}
-                                                        className="w-full h-9 px-3 rounded-lg border border-input text-sm text-[#111827] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                                    />
+                                {/* Address — appears smoothly when CEP found */}
+                                {cepStatus === "ok" && (
+                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 pt-1">
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="col-span-3">
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Endereço</label>
+                                                <p className="text-[14px] text-stone-700 leading-snug mt-0.5">
+                                                    {addrFields.street}, <span className="text-stone-500">{addrFields.neighborhood}</span>
+                                                </p>
+                                                <p className="text-[12px] text-stone-500">{addrFields.city}/{addrFields.state}</p>
+                                            </div>
+                                            <div className="col-span-3">
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Número</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="123"
+                                                    value={numberField}
+                                                    onChange={(e) => setNumberField(e.target.value)}
+                                                    disabled={loading}
+                                                    maxLength={LIMITS.address_number}
+                                                    className={cn(inputClass, "h-10 mt-1")}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {deliveryInfo && (
+                                            <div className={cn(
+                                                "flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl border",
+                                                deliveryInfo.fee === 0
+                                                    ? "bg-emerald-50/80 border-emerald-200/60"
+                                                    : "bg-amber-50/80 border-amber-200/60"
+                                            )}>
+                                                <div className={cn(
+                                                    "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
+                                                    deliveryInfo.fee === 0 ? "bg-emerald-500" : "bg-amber-500"
+                                                )} />
+                                                <div className="text-[12px] leading-relaxed">
+                                                    {deliveryInfo.fee === 0 ? (
+                                                        <>
+                                                            <span className="font-semibold text-emerald-800">Entrega grátis</span>
+                                                            <span className="text-emerald-700"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="font-semibold text-amber-800">Frete: {formatCurrency(deliveryInfo.fee)}</span>
+                                                            <span className="text-amber-700"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
-
-                                            {/* Delivery estimate */}
-                                            {deliveryInfo && (
-                                                deliveryInfo.fee === 0
-                                                    ? <p className="text-xs text-green-600 font-medium bg-green-50 px-3 py-2 rounded-lg">
-                                                        ✅ Entrega grátis para sua região! (~{deliveryInfo.distanceKm.toFixed(1)} km da loja)
-                                                      </p>
-                                                    : <p className="text-xs text-orange-600 font-medium bg-orange-50 px-3 py-2 rounded-lg">
-                                                        🛵 Frete estimado: {formatCurrency(deliveryInfo.fee)} (~{deliveryInfo.distanceKm.toFixed(1)} km da loja)
-                                                      </p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {error && (
-                                        <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
-                                            {error}
-                                        </p>
-                                    )}
-
-                                    <Button
-                                        type="submit"
-                                        className="w-full h-11 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
-                                        disabled={loading || !name.trim()}
-                                    >
-                                        {loading ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            "Cadastrar e Entrar"
                                         )}
-                                    </Button>
+                                    </div>
+                                )}
 
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="w-full gap-2 text-muted-foreground"
-                                        onClick={resetNewClientStep}
+                                {error && (
+                                    <p className="flex items-start gap-1.5 text-xs text-red-600">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                        <span>{error}</span>
+                                    </p>
+                                )}
+
+                                <div className="space-y-3 pt-2">
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !name.trim()}
+                                        className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                     >
-                                        <ArrowLeft className="w-4 h-4" /> Voltar
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </>
+                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                            <>Cadastrar e entrar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={resetNewClientStep}
+                                        className="w-full h-10 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center justify-center gap-1.5 transition-colors"
+                                    >
+                                        <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
                     )}
-                </Card>
-            </div>
+                </div>
+            </main>
+
+            {/* Footer credit */}
+            <footer className="relative z-10 px-6 pb-6 text-center">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
+                    PedidoAI · feito com ♡ no Brasil
+                </p>
+            </footer>
         </div>
     );
 }
