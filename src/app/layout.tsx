@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +29,13 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "PedidoAI - Gestão Inteligente",
   description: "Sistema inteligente de gestão de pedidos de construção",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#F7F2EA",
 };
 
 export default function RootLayout({

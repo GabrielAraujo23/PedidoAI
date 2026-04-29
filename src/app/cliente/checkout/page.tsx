@@ -353,7 +353,7 @@ export default function CheckoutPage() {
 
     if (!mounted || sessionLoading || !session || addrLoadState === "loading") {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: "#F7F2EA" }}>
+            <div className="min-h-screen flex items-center justify-center bg-warm">
                 <Loader2 className="w-7 h-7 animate-spin text-stone-700" />
             </div>
         );
@@ -361,20 +361,9 @@ export default function CheckoutPage() {
 
     return (
         <div
-            className="min-h-screen relative"
-            style={{ background: "#F7F2EA", fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
+            className="min-h-screen relative bg-warm"
+            style={{ fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
         >
-            {/* Background grain */}
-            <div aria-hidden className="fixed inset-0 pointer-events-none z-0">
-                <svg className="absolute inset-0 w-full h-full opacity-[0.13] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                    <filter id="grain-checkout">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
-                        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" />
-                    </filter>
-                    <rect width="100%" height="100%" filter="url(#grain-checkout)" />
-                </svg>
-            </div>
-
             {/* Toast */}
             {toast && (
                 <div className={cn(

@@ -34,9 +34,9 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
         <header
             className="sticky top-0 z-50"
             style={{
-                background: "rgba(247, 242, 234, 0.92)",
-                backdropFilter: "blur(20px) saturate(160%)",
-                WebkitBackdropFilter: "blur(20px) saturate(160%)",
+                background: "rgba(247, 242, 234, 0.96)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
                 borderBottom: "1px solid rgba(120, 113, 108, 0.14)",
                 fontFamily: "var(--font-body), ui-sans-serif, system-ui",
             }}

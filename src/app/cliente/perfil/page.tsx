@@ -116,20 +116,9 @@ export default function ProfilePage() {
 
     return (
         <div
-            className="min-h-screen relative"
-            style={{ background: "#F7F2EA", fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
+            className="min-h-screen relative bg-warm"
+            style={{ fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
         >
-            {/* Background grain */}
-            <div aria-hidden className="fixed inset-0 pointer-events-none z-0">
-                <svg className="absolute inset-0 w-full h-full opacity-[0.13] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                    <filter id="grain-perfil">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
-                        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" />
-                    </filter>
-                    <rect width="100%" height="100%" filter="url(#grain-perfil)" />
-                </svg>
-            </div>
-
             <ClientHeader session={session} />
 
             <main className="relative z-10 max-w-[1280px] mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-24">

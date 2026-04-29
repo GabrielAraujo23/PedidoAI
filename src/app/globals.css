@@ -112,4 +112,19 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Editorial warm cream + light grain — replaces inline <svg> grain.
+     Mobile-safe: no mix-blend, no fixed-position SVG, no feTurbulence at runtime */
+  .bg-warm {
+    background-color: #F7F2EA;
+  }
+
+  /* Hide grain on mobile to keep first-paint fast and avoid Safari quirks */
+  @media (min-width: 768px) {
+    .bg-warm {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+      background-size: 160px 160px;
+      background-repeat: repeat;
+    }
+  }
 }

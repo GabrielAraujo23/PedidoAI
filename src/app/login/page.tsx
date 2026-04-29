@@ -305,26 +305,15 @@ export default function LoginPage() {
 
     return (
         <div
-            className="min-h-screen relative overflow-hidden"
-            style={{
-                background: "#F7F2EA",
-                fontFamily: "var(--font-body), ui-sans-serif, system-ui",
-            }}
+            className="min-h-screen relative overflow-hidden bg-warm"
+            style={{ fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
         >
-            {/* Background — soft warm gradients + grain */}
+            {/* Soft warm blooms — kept (no SVG, GPU-friendly) */}
             <div aria-hidden className="absolute inset-0 pointer-events-none">
-                <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full opacity-50 blur-3xl"
+                <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full opacity-50"
                      style={{ background: "radial-gradient(circle at 30% 30%, #F0BC8E 0%, transparent 65%)" }} />
-                <div className="absolute -bottom-32 -right-20 w-[420px] h-[420px] rounded-full opacity-40 blur-3xl"
+                <div className="absolute -bottom-32 -right-20 w-[420px] h-[420px] rounded-full opacity-40"
                      style={{ background: "radial-gradient(circle at 50% 50%, #D89B7A 0%, transparent 60%)" }} />
-                {/* SVG grain noise */}
-                <svg className="absolute inset-0 w-full h-full opacity-[0.18] mix-blend-overlay" xmlns="http://www.w3.org/2000/svg">
-                    <filter id="noise">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
-                        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0" />
-                    </filter>
-                    <rect width="100%" height="100%" filter="url(#noise)" />
-                </svg>
             </div>
 
             {/* Top brand bar */}
