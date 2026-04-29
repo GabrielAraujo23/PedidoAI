@@ -50,27 +50,36 @@ function isValidPassword(password: unknown): password is string {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-    if (!checkOrigin(request)) return err("Forbidden", 403);
-
-    let body: unknown;
     try {
-        body = await request.json();
-    } catch {
-        return err("Invalid JSON", 400);
-    }
+        if (!checkOrigin(request)) return err("Forbidden", 403);
 
-    if (typeof body !== "object" || body === null) return err("Invalid request", 400);
-    const { action } = body as Record<string, unknown>;
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch {
+            return err("Invalid JSON", 400);
+        }
 
-    const ip = getClientIP(request);
+        if (typeof body !== "object" || body === null) return err("Invalid request", 400);
+        const { action } = body as Record<string, unknown>;
 
-    switch (action) {
-        case "signin":         return handleSignIn(body as Record<string, unknown>, ip);
-        case "signup":         return handleSignUp(body as Record<string, unknown>, ip);
-        case "forgot_request": return handleForgotRequest(body as Record<string, unknown>, ip);
-        case "forgot_verify":  return handleForgotVerify(body as Record<string, unknown>, ip);
-        case "forgot_reset":   return handleForgotReset(body as Record<string, unknown>, ip);
-        default:               return err("Unknown action", 400);
+        const ip = getClientIP(request);
+
+        switch (action) {
+            case "signin":         return await handleSignIn(body as Record<string, unknown>, ip);
+            case "signup":         return await handleSignUp(body as Record<string, unknown>, ip);
+            case "forgot_request": return await handleForgotRequest(body as Record<string, unknown>, ip);
+            case "forgot_verify":  return await handleForgotVerify(body as Record<string, unknown>, ip);
+            case "forgot_reset":   return await handleForgotReset(body as Record<string, unknown>, ip);
+            default:               return err("Unknown action", 400);
+        }
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[POST /api/auth/admin] uncaught:", msg);
+        if (msg.includes("SESSION_SECRET")) {
+            return err("Servidor mal configurado: defina SESSION_SECRET no Vercel.", 500);
+        }
+        return err("Erro interno. Tente novamente.", 500);
     }
 }
 

@@ -33,10 +33,10 @@ const securityHeaders = [
         value: [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-            "style-src 'self' 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://viacep.com.br https://brasilapi.com.br https://cep.awesomeapi.com.br https://nominatim.openstreetmap.org`,
-            "img-src 'self' data: blob:",
-            "font-src 'self'",
+            `img-src 'self' data: blob: https://${supabaseHost}`,
+            "font-src 'self' https://fonts.gstatic.com data:",
             "frame-src 'none'",
             "frame-ancestors 'none'",
             "base-uri 'self'",

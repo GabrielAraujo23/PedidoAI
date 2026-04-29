@@ -26,17 +26,22 @@ async function withCookie(res: NextResponse, payload: ClientSessionPayload): Pro
 
 /** GET /api/auth/client — verify client session cookie, return session payload */
 export async function GET(request: NextRequest) {
-    const cookie = request.cookies.get(CLIENT_SESSION_COOKIE)?.value;
-    if (!cookie) return NextResponse.json({ error: "No session" }, { status: 401 });
+    try {
+        const cookie = request.cookies.get(CLIENT_SESSION_COOKIE)?.value;
+        if (!cookie) return NextResponse.json({ error: "No session" }, { status: 401 });
 
-    const session = await verifyClientSession(cookie);
-    if (!session) {
-        const res = NextResponse.json({ error: "Invalid session" }, { status: 401 });
-        res.cookies.set(CLIENT_SESSION_COOKIE, "", { ...clientSessionCookieOptions(), maxAge: 0 });
-        return res;
+        const session = await verifyClientSession(cookie);
+        if (!session) {
+            const res = NextResponse.json({ error: "Invalid session" }, { status: 401 });
+            res.cookies.set(CLIENT_SESSION_COOKIE, "", { ...clientSessionCookieOptions(), maxAge: 0 });
+            return res;
+        }
+        return NextResponse.json(session);
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[GET /api/auth/client] uncaught:", msg);
+        return NextResponse.json({ error: "Erro interno." }, { status: 500 });
     }
-
-    return NextResponse.json(session);
 }
 
 /** DELETE /api/auth/client — clear client session cookie (logout) */
