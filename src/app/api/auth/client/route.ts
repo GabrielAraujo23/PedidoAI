@@ -48,23 +48,33 @@ export async function DELETE() {
 
 /** POST /api/auth/client — login (returning client) or register (new client) */
 export async function POST(request: NextRequest) {
-    if (!checkOrigin(request)) return err("Forbidden", 403);
+    try {
+        if (!checkOrigin(request)) return err("Forbidden", 403);
 
-    const ip = getClientIP(request);
-    const rl = rateLimit(`client_auth:${ip}`, 10, 15 * 60 * 1000);
-    if (!rl.allowed) return tooMany();
+        const ip = getClientIP(request);
+        const rl = rateLimit(`client_auth:${ip}`, 10, 15 * 60 * 1000);
+        if (!rl.allowed) return tooMany();
 
-    let body: unknown;
-    try { body = await request.json(); }
-    catch { return err("Invalid JSON", 400); }
+        let body: unknown;
+        try { body = await request.json(); }
+        catch { return err("Invalid JSON", 400); }
 
-    if (typeof body !== "object" || body === null) return err("Invalid request", 400);
-    const { action } = body as Record<string, unknown>;
+        if (typeof body !== "object" || body === null) return err("Invalid request", 400);
+        const { action } = body as Record<string, unknown>;
 
-    if (action === "login")    return handleLogin(body as Record<string, unknown>);
-    if (action === "register") return handleRegister(body as Record<string, unknown>, ip);
+        if (action === "login")    return await handleLogin(body as Record<string, unknown>);
+        if (action === "register") return await handleRegister(body as Record<string, unknown>, ip);
 
-    return err("Unknown action", 400);
+        return err("Unknown action", 400);
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error("[/api/auth/client] uncaught:", msg);
+        // Surface the SESSION_SECRET misconfig clearly so it's not just a blind 500
+        if (msg.includes("SESSION_SECRET")) {
+            return err("Servidor mal configurado: defina a variável SESSION_SECRET no Vercel.", 500);
+        }
+        return err("Erro interno. Tente novamente.", 500);
+    }
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
