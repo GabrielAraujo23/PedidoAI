@@ -51,12 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Loading spinner while checking session on admin routes
     if (loading && !isPublic) {
         return (
-            <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-orange-50/30">
+            <div className="h-screen flex items-center justify-center bg-warm">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        <span className="text-white font-bold text-2xl">P</span>
+                    <div className="w-10 h-10 rounded-md bg-stone-900 flex items-center justify-center">
+                        <span
+                            className="text-white text-[16px] font-bold tracking-tighter"
+                            style={{ fontFamily: "var(--font-display)" }}
+                        >
+                            P
+                        </span>
                     </div>
-                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <Loader2 className="w-4 h-4 text-stone-700 animate-spin" />
                 </div>
             </div>
         );
@@ -79,7 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <AuthContext.Provider value={{ adminSession, loading, signOut, setAdminSession }}>
             <div className="flex h-screen overflow-hidden">
                 <NavSidebar />
-                <main className="flex-1 overflow-y-auto ml-64 bg-[#F9FAFB] p-4 md:p-8">
+                <main
+                    className="flex-1 overflow-y-auto ml-64 bg-warm p-5 md:p-8"
+                    style={{ fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
+                >
                     {children}
                 </main>
             </div>

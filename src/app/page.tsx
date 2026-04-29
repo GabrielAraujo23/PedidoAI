@@ -1,56 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
-    Package,
-    Users,
-    Truck,
-    Clock,
-    MoreVertical,
+    Package, Users, Truck, Clock, ArrowUpRight,
+    TrendingUp, ShoppingBag, ChevronRight,
 } from "lucide-react";
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/card";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
+    AreaChart, Area, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer,
 } from "recharts";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { Order, Status } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 
-const STATUS_COLORS: Record<Status, string> = {
-    novo: "bg-blue-100 text-blue-700",
-    confirmado: "bg-orange-100 text-orange-700",
-    rota: "bg-teal-100 text-teal-700",
-    entregue: "bg-green-100 text-green-700",
-};
-
-const STATUS_LABELS: Record<Status, string> = {
-    novo: "Novo",
-    confirmado: "Confirmado",
-    rota: "Em Rota",
-    entregue: "Entregue",
+const STATUS_CONFIG: Record<Status, { label: string; tone: string }> = {
+    novo:       { label: "Novo",       tone: "bg-amber-50 text-amber-700 border-amber-200/60" },
+    confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60" },
+    rota:       { label: "Em rota",    tone: "bg-violet-50 text-violet-700 border-violet-200/60" },
+    entregue:   { label: "Entregue",   tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60" },
 };
 
 const chartData = [
@@ -70,6 +39,9 @@ interface DashboardStats {
     novoCount: number;
     recentOrders: Order[];
 }
+
+const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
+const sectionTitleStyle = { fontFamily: "var(--font-display)", fontWeight: 400 };
 
 export default function DashboardPage() {
     const { adminSession } = useAuth();
@@ -98,204 +70,244 @@ export default function DashboardPage() {
                     totalClients: clients?.length ?? 0,
                     rotaCount: orders.filter((o) => o.status === "rota").length,
                     novoCount: orders.filter((o) => o.status === "novo").length,
-                    recentOrders: sorted.slice(0, 4) as Order[],
+                    recentOrders: sorted.slice(0, 5) as Order[],
                 });
             }
         }
-
         load();
     }, [adminSession]);
 
+    const adminName = adminSession?.email?.split("@")[0] ?? "admin";
+
     const statCards = [
         {
-            title: "Total Pedidos",
-            value: String(stats.totalOrders),
+            label: "Total de pedidos",
+            value: stats.totalOrders,
             icon: Package,
-            color: "text-blue-600",
-            bg: "bg-blue-100",
+            gradient: "from-stone-700 to-stone-900",
+            iconBg: "bg-white/15",
         },
         {
-            title: "Clientes",
-            value: String(stats.totalClients),
+            label: "Clientes ativos",
+            value: stats.totalClients,
             icon: Users,
-            color: "text-orange-600",
-            bg: "bg-orange-100",
+            gradient: "from-amber-400 to-orange-500",
+            iconBg: "bg-white/15",
         },
         {
-            title: "Em Rota",
-            value: String(stats.rotaCount),
+            label: "Em rota",
+            value: stats.rotaCount,
             icon: Truck,
-            color: "text-teal-600",
-            bg: "bg-teal-100",
+            gradient: "from-violet-500 to-purple-700",
+            iconBg: "bg-white/15",
         },
         {
-            title: "Pendentes",
-            value: String(stats.novoCount),
+            label: "Aguardando",
+            value: stats.novoCount,
             icon: Clock,
-            color: "text-red-600",
-            bg: "bg-red-100",
+            gradient: "from-blue-500 to-blue-700",
+            iconBg: "bg-white/15",
         },
     ];
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
-            {/* Header */}
-            <div className="flex justify-between items-end">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+            {/* ── Header ── */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-secondary">Dashboard</h2>
-                    <p className="text-muted-foreground">
-                        Bem-vindo à PedidoAI, sua loja está operando normalmente.
+                    <p className={cn(eyebrowClass, "mb-3")}>Bem-vindo, {adminName}</p>
+                    <h1
+                        className="text-[40px] sm:text-[48px] leading-[0.96] tracking-tight text-stone-900"
+                        style={sectionTitleStyle}
+                    >
+                        Sua loja, em{" "}
+                        <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                            tempo real.
+                        </em>
+                    </h1>
+                    <p className="text-[14px] text-stone-600 mt-3 leading-relaxed max-w-[520px]">
+                        Acompanhe pedidos, clientes e operação de entrega num só lugar.
                     </p>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" className="glass hover:bg-white/80">
-                        Exportar Relatório
-                    </Button>
-                    <Button className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-                        Configurar Loja
-                    </Button>
-                </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {statCards.map((stat) => (
-                    <Card
-                        key={stat.title}
-                        className="glass border-none hover:translate-y-[-4px] transition-all duration-300 hover:shadow-2xl"
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    <button className="px-4 h-10 rounded-xl border border-stone-300/70 bg-white/70 text-[13px] font-semibold text-stone-700 hover:bg-white hover:border-stone-500 transition-all">
+                        Exportar relatório
+                    </button>
+                    <Link
+                        href="/loja"
+                        className="group inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-stone-900 text-white text-[13px] font-semibold tracking-wide hover:bg-stone-800 transition-all duration-200 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                     >
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                {stat.title}
-                            </CardTitle>
-                            <div className={`p-2 rounded-lg ${stat.bg}`}>
-                                <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold">{stat.value}</div>
-                        </CardContent>
-                    </Card>
+                        Configurar loja
+                        <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </Link>
+                </div>
+            </header>
+
+            {/* ── Stat cards ── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {statCards.map(({ label, value, icon: Icon, gradient, iconBg }) => (
+                    <div
+                        key={label}
+                        className={cn(
+                            "relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br ring-1 ring-stone-200/60 transition-all duration-200 hover:shadow-lg hover:scale-[1.01]",
+                            gradient
+                        )}
+                    >
+                        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-4", iconBg)}>
+                            <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <p
+                            className="text-white tabular-nums leading-none"
+                            style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "32px" }}
+                        >
+                            {value}
+                        </p>
+                        <p className="text-[11.5px] font-medium text-white/75 mt-1.5">{label}</p>
+                        <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
+                    </div>
                 ))}
             </div>
 
-            {/* Main Content */}
+            {/* ── Main grid ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
                 {/* Chart */}
-                <Card className="lg:col-span-2 glass border-none">
-                    <CardHeader>
-                        <CardTitle className="text-xl text-secondary">Visão Geral de Pedidos</CardTitle>
-                        <CardDescription>Performance semanal de pedidos</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[350px] w-full pt-4">
+                <section className="lg:col-span-2 bg-white rounded-2xl border border-stone-200/70 overflow-hidden">
+                    <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-stone-100">
+                        <div>
+                            <p className={eyebrowClass}>Movimento</p>
+                            <h2
+                                className="text-[22px] tracking-tight text-stone-900 mt-0.5"
+                                style={sectionTitleStyle}
+                            >
+                                Visão semanal
+                            </h2>
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-2.5 py-1 rounded-full">
+                            <TrendingUp className="w-3 h-3" />
+                            <span className="font-semibold">+12%</span>
+                        </div>
+                    </header>
+
+                    <div className="h-[320px] w-full pt-4 pr-5">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                                 <defs>
-                                    <linearGradient id="colorPedidos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#FFAC26" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#FFAC26" stopOpacity={0} />
+                                    <linearGradient id="warmGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#C2410C" stopOpacity={0.28} />
+                                        <stop offset="95%" stopColor="#C2410C" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
                                 <XAxis
                                     dataKey="name"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: "#6B7280", fontSize: 12 }}
+                                    tick={{ fill: "#78716C", fontSize: 11, fontWeight: 600 }}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: "#6B7280", fontSize: 12 }}
+                                    tick={{ fill: "#A8A29E", fontSize: 10 }}
                                 />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: "rgba(255,255,255,0.8)",
+                                        backgroundColor: "#1C1917",
                                         borderRadius: "12px",
-                                        border: "1px solid rgba(255,255,255,0.2)",
-                                        backdropFilter: "blur(8px)",
-                                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                                        border: "none",
+                                        color: "white",
+                                        fontSize: "12px",
+                                        boxShadow: "0 10px 25px -3px rgba(0,0,0,0.2)",
                                     }}
+                                    labelStyle={{ color: "#A8A29E", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "4px" }}
+                                    itemStyle={{ color: "#FB923C", fontWeight: 600 }}
+                                    cursor={{ stroke: "#1C1917", strokeWidth: 1, strokeOpacity: 0.2, strokeDasharray: "3 3" }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="pedidos"
-                                    stroke="#FFAC26"
-                                    strokeWidth={3}
+                                    stroke="#C2410C"
+                                    strokeWidth={2.5}
                                     fillOpacity={1}
-                                    fill="url(#colorPedidos)"
+                                    fill="url(#warmGradient)"
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+                    </div>
+                </section>
 
                 {/* Recent Orders */}
-                <Card className="glass border-none">
-                    <CardHeader className="flex flex-row items-center justify-between">
+                <section className="bg-white rounded-2xl border border-stone-200/70 overflow-hidden flex flex-col">
+                    <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-stone-100 flex-shrink-0">
                         <div>
-                            <CardTitle className="text-xl text-secondary">Pedidos Recentes</CardTitle>
-                            <CardDescription>Últimas movimentações da fila</CardDescription>
+                            <p className={eyebrowClass}>Histórico</p>
+                            <h2
+                                className="text-[18px] tracking-tight text-stone-900 mt-0.5"
+                                style={sectionTitleStyle}
+                            >
+                                Pedidos recentes
+                            </h2>
                         </div>
-                        <Button variant="ghost" size="icon">
-                            <MoreVertical className="w-5 h-5 text-muted-foreground" />
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent border-white/20">
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead className="text-right">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {stats.recentOrders.map((order) => (
-                                    <TableRow
-                                        key={order.id}
-                                        className="hover:bg-white/40 border-white/10 transition-colors"
-                                    >
-                                        <TableCell className="font-medium">
-                                            <div className="flex flex-col">
-                                                <span>{order.client}</span>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    #{order.id}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Badge
-                                                variant="outline"
-                                                className={cn(
-                                                    "rounded-md border-none px-2 py-0.5",
-                                                    STATUS_COLORS[order.status]
-                                                )}
+                    </header>
+
+                    <div className="flex-1">
+                        {stats.recentOrders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mb-3">
+                                    <ShoppingBag className="w-5 h-5 text-stone-400" />
+                                </div>
+                                <p
+                                    className="text-[16px] tracking-tight text-stone-800"
+                                    style={sectionTitleStyle}
+                                >
+                                    Nenhum pedido ainda.
+                                </p>
+                                <p className="text-[12px] text-stone-500 mt-1.5 max-w-[220px] leading-relaxed">
+                                    Quando chegar o primeiro pedido, ele aparece aqui.
+                                </p>
+                            </div>
+                        ) : (
+                            <ul className="divide-y divide-stone-100">
+                                {stats.recentOrders.map((order) => {
+                                    const cfg = STATUS_CONFIG[order.status];
+                                    return (
+                                        <li key={order.id}>
+                                            <Link
+                                                href={`/pedidos`}
+                                                className="flex items-center gap-3 px-6 py-3.5 group hover:bg-stone-50/60 transition-colors"
                                             >
-                                                {STATUS_LABELS[order.status]}
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {stats.recentOrders.length === 0 && (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={2}
-                                            className="text-center text-muted-foreground py-8 text-sm"
-                                        >
-                                            Nenhum pedido registrado ainda.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                        <Button
-                            variant="link"
-                            className="w-full mt-4 text-primary hover:text-primary/80"
-                        >
-                            Ver Todos os Pedidos
-                        </Button>
-                    </CardContent>
-                </Card>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 mb-0.5">
+                                                        #ORD-{order.id.padStart(4, "0")}
+                                                    </p>
+                                                    <p className="text-[13px] font-semibold text-stone-900 truncate">
+                                                        {order.client}
+                                                    </p>
+                                                </div>
+                                                <span className={cn(
+                                                    "inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0",
+                                                    cfg.tone
+                                                )}>
+                                                    {cfg.label}
+                                                </span>
+                                                <ChevronRight className="w-3.5 h-3.5 text-stone-400 transition-all group-hover:text-stone-700 group-hover:translate-x-0.5" />
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                    </div>
+
+                    <Link
+                        href="/pedidos"
+                        className="border-t border-stone-100 px-6 py-3 text-center text-[12px] uppercase tracking-[0.2em] font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-50/40 transition-colors group"
+                    >
+                        Ver todos
+                        <ArrowUpRight className="w-3.5 h-3.5 inline ml-1 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </Link>
+                </section>
             </div>
         </div>
     );
