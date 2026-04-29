@@ -243,7 +243,7 @@ export default function ProfilePage() {
                                         <div className="text-center py-8">
                                             <Package className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                                             <p className="text-sm text-[#6B7280]">Nenhum pedido ainda.</p>
-                                            <Link href="/cliente/chat" className="text-sm text-[#F97316] hover:underline mt-1 inline-block">
+                                            <Link href="/cliente/catalogo" className="text-sm text-[#F97316] hover:underline mt-1 inline-block">
                                                 Fazer primeiro pedido
                                             </Link>
                                         </div>
@@ -294,7 +294,7 @@ export default function ProfilePage() {
                                     <div className="text-center py-12">
                                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="font-bold text-[#111827]">Nenhum pedido ainda</p>
-                                        <Link href="/cliente/chat" className="text-sm text-[#F97316] hover:underline mt-1 inline-block">
+                                        <Link href="/cliente/catalogo" className="text-sm text-[#F97316] hover:underline mt-1 inline-block">
                                             Fazer meu primeiro pedido
                                         </Link>
                                     </div>

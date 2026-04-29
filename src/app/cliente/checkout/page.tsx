@@ -154,7 +154,7 @@ export default function CheckoutPage() {
     // Redirect to catalog if cart is empty (but not while placing an order)
     useEffect(() => {
         if (mounted && totalItems === 0 && !placing) {
-            router.push("/cliente/chat");
+            router.push("/cliente/catalogo");
         }
     }, [mounted, totalItems, placing, router]);
 
@@ -411,7 +411,7 @@ export default function CheckoutPage() {
 
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-1 text-sm mb-6">
-                    <Link href="/cliente/chat" className="text-[#6B7280] hover:text-[#111827]">Carrinho</Link>
+                    <Link href="/cliente/catalogo" className="text-[#6B7280] hover:text-[#111827]">Carrinho</Link>
                     <ChevronRight className="w-4 h-4 text-[#6B7280]" />
                     <span className="text-[#F97316] font-semibold">Checkout</span>
                 </div>

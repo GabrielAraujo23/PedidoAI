@@ -244,7 +244,7 @@ export default function LoginPage() {
                 body: JSON.stringify({ action: "login", phone: client.phone, adminId: effectiveAdminId }),
             });
             if (!res.ok) throw new Error("auth failed");
-            router.push("/cliente/chat");
+            router.push("/cliente/catalogo");
         } catch {
             setError("Erro ao entrar. Tente novamente.");
             setLoading(false);
@@ -282,7 +282,7 @@ export default function LoginPage() {
                 return;
             }
             logEvent({ event_type: "client_registered", actor_type: "client" });
-            router.push("/cliente/chat");
+            router.push("/cliente/catalogo");
         } catch {
             setError("Erro ao cadastrar. Tente novamente.");
             setLoading(false);

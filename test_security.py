@@ -172,7 +172,7 @@ with sync_playwright() as p:
 
     check("GET /login acessivel sem sessao",                nav(f"{BASE}/login")         and "/login"    in nav(f"{BASE}/login"))
     check("GET /acesso acessivel sem sessao",               "/acesso"  in nav(f"{BASE}/acesso"))
-    check("GET /cliente/chat acessivel sem sessao",         "/cliente/" in nav(f"{BASE}/cliente/chat"))
+    check("GET /cliente/catalogo acessivel sem sessao",         "/cliente/" in nav(f"{BASE}/cliente/catalogo"))
 
     # ── 8. API SESSION: unauthenticated GET returns 401 ──────────────────────
     section("8 · API /api/auth/session — sem cookie retorna 401")

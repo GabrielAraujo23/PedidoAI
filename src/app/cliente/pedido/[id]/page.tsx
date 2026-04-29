@@ -128,7 +128,7 @@ export default function OrderTrackingPage() {
                     <div className="text-center py-24">
                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="font-bold text-[#111827]">Pedido não encontrado</p>
-                        <Link href="/cliente/chat" className="text-sm text-[#F97316] hover:underline mt-2 inline-block">
+                        <Link href="/cliente/catalogo" className="text-sm text-[#F97316] hover:underline mt-2 inline-block">
                             Voltar ao cardápio
                         </Link>
                     </div>
@@ -161,7 +161,7 @@ export default function OrderTrackingPage() {
                                         WhatsApp
                                     </a>
                                     <Link
-                                        href="/cliente/chat"
+                                        href="/cliente/catalogo"
                                         className="flex items-center gap-2 px-5 py-2.5 border-2 border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
@@ -279,7 +279,7 @@ export default function OrderTrackingPage() {
                                 </div>
 
                                 <Link
-                                    href="/cliente/chat"
+                                    href="/cliente/catalogo"
                                     className="mt-4 flex items-center justify-center gap-2 w-full h-10 border border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
