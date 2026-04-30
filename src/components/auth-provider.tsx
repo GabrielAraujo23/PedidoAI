@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return (
             <div className="h-screen flex items-center justify-center bg-warm">
                 <div className="flex flex-col items-center gap-3">
-                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-14 w-auto object-contain" />
+                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-32 w-auto object-contain" />
                     <Loader2 className="w-4 h-4 text-stone-700 animate-spin" />
                 </div>
             </div>
