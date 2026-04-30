@@ -44,7 +44,7 @@ export function NavSidebar() {
         >
             {/* Brand */}
             <Link href="/" className="mb-10 flex items-center group">
-                <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+                <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-16 w-auto object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Section label */}

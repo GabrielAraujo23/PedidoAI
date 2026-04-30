@@ -45,7 +45,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
 
                 {/* Logo */}
                 <Link href="/cliente/catalogo" className="flex items-center shrink-0 group">
-                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-9 w-auto object-contain transition-transform group-hover:scale-105" />
+                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-12 w-auto object-contain transition-transform group-hover:scale-105" />
                 </Link>
 
                 {/* Nav */}
