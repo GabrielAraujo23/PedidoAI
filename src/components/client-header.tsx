@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Search, X, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
@@ -45,7 +46,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
 
                 {/* Logo */}
                 <Link href="/cliente/catalogo" className="flex items-center shrink-0 group">
-                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-28 w-auto object-contain transition-transform group-hover:scale-105" />
+                    <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={180} height={98} className="w-[180px] h-auto object-contain transition-transform group-hover:scale-105" />
                 </Link>
 
                 {/* Nav */}

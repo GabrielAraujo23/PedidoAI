@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
     Mail, Lock, AlertCircle, Loader2, ShieldCheck,
@@ -282,7 +283,7 @@ export default function AcessoPage() {
             {/* Top brand bar */}
             <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
                 <div className="flex items-center">
-                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-32 w-auto object-contain" />
+                    <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[280px] h-auto object-contain" />
                 </div>
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-stone-500 font-semibold">
                     <ShieldCheck className="w-3 h-3 text-orange-700" />

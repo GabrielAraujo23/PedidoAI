@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
@@ -44,7 +45,7 @@ export function NavSidebar() {
         >
             {/* Brand */}
             <Link href="/" className="mb-10 flex items-center group">
-                <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-24 w-auto object-contain transition-transform group-hover:scale-105" />
+                <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={220} height={120} className="w-[220px] h-auto object-contain transition-transform group-hover:scale-105" />
             </Link>
 
             {/* Section label */}

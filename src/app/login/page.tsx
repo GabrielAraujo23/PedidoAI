@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Phone, User, MapPin, Loader2, ArrowLeft, AlertCircle, Check, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -319,7 +320,7 @@ export default function LoginPage() {
             {/* Top brand bar */}
             <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
                 <div className="flex items-center">
-                    <img src="/Logo_PedidoAi.png" alt="PedidoAI" className="h-32 w-auto object-contain" />
+                    <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[280px] h-auto object-contain" />
                 </div>
                 <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500 hidden sm:block">
                     Loja Aberta
