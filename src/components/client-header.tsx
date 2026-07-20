@@ -11,7 +11,7 @@ import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 
 const NAV = [
-    { label: "Catálogo",     href: "/cliente/catalogo" },
+    { label: "Catálogo", href: "/cliente/catalogo" },
     { label: "Meus Pedidos", href: "/cliente/perfil" },
 ];
 
@@ -23,12 +23,12 @@ interface ClientHeaderProps {
 
 export function ClientHeader({ session = null, searchValue = "", onSearchChange }: ClientHeaderProps) {
     const pathname = usePathname();
-    const router   = useRouter();
+    const router = useRouter();
     const { clearCart, totalItems } = useCart();
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
     async function handleLogout() {
-        await fetch("/api/auth/client", { method: "DELETE" }).catch(() => {});
+        await fetch("/api/auth/client", { method: "DELETE" }).catch(() => { });
         clearCart();
         router.push("/login");
     }
@@ -45,16 +45,16 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
             }}
         >
             {/* ── Main bar ── */}
-            <div className="max-w-[1320px] mx-auto px-4 sm:px-8 h-[64px] flex items-center gap-3">
+            <div className="max-w-[1320px] mx-auto px-4 sm:px-8 h-[76px] flex items-center gap-3">
 
                 {/* Logo */}
                 <Link href="/cliente/catalogo" className="flex items-center shrink-0 group py-1">
                     <Image
                         src="/Logo_PedidoAi.png"
                         alt="PedidoAI"
-                        width={160}
-                        height={44}
-                        className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+                        width={220}
+                        height={120}
+                        className="h-14 w-auto object-contain transition-transform group-hover:scale-105"
                         priority
                     />
                 </Link>
