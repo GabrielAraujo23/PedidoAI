@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Camera, X, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 interface BarcodeScannerProps {
     onDetected: (barcode: string) => void;
@@ -12,6 +12,9 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const onDetectedRef = useRef(onDetected);
+    useEffect(() => { onDetectedRef.current = onDetected; }, [onDetected]);
 
     useEffect(() => {
         let reader: import("@zxing/browser").BrowserMultiFormatReader;
@@ -29,7 +32,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                     d.label.toLowerCase().includes("back") ||
                     d.label.toLowerCase().includes("traseira") ||
                     d.label.toLowerCase().includes("rear")
-                ) ?? devices[devices.length - 1];
+                ) ?? devices[0];
 
                 if (!videoRef.current || !active) return;
                 setLoading(false);
@@ -39,7 +42,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                     videoRef.current,
                     (result, err) => {
                         if (result && active) {
-                            onDetected(result.getText());
+                            onDetectedRef.current(result.getText());
                         }
                         if (err) {
                             // Frame errors are normal, ignore
@@ -47,8 +50,10 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                     }
                 );
             } catch (e) {
-                if (active) setError(e instanceof Error ? e.message : "Erro ao acessar câmera.");
-                setLoading(false);
+                if (active) {
+                    setError(e instanceof Error ? e.message : "Erro ao acessar câmera.");
+                    setLoading(false);
+                }
             }
         }
 
@@ -58,7 +63,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
             active = false;
             reader?.reset();
         };
-    }, [onDetected]);
+    }, []);
 
     return (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
@@ -76,6 +81,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                         className="w-full h-full object-cover"
                         playsInline
                         muted
+                        autoPlay
                     />
 
                     {/* Viewfinder corners */}
