@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS nfe_imports (
     supplier_name TEXT,
     total_items   INTEGER     NOT NULL DEFAULT 0,
     imported_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-    status        TEXT        NOT NULL DEFAULT 'completed'
+    status        TEXT        NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'failed'))
 );
 
 CREATE INDEX IF NOT EXISTS nfe_imports_admin_idx ON nfe_imports (admin_id);
