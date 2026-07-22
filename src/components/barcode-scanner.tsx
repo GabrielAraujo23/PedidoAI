@@ -51,7 +51,15 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                 );
             } catch (e) {
                 if (active) {
-                    setError(e instanceof Error ? e.message : "Erro ao acessar câmera.");
+                    const msg = e instanceof Error ? e.message : String(e);
+                    const isPermission = msg.toLowerCase().includes("permission") ||
+                        msg.toLowerCase().includes("denied") ||
+                        msg.toLowerCase().includes("notallowed");
+                    setError(
+                        isPermission
+                            ? "Acesso à câmera negado. Clique no ícone de câmera 🎥 na barra de endereços do navegador e permita o acesso, depois tente novamente."
+                            : msg || "Erro ao acessar câmera."
+                    );
                     setLoading(false);
                 }
             }
@@ -105,8 +113,9 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                     )}
 
                     {error && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-stone-900 p-6 text-center">
-                            <p className="text-red-400 text-sm">{error}</p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-900 p-6 text-center gap-3">
+                            <span className="text-3xl">📷</span>
+                            <p className="text-red-400 text-[13px] leading-relaxed">{error}</p>
                         </div>
                     )}
                 </div>

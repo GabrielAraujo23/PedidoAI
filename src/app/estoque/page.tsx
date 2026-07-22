@@ -2,10 +2,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
     Package, TrendingDown, AlertTriangle, DollarSign,
     History, ArrowUpCircle, ArrowDownCircle, Settings2,
-    ChevronLeft, ChevronRight,
+    ChevronLeft, ChevronRight, PackagePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -98,11 +99,20 @@ export default function EstoquePage() {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <header>
-                <p className={cn(eyebrowClass, "mb-3")}>Controle</p>
-                <h1 className="text-[40px] leading-[0.96] tracking-tight text-stone-900" style={sectionTitleStyle}>
-                    Estoque
-                </h1>
+            <header className="flex items-end justify-between gap-4">
+                <div>
+                    <p className={cn(eyebrowClass, "mb-3")}>Controle</p>
+                    <h1 className="text-[40px] leading-[0.96] tracking-tight text-stone-900" style={sectionTitleStyle}>
+                        Estoque
+                    </h1>
+                </div>
+                <Link
+                    href="/estoque/receber"
+                    className="inline-flex items-center gap-2 h-10 px-4 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 transition-colors shrink-0"
+                >
+                    <PackagePlus className="w-4 h-4" />
+                    Receber Mercadoria
+                </Link>
             </header>
 
             {/* Summary cards */}
