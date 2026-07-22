@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
         .from("products")
         .update({ stock_quantity: newQty })
-        .eq("id", product_id);
+        .eq("id", product_id)
+        .eq("admin_id", session.adminId);
 
     if (updateError) return err("Erro ao atualizar estoque.", 500);
 
