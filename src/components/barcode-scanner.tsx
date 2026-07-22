@@ -17,13 +17,13 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
     useEffect(() => { onDetectedRef.current = onDetected; }, [onDetected]);
 
     useEffect(() => {
-        let reader: import("@zxing/browser").BrowserMultiFormatReader;
+        let controls: { stop: () => void } | null = null;
         let active = true;
 
         async function start() {
             try {
                 const { BrowserMultiFormatReader } = await import("@zxing/browser");
-                reader = new BrowserMultiFormatReader();
+                const reader = new BrowserMultiFormatReader();
                 const devices = await BrowserMultiFormatReader.listVideoInputDevices();
                 if (devices.length === 0) throw new Error("Nenhuma câmera encontrada.");
 
@@ -37,7 +37,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                 if (!videoRef.current || !active) return;
                 setLoading(false);
 
-                await reader.decodeFromVideoDevice(
+                controls = await reader.decodeFromVideoDevice(
                     device.deviceId,
                     videoRef.current,
                     (result, err) => {
@@ -61,7 +61,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
 
         return () => {
             active = false;
-            reader?.reset();
+            controls?.stop();
         };
     }, []);
 
