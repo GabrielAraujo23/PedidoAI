@@ -104,6 +104,7 @@ export default function ReceberPage() {
 
     async function handleConfirmReceipt() {
         setConfirming(true);
+        setXmlError(null);
         const items = reviewItems
             .filter((i) => i.confirmed)
             .map((i) => ({
@@ -112,20 +113,30 @@ export default function ReceberPage() {
                 quantity: i.nfeProduct.qCom,
                 unit: i.nfeProduct.uCom,
                 unit_price: i.nfeProduct.vUnCom,
-                barcode: i.nfeProduct.cEAN,
+                barcode: i.nfeProduct.cEAN || null,
                 category: i.category,
             }));
 
-        const res = await fetch("/api/estoque/receber", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items, chave_acesso: chaveAcesso || null, supplier_name: supplierName || null }),
-        });
+        try {
+            const res = await fetch("/api/estoque/receber", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items, chave_acesso: chaveAcesso || null, supplier_name: supplierName || null }),
+            });
 
-        if (res.ok) {
-            setConfirmed(true);
-            setReviewItems([]);
+            const body = await res.json() as { ok?: boolean; processed?: number; error?: string; details?: string[] };
+
+            if (res.ok && body.ok) {
+                setConfirmed(true);
+                setReviewItems([]);
+            } else {
+                const detail = body.details?.slice(0, 3).join(" | ") ?? "";
+                setXmlError(`Erro: ${body.error ?? "falha desconhecida"}${detail ? ` — ${detail}` : ""}`);
+            }
+        } catch (e) {
+            setXmlError(`Erro de rede: ${e instanceof Error ? e.message : String(e)}`);
         }
+
         setConfirming(false);
     }
 
