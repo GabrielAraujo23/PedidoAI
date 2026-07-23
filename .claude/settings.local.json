@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(mkdir -p \"/c/Users/Gabriel Lima/OneDrive/Área de Trabalho/PedidoAI/src/app/api/orders/[id]/status\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Gabriel Lima\\OneDrive\\Área de Trabalho\\PedidoAI\\src\\app\\api\\orders\\[id]"
     ]
   }
 }
