@@ -33,25 +33,20 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
             try {
                 const { BrowserMultiFormatReader } = await import("@zxing/browser");
                 const reader = new BrowserMultiFormatReader();
-                const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-                if (devices.length === 0) throw new Error("Nenhuma câmera encontrada.");
-
-                const device = devices.find((d) =>
-                    d.label.toLowerCase().includes("back") ||
-                    d.label.toLowerCase().includes("traseira") ||
-                    d.label.toLowerCase().includes("rear")
-                ) ?? devices[0];
 
                 if (!videoRef.current || !active) return;
-                setLoading(false);
 
-                controls = await reader.decodeFromVideoDevice(
-                    device.deviceId,
+                // decodeFromConstraints works on mobile without needing to list devices first
+                // (listVideoInputDevices requires prior permission on iOS/Android)
+                controls = await reader.decodeFromConstraints(
+                    { video: { facingMode: { ideal: "environment" } } },
                     videoRef.current,
                     (result) => {
                         if (result && active) onDetectedRef.current(result.getText());
                     }
                 );
+
+                if (active) setLoading(false);
             } catch (e) {
                 if (!active) return;
                 const msg = e instanceof Error ? e.message : String(e);

@@ -13,6 +13,7 @@ import {
     ShieldCheck,
     ShoppingBag,
     Warehouse,
+    X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -27,7 +28,12 @@ const menuItems = [
     { icon: Store,            label: "Loja",             href: "/loja" },
 ];
 
-export function NavSidebar() {
+interface NavSidebarProps {
+    isOpen?: boolean;
+    onClose?: () => void;
+}
+
+export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
     const pathname = usePathname();
     const { adminSession, signOut } = useAuth();
 
@@ -36,7 +42,11 @@ export function NavSidebar() {
 
     return (
         <aside
-            className="fixed left-0 top-0 h-screen w-64 flex flex-col p-5 z-50"
+            className={cn(
+                "fixed left-0 top-0 h-screen w-64 flex flex-col p-5 z-50 transition-transform duration-300",
+                "lg:translate-x-0",
+                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            )}
             style={{
                 background: "rgba(247, 242, 234, 0.96)",
                 backdropFilter: "blur(10px)",
@@ -45,8 +55,16 @@ export function NavSidebar() {
                 fontFamily: "var(--font-body), ui-sans-serif, system-ui",
             }}
         >
+            {/* Close button — mobile only */}
+            <button
+                onClick={onClose}
+                className="absolute top-4 right-4 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors"
+            >
+                <X className="w-4 h-4" />
+            </button>
+
             {/* Brand */}
-            <Link href="/" className="mb-10 flex items-center group">
+            <Link href="/" onClick={onClose} className="mb-10 flex items-center group">
                 <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={220} height={120} className="w-[220px] h-auto object-contain transition-transform group-hover:scale-105" />
             </Link>
 
@@ -63,6 +81,7 @@ export function NavSidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={onClose}
                             className={cn(
                                 "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-[13.5px]",
                                 isActive
