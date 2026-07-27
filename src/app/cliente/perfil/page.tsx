@@ -613,36 +613,178 @@ export default function ProfilePage() {
                                 </section>
 
                                 <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
-                                    <div className="mb-5">
-                                        <p className={eyebrowClass}>Conta</p>
-                                        <h2
-                                            className="text-[22px] tracking-tight text-stone-900 mt-0.5"
-                                            style={sectionTitleStyle}
-                                        >
-                                            Informações pessoais
-                                        </h2>
+                                    <div className="flex items-start justify-between gap-4 mb-5">
+                                        <div>
+                                            <p className={eyebrowClass}>Conta</p>
+                                            <h2
+                                                className="text-[22px] tracking-tight text-stone-900 mt-0.5"
+                                                style={sectionTitleStyle}
+                                            >
+                                                Informações pessoais
+                                            </h2>
+                                        </div>
+                                        {!editing && (
+                                            <button
+                                                onClick={startEdit}
+                                                className="text-[12px] uppercase tracking-[0.18em] font-semibold text-stone-600 hover:text-stone-900 inline-flex items-center gap-1 shrink-0 transition-colors"
+                                            >
+                                                Editar
+                                                <ChevronRight className="w-3 h-3" />
+                                            </button>
+                                        )}
                                     </div>
 
-                                    <dl className="space-y-4">
-                                        <div>
-                                            <dt className={eyebrowClass}>Nome completo</dt>
-                                            <dd className="text-[14px] text-stone-900 mt-1">{session.name}</dd>
+                                    {!editing ? (
+                                        <div className="space-y-4">
+                                            <dl className="space-y-4">
+                                                <div>
+                                                    <dt className={eyebrowClass}>Nome completo</dt>
+                                                    <dd className="text-[14px] text-stone-900 mt-1">{session.name}</dd>
+                                                </div>
+                                                <div>
+                                                    <dt className={eyebrowClass}>Telefone</dt>
+                                                    <dd className="text-[14px] text-stone-900 mt-1">{client?.phone ?? "—"}</dd>
+                                                </div>
+                                                <div>
+                                                    <dt className={eyebrowClass}>Endereço principal</dt>
+                                                    <dd className="text-[14px] text-stone-900 mt-1">
+                                                        {client?.address ?? (
+                                                            <span className="italic text-stone-500" style={{ fontFamily: "var(--font-display)" }}>
+                                                                Não informado
+                                                            </span>
+                                                        )}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                            {saveSuccess && (
+                                                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-[13px] font-medium animate-in fade-in duration-300">
+                                                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                                                    Dados atualizados com sucesso.
+                                                </div>
+                                            )}
                                         </div>
-                                        <div>
-                                            <dt className={eyebrowClass}>Telefone</dt>
-                                            <dd className="text-[14px] text-stone-900 mt-1">{client?.phone ?? "—"}</dd>
-                                        </div>
-                                        <div>
-                                            <dt className={eyebrowClass}>Endereço principal</dt>
-                                            <dd className="text-[14px] text-stone-900 mt-1">
-                                                {client?.address ?? <span className="italic text-stone-500" style={{ fontFamily: "var(--font-display)" }}>Não informado</span>}
-                                            </dd>
-                                        </div>
-                                    </dl>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                    Nome completo *
+                                                </label>
+                                                <input
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    maxLength={LIMITS.name}
+                                                    placeholder="João Silva"
+                                                    className="w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                />
+                                            </div>
 
-                                    <p className="text-[11.5px] text-stone-500 mt-6 leading-relaxed">
-                                        Para atualizar seus dados, entre em contato com a loja.
-                                    </p>
+                                            <div>
+                                                <label className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                    Telefone *
+                                                </label>
+                                                <input
+                                                    value={editPhone}
+                                                    onChange={(e) => setEditPhone(maskPhone(e.target.value))}
+                                                    inputMode="tel"
+                                                    maxLength={15}
+                                                    placeholder="(11) 99999-0001"
+                                                    className="w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3" />
+                                                        Novo CEP{" "}
+                                                        <span className="normal-case tracking-normal font-normal text-stone-400">
+                                                            (opcional — deixe em branco para manter o endereço atual)
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        placeholder="00000-000"
+                                                        maxLength={9}
+                                                        value={cep}
+                                                        onChange={(e) => handleCepChange(e.target.value)}
+                                                        className={cn(
+                                                            "w-full h-11 px-3.5 pr-10 rounded-xl border bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all",
+                                                            cepStatus === "error"
+                                                                ? "border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/10"
+                                                                : cepStatus === "ok"
+                                                                ? "border-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                                                                : "border-stone-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                        )}
+                                                    />
+                                                    {cepStatus === "loading" && (
+                                                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                                                    )}
+                                                    {cepStatus === "ok" && (
+                                                        <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
+                                                    )}
+                                                </div>
+                                                {cepStatus === "error" && (
+                                                    <p className="text-[12px] text-red-600 mt-1">{cepError}</p>
+                                                )}
+                                            </div>
+
+                                            {cepStatus === "ok" && addrFields.street && (
+                                                <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-stone-50/80 rounded-xl p-4 border border-stone-100">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 mb-0.5">Endereço</p>
+                                                        <p className="text-[13px] text-stone-800 leading-snug">
+                                                            {addrFields.street}
+                                                            {addrFields.neighborhood && (
+                                                                <span className="text-stone-500">, {addrFields.neighborhood}</span>
+                                                            )}
+                                                        </p>
+                                                        <p className="text-[12px] text-stone-500">{addrFields.city}/{addrFields.state}</p>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 block mb-1">
+                                                            Número
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="123"
+                                                            value={numberField}
+                                                            onChange={(e) => setNumberField(e.target.value)}
+                                                            maxLength={LIMITS.address_number}
+                                                            className="h-10 px-3.5 max-w-[160px] rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {saveError && (
+                                                <p className="text-[12px] text-red-600">{saveError}</p>
+                                            )}
+
+                                            <div className="flex items-center justify-end gap-3 pt-1">
+                                                <button
+                                                    onClick={cancelEdit}
+                                                    disabled={saving}
+                                                    className="h-10 px-4 text-[13px] font-semibold text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-50"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                                <button
+                                                    onClick={saveProfile}
+                                                    disabled={saving || cepStatus === "loading"}
+                                                    className="h-10 px-6 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
+                                                >
+                                                    {saving ? (
+                                                        <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+                                                    ) : (
+                                                        "Salvar alterações"
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </section>
 
                                 <button
