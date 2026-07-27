@@ -14,6 +14,7 @@ import {
     ShoppingBag,
     Warehouse,
     X,
+    PhoneCall,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -24,6 +25,7 @@ const menuItems = [
     { icon: Users,            label: "Clientes",         href: "/clientes" },
     { icon: ShoppingBag,      label: "Produtos",         href: "/produtos" },
     { icon: Warehouse,        label: "Estoque",          href: "/estoque" },
+    { icon: PhoneCall,        label: "Atendimento",      href: "/atendimento" },
     { icon: MessageSquare,    label: "Chat Inteligente", href: "/chat" },
     { icon: Store,            label: "Loja",             href: "/loja" },
 ];
