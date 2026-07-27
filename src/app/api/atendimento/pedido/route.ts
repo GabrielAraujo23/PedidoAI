@@ -57,16 +57,26 @@ export async function POST(request: NextRequest) {
 
     if (clientErr || !clientRow) return err("Cliente não encontrado.", 404);
 
-    // Compute next position for kanban ordering
-    const { data: posData } = await supabase
+    // Compute next position and next numeric ID (orders.id is text, e.g. "1", "2"...)
+    const { data: lastOrder } = await supabase
         .from("orders")
-        .select("position")
+        .select("id, position")
         .eq("admin_id", session.adminId)
         .order("position", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-    const position = (posData?.position ?? 0) + 1;
+    const position = (lastOrder?.position ?? 0) + 1;
+
+    // Derive next ID across ALL orders (not just this admin's) to avoid collisions
+    const { data: globalMax } = await supabase
+        .from("orders")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    const nextId = String((parseInt(globalMax?.id ?? "0") || 0) + 1);
 
     // Build products summary string (displayed in kanban card)
     const productsSummary = items
@@ -77,6 +87,7 @@ export async function POST(request: NextRequest) {
     const { data: order, error: orderErr } = await supabase
         .from("orders")
         .insert({
+            id: nextId,
             client: client_name,
             client_id,
             products: productsSummary,
