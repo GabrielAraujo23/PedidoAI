@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
     User, Package, MapPin, Settings,
     ChevronRight, Bell, Moon, LogOut, Star,
     CheckCircle, Truck, Clock, Home, Briefcase,
-    ArrowUpRight,
+    ArrowUpRight, Check, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
 import { useClientSession } from "@/lib/client-session";
+import { sanitizeExternalText, LIMITS } from "@/lib/validators";
 import type { Status } from "@/lib/types";
 
 interface OrderSummary {
@@ -43,6 +44,27 @@ function formatShortDate(iso: string) {
     });
 }
 
+interface AddrFields {
+    street: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+}
+const EMPTY_ADDR: AddrFields = { street: "", neighborhood: "", city: "", state: "" };
+
+function maskCep(v: string): string {
+    const d = v.replace(/\D/g, "").slice(0, 8);
+    return d.length <= 5 ? d : `${d.slice(0, 5)}-${d.slice(5)}`;
+}
+
+function maskPhone(v: string): string {
+    const d = v.replace(/\D/g, "").slice(0, 11);
+    if (!d) return "";
+    if (d.length <= 2)  return `(${d}`;
+    if (d.length <= 7)  return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
 const STATUS_CONFIG: Record<Status, { label: string; tone: string; Icon: typeof Clock }> = {
     novo:       { label: "Pendente",   tone: "bg-amber-50 text-amber-700 border-amber-200/60",     Icon: Clock },
     confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60",  Icon: CheckCircle },
@@ -63,7 +85,7 @@ const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text
 const sectionTitleStyle = { fontFamily: "var(--font-display)", fontWeight: 400 };
 
 export default function ProfilePage() {
-    const { session, loading: sessionLoading, logout } = useClientSession();
+    const { session, loading: sessionLoading, logout, refresh } = useClientSession();
     const [mounted, setMounted] = useState(false);
     const [client, setClient] = useState<ClientData | null>(null);
     const [orders, setOrders] = useState<OrderSummary[]>([]);
@@ -71,6 +93,22 @@ export default function ProfilePage() {
     const [activeNav, setActiveNav] = useState<NavItem>("perfil");
     const [notifications, setNotifications] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
+
+    // Edit profile state
+    const [editing, setEditing]         = useState(false);
+    const [editName, setEditName]       = useState("");
+    const [editPhone, setEditPhone]     = useState("");
+    const [saving, setSaving]           = useState(false);
+    const [saveError, setSaveError]     = useState<string | null>(null);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
+    // CEP state
+    const [cep, setCep]                 = useState("");
+    const [cepStatus, setCepStatus]     = useState<"idle" | "loading" | "ok" | "error">("idle");
+    const [cepError, setCepError]       = useState("");
+    const [addrFields, setAddrFields]   = useState<AddrFields>(EMPTY_ADDR);
+    const [numberField, setNumberField] = useState("");
+    const fetchedCepRef                 = useRef("");
 
     const { clearCart } = useCart();
 
@@ -103,6 +141,80 @@ export default function ProfilePage() {
     async function handleLogout() {
         clearCart();
         await logout();
+    }
+
+    function startEdit() {
+        setEditName(session!.name);
+        setEditPhone(client?.phone ?? "");
+        setCep(""); setCepStatus("idle"); setCepError("");
+        setAddrFields(EMPTY_ADDR); setNumberField("");
+        setSaveError(null); setSaveSuccess(false);
+        setEditing(true);
+    }
+
+    function cancelEdit() {
+        setEditing(false);
+        setSaveError(null);
+    }
+
+    async function fetchCep(digits: string) {
+        setCepStatus("loading"); setCepError("");
+        const ac    = new AbortController();
+        const timer = setTimeout(() => ac.abort(), 8_000);
+        try {
+            const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: ac.signal });
+            const data = await res.json() as Record<string, string>;
+            if (fetchedCepRef.current !== digits) return;
+            if (data.erro) { setCepStatus("error"); setCepError("CEP não encontrado."); return; }
+            setAddrFields({
+                street:       sanitizeExternalText(data.logradouro, LIMITS.street),
+                neighborhood: sanitizeExternalText(data.bairro,     LIMITS.neighborhood),
+                city:         sanitizeExternalText(data.localidade,  LIMITS.city),
+                state:        sanitizeExternalText(data.uf,          LIMITS.state),
+            });
+            setCepStatus("ok");
+        } catch {
+            if (fetchedCepRef.current === digits) {
+                setCepStatus("error"); setCepError("CEP não encontrado.");
+            }
+        } finally { clearTimeout(timer); }
+    }
+
+    function handleCepChange(raw: string) {
+        const masked = maskCep(raw);
+        setCep(masked); setAddrFields(EMPTY_ADDR); setCepStatus("idle"); setCepError("");
+        const digits = masked.replace(/\D/g, "");
+        if (digits.length === 8) { fetchedCepRef.current = digits; fetchCep(digits); }
+        else fetchedCepRef.current = "";
+    }
+
+    async function saveProfile() {
+        setSaving(true); setSaveError(null);
+        const body: Record<string, unknown> = { name: editName, phone: editPhone };
+        if (cepStatus === "ok" && addrFields.street) {
+            body.address = [
+                addrFields.street, numberField.trim(),
+                addrFields.neighborhood, `${addrFields.city}/${addrFields.state}`,
+            ].filter(Boolean).join(", ");
+        }
+        const res = await fetch("/api/cliente/perfil", {
+            method:  "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify(body),
+        }).catch(() => null);
+        if (!res) { setSaveError("Erro de rede. Tente novamente."); setSaving(false); return; }
+        const data = await res.json() as { ok?: boolean; error?: string };
+        if (!res.ok) { setSaveError(data.error ?? "Erro ao salvar."); setSaving(false); return; }
+        await refresh();
+        const { data: updated } = await supabase
+            .from("clients")
+            .select("id, name, phone, address, created_at")
+            .eq("id", session!.clientId)
+            .single();
+        if (updated) setClient(updated as ClientData);
+        setSaving(false); setEditing(false);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
     }
 
     if (!mounted || sessionLoading || !session) return null;
