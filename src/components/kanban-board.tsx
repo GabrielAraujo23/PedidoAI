@@ -63,6 +63,7 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
         const activeId = active.id as string;
         const overId = over.id as string;
         const isColumn = COLUMNS.some((col) => col.id === overId);
+        const snapshot = orders; // for rollback on DB error
 
         let updatedOrders: Order[] = [];
 
@@ -101,7 +102,15 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
             });
 
         for (const u of updates) {
-            await supabase.from("orders").update({ status: u.status, position: u.position }).eq("id", u.id);
+            const { error } = await supabase
+                .from("orders")
+                .update({ status: u.status, position: u.position })
+                .eq("id", u.id);
+            if (error) {
+                console.error("[kanban] update error:", error.message);
+                setOrders(snapshot);
+                return;
+            }
         }
     }
 
