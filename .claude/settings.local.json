@@ -4,7 +4,9 @@
       "Bash(npx tsc:*)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(mkdir -p \"/c/Users/Gabriel Lima/OneDrive/Área de Trabalho/PedidoAI/src/app/api/orders/[id]/status\")"
+      "Bash(mkdir -p \"/c/Users/Gabriel Lima/OneDrive/Área de Trabalho/PedidoAI/src/app/api/orders/[id]/status\")",
+      "Bash(git push *)",
+      "Bash(git commit -m ' *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Gabriel Lima\\OneDrive\\Área de Trabalho\\PedidoAI\\src\\app\\api\\orders\\[id]"
