@@ -8,6 +8,7 @@ export interface Order {
     position: number;
     client_id?: string | null;
     created_at?: string;
+    notes?: string | null;
 }
 
 export interface Client {
