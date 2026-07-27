@@ -42,14 +42,17 @@ export async function PATCH(request: NextRequest) {
     const raw = body as Record<string, unknown>;
     const hasAddress = "address" in raw;
 
-    const nameVal = validateName(typeof raw.name === "string" ? raw.name : "");
+    const rawName  = typeof raw.name  === "string" ? raw.name  : "";
+    const rawPhone = typeof raw.phone === "string" ? raw.phone : "";
+
+    const nameVal = validateName(rawName);
     if (!nameVal.ok) return err(nameVal.error, 400);
 
-    const phoneVal = validatePhone(typeof raw.phone === "string" ? raw.phone : "", true);
+    const phoneVal = validatePhone(rawPhone, true);
     if (!phoneVal.ok) return err(phoneVal.error, 400);
 
-    const cleanName  = (raw.name as string).trim();
-    const cleanPhone = (raw.phone as string).trim();
+    const cleanName  = rawName.trim();
+    const cleanPhone = rawPhone.trim();
     const cleanAddress = hasAddress
         ? (typeof raw.address === "string" && raw.address.trim()
             ? truncate(raw.address.trim(), 255)
@@ -72,7 +75,8 @@ export async function PATCH(request: NextRequest) {
     const { error: updateError } = await supabase
         .from("clients")
         .update(updatePayload)
-        .eq("id", session.clientId);
+        .eq("id", session.clientId)
+        .eq("admin_id", session.adminId);
 
     if (updateError) {
         console.error("[PATCH /api/cliente/perfil]", updateError.message);
@@ -87,7 +91,7 @@ export async function PATCH(request: NextRequest) {
     };
 
     const signed = await signClientSession(newPayload);
-    const res = NextResponse.json({ ok: true, session: newPayload });
+    const res = NextResponse.json({ ok: true, name: cleanName, phone: cleanPhone });
     res.cookies.set(CLIENT_SESSION_COOKIE, signed, clientSessionCookieOptions());
     return res;
 }
