@@ -666,10 +666,11 @@ export default function ProfilePage() {
                                     ) : (
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                <label htmlFor="edit-name" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
                                                     Nome completo *
                                                 </label>
                                                 <input
+                                                    id="edit-name"
                                                     value={editName}
                                                     onChange={(e) => setEditName(e.target.value)}
                                                     maxLength={LIMITS.name}
@@ -679,10 +680,11 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div>
-                                                <label className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                <label htmlFor="edit-phone" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
                                                     Telefone *
                                                 </label>
                                                 <input
+                                                    id="edit-phone"
                                                     value={editPhone}
                                                     onChange={(e) => setEditPhone(maskPhone(e.target.value))}
                                                     inputMode="tel"
@@ -693,7 +695,7 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div>
-                                                <label className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                <label htmlFor="edit-cep" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
                                                     <span className="flex items-center gap-1">
                                                         <MapPin className="w-3 h-3" />
                                                         Novo CEP{" "}
@@ -704,6 +706,7 @@ export default function ProfilePage() {
                                                 </label>
                                                 <div className="relative">
                                                     <input
+                                                        id="edit-cep"
                                                         type="text"
                                                         inputMode="numeric"
                                                         placeholder="00000-000"
@@ -744,10 +747,11 @@ export default function ProfilePage() {
                                                         <p className="text-[12px] text-stone-500">{addrFields.city}/{addrFields.state}</p>
                                                     </div>
                                                     <div>
-                                                        <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 block mb-1">
+                                                        <label htmlFor="edit-number" className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 block mb-1">
                                                             Número
                                                         </label>
                                                         <input
+                                                            id="edit-number"
                                                             type="text"
                                                             placeholder="123"
                                                             value={numberField}
