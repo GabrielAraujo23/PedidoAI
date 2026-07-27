@@ -28,6 +28,7 @@ const STATUS_LABELS: Record<Status, string> = {
     confirmado: "Confirmado",
     rota: "Em Rota",
     entregue: "Entregue",
+    cancelado: "Cancelado",
 };
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -35,6 +36,7 @@ const STATUS_COLORS: Record<Status, string> = {
     confirmado: "bg-orange-100 text-orange-700",
     rota: "bg-teal-100 text-teal-700",
     entregue: "bg-green-100 text-green-700",
+    cancelado: "bg-red-100 text-red-700",
 };
 
 interface ClientMetrics {

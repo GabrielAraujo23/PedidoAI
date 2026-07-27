@@ -20,6 +20,7 @@ const STATUS_CONFIG: Record<Status, { label: string; tone: string }> = {
     confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60" },
     rota:       { label: "Em rota",    tone: "bg-violet-50 text-violet-700 border-violet-200/60" },
     entregue:   { label: "Entregue",   tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60" },
+    cancelado:  { label: "Cancelado",  tone: "bg-red-50 text-red-700 border-red-200/60" },
 };
 
 

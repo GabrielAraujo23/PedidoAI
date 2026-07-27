@@ -6,7 +6,7 @@ import {
     User, Package, MapPin, Settings,
     ChevronRight, Bell, Moon, LogOut, Star,
     CheckCircle, Truck, Clock, Home, Briefcase,
-    ArrowUpRight, Check, Loader2,
+    ArrowUpRight, Check, Loader2, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -70,6 +70,7 @@ const STATUS_CONFIG: Record<Status, { label: string; tone: string; Icon: typeof 
     confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60",  Icon: CheckCircle },
     rota:       { label: "Em rota",    tone: "bg-violet-50 text-violet-700 border-violet-200/60", Icon: Truck },
     entregue:   { label: "Entregue",   tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60", Icon: Star },
+    cancelado:  { label: "Cancelado",  tone: "bg-red-50 text-red-700 border-red-200/60",             Icon: X },
 };
 
 type NavItem = "perfil" | "pedidos" | "enderecos" | "configuracoes";
