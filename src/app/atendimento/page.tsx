@@ -351,7 +351,7 @@ function Step1Client({ adminId, selected, onSelect, onNext }: {
     );
 }
 
-function Step2Products(_props: {
+function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext }: {
     adminId: string;
     cart: CartItem[];
     onUpdateCart: (product: Product, delta: number) => void;
@@ -359,9 +359,173 @@ function Step2Products(_props: {
     onBack: () => void;
     onNext: () => void;
 }) {
+    const [products, setProducts]     = useState<Product[]>([]);
+    const [loading, setLoading]       = useState(true);
+    const [loadError, setLoadError]   = useState<string | null>(null);
+    const [category, setCategory]     = useState("Todos");
+    const [search, setSearch]         = useState("");
+
+    useEffect(() => {
+        supabase
+            .from("products")
+            .select("id, name, category, unit, price, active")
+            .eq("admin_id", adminId)
+            .eq("active", true)
+            .order("name")
+            .then(({ data, error }) => {
+                if (error) setLoadError(error.message);
+                else setProducts((data ?? []) as Product[]);
+                setLoading(false);
+            });
+    }, [adminId]);
+
+    const categories = [
+        "Todos",
+        ...Array.from(new Set(products.map((p) => p.category))).sort(),
+    ];
+
+    const filtered = products.filter((p) => {
+        const matchCat    = category === "Todos" || p.category === category;
+        const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+        return matchCat && matchSearch;
+    });
+
+    const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
+    const qtyMap    = Object.fromEntries(cart.map((i) => [i.product_id, i.quantity]));
+
+    if (loadError) return (
+        <div className="bg-white rounded-2xl border border-stone-200/70 p-6 text-center space-y-3">
+            <p className="text-red-500 text-[13px]">{loadError}</p>
+            <button
+                onClick={() => window.location.reload()}
+                className="h-9 px-4 bg-stone-900 text-white rounded-xl text-[13px] font-semibold"
+            >
+                Tentar novamente
+            </button>
+        </div>
+    );
+
     return (
-        <div className="bg-white rounded-2xl border border-stone-200/70 p-6">
-            <p className="text-stone-400 text-[13px]">Step 2 — em construção</p>
+        <div className="space-y-4">
+            {/* Sticky cart summary */}
+            <div className="bg-white rounded-2xl border border-stone-200/70 px-5 py-3 flex items-center justify-between gap-4">
+                <span className="text-[13px] text-stone-500">
+                    {cartCount === 0 ? (
+                        "Nenhum item selecionado"
+                    ) : (
+                        <span>
+                            <strong className="text-stone-900">{cartCount} {cartCount === 1 ? "item" : "itens"}</strong>
+                            {" · "}R$ {cartTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </span>
+                    )}
+                </span>
+                <button
+                    onClick={onNext}
+                    disabled={cartCount === 0}
+                    className="h-9 px-5 bg-orange-500 text-white rounded-xl text-[13px] font-semibold hover:bg-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    Avançar →
+                </button>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-stone-200/70 p-5 space-y-4">
+                {/* Category pills */}
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat}
+                            onClick={() => setCategory(cat)}
+                            className={cn(
+                                "shrink-0 h-8 px-3 rounded-full text-[12px] font-semibold transition-colors",
+                                category === cat
+                                    ? "bg-stone-900 text-white"
+                                    : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                            )}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Search */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Buscar produto..."
+                        className="w-full h-10 pl-9 pr-3 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900 transition-colors"
+                    />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-[13px]">🔍</span>
+                </div>
+
+                {/* Product grid */}
+                {loading ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="h-24 bg-stone-100 rounded-xl animate-pulse" />
+                        ))}
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <p className="text-[13px] text-stone-400 text-center py-6">
+                        Nenhum produto encontrado.
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {filtered.map((p) => {
+                            const qty = qtyMap[p.id] ?? 0;
+                            return (
+                                <div
+                                    key={p.id}
+                                    className={cn(
+                                        "rounded-xl border p-3 transition-all",
+                                        qty > 0
+                                            ? "border-orange-300 bg-orange-50/60"
+                                            : "border-stone-200 bg-white"
+                                    )}
+                                >
+                                    <p className="text-[12px] font-semibold text-stone-900 leading-tight mb-0.5">
+                                        {p.name}
+                                    </p>
+                                    <p className="text-[11px] text-stone-400 mb-3">
+                                        R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} / {p.unit}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => onUpdateCart(p, -1)}
+                                            disabled={qty === 0}
+                                            className="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 disabled:opacity-30 disabled:cursor-not-allowed text-stone-700 font-bold text-[14px] flex items-center justify-center transition-colors"
+                                        >
+                                            −
+                                        </button>
+                                        <span className={cn(
+                                            "w-6 text-center text-[13px] font-semibold tabular-nums",
+                                            qty > 0 ? "text-orange-500" : "text-stone-300"
+                                        )}>
+                                            {qty}
+                                        </span>
+                                        <button
+                                            onClick={() => onUpdateCart(p, 1)}
+                                            className="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-[14px] flex items-center justify-center transition-colors"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex justify-start">
+                <button
+                    onClick={onBack}
+                    className="text-[13px] text-stone-400 hover:text-stone-700 transition-colors"
+                >
+                    ← Voltar
+                </button>
+            </div>
         </div>
     );
 }
