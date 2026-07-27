@@ -36,5 +36,12 @@ export function useClientSession(redirectOnMissing = true) {
         router.push("/login");
     }
 
-    return { session, loading, logout };
+    async function refresh() {
+        const data = await fetch("/api/auth/client")
+            .then((res) => (res.ok ? res.json() : null))
+            .catch(() => null);
+        if (data?.clientId) setSession(data as ClientSession);
+    }
+
+    return { session, loading, logout, refresh };
 }
