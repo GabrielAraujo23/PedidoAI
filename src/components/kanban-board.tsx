@@ -130,7 +130,7 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
                                         <div
                                             key={order.id}
                                             className={cn(
-                                                order.status === "cancelado" ? "opacity-60" : ""
+                                                order.status === "cancelado" && "opacity-60"
                                             )}
                                         >
                                             <KanbanItem

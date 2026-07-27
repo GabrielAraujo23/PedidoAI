@@ -1,5 +1,6 @@
 "use client";
 
+import type { ElementType } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CheckCircle2, Truck, Clock, PackageCheck, XCircle } from "lucide-react";
@@ -15,7 +16,7 @@ interface KanbanItemProps {
     cancelled?: boolean;
 }
 
-const STATUS_META: Record<Status, { icon: React.ElementType; color: string; bg: string; bar: string }> = {
+const STATUS_META: Record<Status, { icon: ElementType; color: string; bg: string; bar: string }> = {
     novo:       { icon: Clock,        color: "text-blue-500",    bg: "bg-blue-50",    bar: "bg-blue-400" },
     confirmado: { icon: CheckCircle2, color: "text-amber-500",   bg: "bg-amber-50",   bar: "bg-amber-400" },
     rota:       { icon: Truck,        color: "text-violet-500",  bg: "bg-violet-50",  bar: "bg-violet-400" },
