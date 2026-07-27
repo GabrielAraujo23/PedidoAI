@@ -113,7 +113,7 @@ export default function OrderTrackingPage() {
             setCancelling(false);
             return;
         }
-        const data = await res.json() as { ok?: boolean; error?: string };
+        const data = await res.json() as { error?: string };
         if (!res.ok) {
             setCancelError(data.error ?? "Erro ao cancelar.");
             setCancelling(false);
@@ -220,7 +220,7 @@ export default function OrderTrackingPage() {
                                     <div>
                                         <p className="font-bold text-[#111827]">Pedido cancelado</p>
                                         <p className="text-sm text-[#6B7280]">
-                                            Cancelado em {order.created_at ? formatDate(order.created_at) : "—"}
+                                            Pedido feito em {order.created_at ? formatDate(order.created_at) : "—"}
                                         </p>
                                     </div>
                                 </div>
@@ -336,7 +336,8 @@ export default function OrderTrackingPage() {
                                         {!confirmCancel ? (
                                             <button
                                                 onClick={() => setConfirmCancel(true)}
-                                                className="w-full h-10 border border-red-300 text-red-600 rounded-full text-sm font-bold hover:bg-red-50 transition-colors"
+                                                disabled={cancelling}
+                                                className="w-full h-10 border border-red-300 text-red-600 rounded-full text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50"
                                             >
                                                 Cancelar pedido
                                             </button>
