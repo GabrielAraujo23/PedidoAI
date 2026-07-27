@@ -1,4 +1,4 @@
-export type Status = "novo" | "confirmado" | "rota" | "entregue";
+export type Status = "novo" | "confirmado" | "rota" | "entregue" | "cancelado";
 
 export interface Order {
     id: string;
