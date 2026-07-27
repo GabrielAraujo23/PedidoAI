@@ -530,7 +530,7 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
     );
 }
 
-function Step3Confirm(_props: {
+function Step3Confirm({ client, cart, cartTotal, notes, onNotesChange, onBack, onDone }: {
     client: SelectedClient;
     cart: CartItem[];
     cartTotal: number;
@@ -539,9 +539,126 @@ function Step3Confirm(_props: {
     onBack: () => void;
     onDone: () => void;
 }) {
+    const [submitting, setSubmitting]   = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    async function confirm() {
+        setSubmitting(true);
+        setSubmitError(null);
+
+        try {
+            const res = await fetch("/api/atendimento/pedido", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    client_id: client.id,
+                    client_name: client.name,
+                    notes: notes.trim() || null,
+                    items: cart.map((i) => ({
+                        product_id: i.product_id,
+                        product_name: i.product_name,
+                        unit: i.unit,
+                        unit_price: i.unit_price,
+                        quantity: i.quantity,
+                    })),
+                }),
+            });
+
+            const body = await res.json() as { ok?: boolean; error?: string };
+
+            if (res.ok && body.ok) {
+                onDone();
+            } else {
+                setSubmitError(body.error ?? "Erro ao criar pedido. Tente novamente.");
+            }
+        } catch (e) {
+            setSubmitError(e instanceof Error ? e.message : "Erro de rede.");
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
     return (
-        <div className="bg-white rounded-2xl border border-stone-200/70 p-6">
-            <p className="text-stone-400 text-[13px]">Step 3 — em construção</p>
+        <div className="space-y-4">
+            {/* Client summary */}
+            <div className="bg-white rounded-2xl border border-stone-200/70 p-5">
+                <p className={cn(eyebrowClass, "mb-3")}>Cliente</p>
+                <p className="text-[15px] font-semibold text-stone-900">{client.name}</p>
+                <p className="text-[13px] text-stone-500 mt-0.5">
+                    {client.phone}{client.address ? ` · ${client.address}` : ""}
+                </p>
+            </div>
+
+            {/* Items list */}
+            <div className="bg-white rounded-2xl border border-stone-200/70 p-5">
+                <p className={cn(eyebrowClass, "mb-3")}>Itens do pedido</p>
+                <div className="divide-y divide-stone-100">
+                    {cart.map((item) => (
+                        <div key={item.product_id} className="py-2.5 flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                                <span className="text-[13px] font-medium text-stone-900">
+                                    {item.product_name}
+                                </span>
+                                <span className="text-[12px] text-stone-400 ml-2">
+                                    × {item.quantity} {item.unit}
+                                </span>
+                            </div>
+                            <span className="text-[13px] font-semibold text-stone-900 tabular-nums shrink-0">
+                                R$ {(item.unit_price * item.quantity).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+                <div className="border-t border-stone-200 mt-2 pt-3 flex items-center justify-between">
+                    <span className="text-[14px] font-bold text-stone-900">Total</span>
+                    <span
+                        className="text-[18px] font-bold text-stone-900 tabular-nums"
+                        style={sectionTitleStyle}
+                    >
+                        R$ {cartTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                </div>
+            </div>
+
+            {/* Observations */}
+            <div className="bg-white rounded-2xl border border-stone-200/70 p-5">
+                <label className={cn(eyebrowClass, "block mb-3")}>Observações (opcional)</label>
+                <textarea
+                    value={notes}
+                    onChange={(e) => onNotesChange(e.target.value)}
+                    placeholder="Entregar no fundo, portão azul..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900 transition-colors resize-none"
+                />
+            </div>
+
+            {submitError && (
+                <p className="text-[12px] text-red-600 text-center">{submitError}</p>
+            )}
+
+            <div className="flex items-center justify-between gap-4">
+                <button
+                    onClick={onBack}
+                    disabled={submitting}
+                    className="text-[13px] text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
+                >
+                    ← Editar produtos
+                </button>
+                <button
+                    onClick={confirm}
+                    disabled={submitting}
+                    className="h-11 px-8 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                    {submitting ? (
+                        <>
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Criando pedido...
+                        </>
+                    ) : (
+                        "✓ Confirmar Pedido"
+                    )}
+                </button>
+            </div>
         </div>
     );
 }
