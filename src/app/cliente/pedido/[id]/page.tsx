@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
     CheckCircle, Clock, Truck, Star,
-    Package, MessageCircle, Plus, Loader2,
+    Package, MessageCircle, Plus, Loader2, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -44,7 +44,7 @@ const STEPS: { status: Status; label: string; Icon: typeof Package }[] = [
 ];
 
 const STATUS_ORDER: Record<Status, number> = {
-    novo: 0, confirmado: 1, rota: 2, entregue: 3,
+    novo: 0, confirmado: 1, rota: 2, entregue: 3, cancelado: -1,
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -68,6 +68,9 @@ export default function OrderTrackingPage() {
     const [order, setOrder] = useState<OrderData | null>(null);
     const [items, setItems] = useState<OrderItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [cancelling, setCancelling]       = useState(false);
+    const [cancelError, setCancelError]     = useState<string | null>(null);
+    const [confirmCancel, setConfirmCancel] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -97,6 +100,29 @@ export default function OrderTrackingPage() {
 
         fetchOrder();
     }, [session, id]);
+
+    async function handleCancel() {
+        setCancelling(true);
+        setCancelError(null);
+        const res = await fetch(`/api/cliente/pedido/${id}/cancelar`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+        }).catch(() => null);
+        if (!res) {
+            setCancelError("Erro de rede. Tente novamente.");
+            setCancelling(false);
+            return;
+        }
+        const data = await res.json() as { ok?: boolean; error?: string };
+        if (!res.ok) {
+            setCancelError(data.error ?? "Erro ao cancelar.");
+            setCancelling(false);
+            return;
+        }
+        setOrder((prev) => prev ? { ...prev, status: "cancelado" } : prev);
+        setConfirmCancel(false);
+        setCancelling(false);
+    }
 
     if (!mounted || sessionLoading || !session) return null;
 
@@ -138,85 +164,112 @@ export default function OrderTrackingPage() {
                         {/* ── Left column ──────────────────────────────────── */}
                         <div className="flex-1 space-y-4">
 
-                            {/* Success card */}
-                            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm text-center">
-                                <div className="w-14 h-14 bg-[#22C55E]/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <CheckCircle className="w-8 h-8 text-[#22C55E]" />
-                                </div>
-                                <p className="text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">SUCESSO</p>
-                                <h1 className="text-2xl font-bold text-[#111827] mb-2">
-                                    Pedido #{order.id} realizado!
-                                </h1>
-                                <p className="text-sm text-[#6B7280] mb-5">
-                                    Seu pedido foi processado com sucesso e está sendo preparado com todo carinho pela nossa equipe.
-                                </p>
-                                <div className="flex gap-3 justify-center">
-                                    <a
-                                        href="https://wa.me/"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-[#22C55E] text-white rounded-full text-sm font-bold hover:bg-[#22C55E]/90 transition-colors"
-                                    >
-                                        <MessageCircle className="w-4 h-4" />
-                                        WhatsApp
-                                    </a>
+                            {order.status === "cancelado" ? (
+                                <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm text-center">
+                                    <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <XCircle className="w-8 h-8 text-red-500" />
+                                    </div>
+                                    <h1 className="text-2xl font-bold text-[#111827] mb-2">Pedido #{order.id} cancelado</h1>
+                                    <p className="text-sm text-[#6B7280] mb-5">Este pedido foi cancelado.</p>
                                     <Link
                                         href="/cliente/catalogo"
-                                        className="flex items-center gap-2 px-5 py-2.5 border-2 border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
                                         Fazer novo pedido
                                     </Link>
                                 </div>
-                            </div>
-
-                            {/* Status tracker */}
-                            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm">
-                                <h2 className="font-bold text-[#111827] mb-6">Status do Envio</h2>
-
-                                {/* Steps */}
-                                <div className="relative flex justify-between">
-                                    {/* Connecting line */}
-                                    <div className="absolute top-5 left-0 right-0 h-0.5 bg-[#E5E7EB]" />
-                                    <div
-                                        className="absolute top-5 left-0 h-0.5 bg-[#22C55E] transition-all duration-500"
-                                        style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}
-                                    />
-
-                                    {STEPS.map((step, idx) => {
-                                        const done = idx < currentStepIndex;
-                                        const active = idx === currentStepIndex;
-                                        const Icon = step.Icon;
-
-                                        return (
-                                            <div key={step.status} className="relative flex flex-col items-center z-10">
-                                                <div className={cn(
-                                                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
-                                                    done
-                                                        ? "bg-[#22C55E] border-[#22C55E] text-white"
-                                                        : active
-                                                            ? "bg-[#F97316] border-[#F97316] text-white"
-                                                            : "bg-white border-[#E5E7EB] text-[#6B7280]"
-                                                )}>
-                                                    {done ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                                                </div>
-                                                <p className={cn(
-                                                    "text-[11px] font-semibold mt-2 text-center",
-                                                    active ? "text-[#F97316]" : done ? "text-[#22C55E]" : "text-[#6B7280]"
-                                                )}>
-                                                    {step.label}
-                                                </p>
-                                                {active && (
-                                                    <p className="text-[10px] text-[#6B7280] mt-0.5">A caminho</p>
-                                                )}
-                                                {done && order.created_at && (
-                                                    <p className="text-[10px] text-[#6B7280] mt-0.5">{formatDate(order.created_at)}</p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
+                            ) : (
+                                <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm text-center">
+                                    <div className="w-14 h-14 bg-[#22C55E]/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <CheckCircle className="w-8 h-8 text-[#22C55E]" />
+                                    </div>
+                                    <p className="text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">SUCESSO</p>
+                                    <h1 className="text-2xl font-bold text-[#111827] mb-2">
+                                        Pedido #{order.id} realizado!
+                                    </h1>
+                                    <p className="text-sm text-[#6B7280] mb-5">
+                                        Seu pedido foi processado com sucesso e está sendo preparado com todo carinho pela nossa equipe.
+                                    </p>
+                                    <div className="flex gap-3 justify-center">
+                                        <a
+                                            href="https://wa.me/"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 px-5 py-2.5 bg-[#22C55E] text-white rounded-full text-sm font-bold hover:bg-[#22C55E]/90 transition-colors"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                            WhatsApp
+                                        </a>
+                                        <Link
+                                            href="/cliente/catalogo"
+                                            className="flex items-center gap-2 px-5 py-2.5 border-2 border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Fazer novo pedido
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {order.status === "cancelado" ? (
+                                <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                        <XCircle className="w-5 h-5 text-red-500" />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-[#111827]">Pedido cancelado</p>
+                                        <p className="text-sm text-[#6B7280]">
+                                            Cancelado em {order.created_at ? formatDate(order.created_at) : "—"}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm">
+                                    <h2 className="font-bold text-[#111827] mb-6">Status do Envio</h2>
+
+                                    <div className="relative flex justify-between">
+                                        <div className="absolute top-5 left-0 right-0 h-0.5 bg-[#E5E7EB]" />
+                                        <div
+                                            className="absolute top-5 left-0 h-0.5 bg-[#22C55E] transition-all duration-500"
+                                            style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}
+                                        />
+
+                                        {STEPS.map((step, idx) => {
+                                            const done   = idx < currentStepIndex;
+                                            const active = idx === currentStepIndex;
+                                            const Icon   = step.Icon;
+
+                                            return (
+                                                <div key={step.status} className="relative flex flex-col items-center z-10">
+                                                    <div className={cn(
+                                                        "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all",
+                                                        done
+                                                            ? "bg-[#22C55E] border-[#22C55E] text-white"
+                                                            : active
+                                                                ? "bg-[#F97316] border-[#F97316] text-white"
+                                                                : "bg-white border-[#E5E7EB] text-[#6B7280]"
+                                                    )}>
+                                                        {done ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                                                    </div>
+                                                    <p className={cn(
+                                                        "text-[11px] font-semibold mt-2 text-center",
+                                                        active ? "text-[#F97316]" : done ? "text-[#22C55E]" : "text-[#6B7280]"
+                                                    )}>
+                                                        {step.label}
+                                                    </p>
+                                                    {active && (
+                                                        <p className="text-[10px] text-[#6B7280] mt-0.5">A caminho</p>
+                                                    )}
+                                                    {done && order.created_at && (
+                                                        <p className="text-[10px] text-[#6B7280] mt-0.5">{formatDate(order.created_at)}</p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* ── Right sidebar ─────────────────────────────────── */}
@@ -277,6 +330,42 @@ export default function OrderTrackingPage() {
                                         </p>
                                     </div>
                                 </div>
+
+                                {order.status === "novo" && (
+                                    <div className="border-t border-[#E5E7EB] mt-3 pt-3">
+                                        {!confirmCancel ? (
+                                            <button
+                                                onClick={() => setConfirmCancel(true)}
+                                                className="w-full h-10 border border-red-300 text-red-600 rounded-full text-sm font-bold hover:bg-red-50 transition-colors"
+                                            >
+                                                Cancelar pedido
+                                            </button>
+                                        ) : (
+                                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+                                                <p className="text-sm font-semibold text-red-800">Tem certeza?</p>
+                                                <p className="text-xs text-red-600">Esta ação não pode ser desfeita.</p>
+                                                {cancelError && <p className="text-xs text-red-700">{cancelError}</p>}
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => { setConfirmCancel(false); setCancelError(null); }}
+                                                        disabled={cancelling}
+                                                        className="flex-1 h-9 border border-red-300 text-red-600 rounded-full text-xs font-bold hover:bg-white transition-colors disabled:opacity-50"
+                                                    >
+                                                        Manter
+                                                    </button>
+                                                    <button
+                                                        onClick={handleCancel}
+                                                        disabled={cancelling}
+                                                        className="flex-1 h-9 bg-red-600 text-white rounded-full text-xs font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                                                    >
+                                                        {cancelling && <Loader2 className="w-3 h-3 animate-spin" />}
+                                                        Sim, cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <Link
                                     href="/cliente/catalogo"
