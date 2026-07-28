@@ -384,7 +384,7 @@ export default function ProfilePage() {
                                 return (
                                     <button
                                         key={id}
-                                        onClick={() => setActiveNav(id)}
+                                        onClick={() => { setActiveNav(id); setRepeatError(null); }}
                                         className={cn(
                                             "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] transition-all duration-200 text-left group",
                                             isActive
@@ -593,7 +593,7 @@ export default function ProfilePage() {
                                                         </div>
                                                     </Link>
 
-                                                    <div className="pb-3 pl-14 flex flex-col gap-1">
+                                                    <div className="pb-3 pl-14 flex flex-col gap-1" aria-live="polite">
                                                         {repeating === order.id ? (
                                                             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-400">
                                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -601,9 +601,11 @@ export default function ProfilePage() {
                                                             </span>
                                                         ) : (
                                                             <button
+                                                                aria-label={`Repetir pedido #ORD-${order.id.padStart(4, "0")}`}
                                                                 onClick={() => handleRepeat(order.id)}
                                                                 disabled={repeating !== null}
-                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-40"
+                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                type="button"
                                                             >
                                                                 <RotateCcw className="w-3.5 h-3.5" />
                                                                 Repetir
