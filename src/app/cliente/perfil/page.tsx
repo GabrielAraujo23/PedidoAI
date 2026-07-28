@@ -570,7 +570,7 @@ export default function ProfilePage() {
                                                 <li key={order.id}>
                                                     <Link
                                                         href={`/cliente/pedido/${order.id}`}
-                                                        className="flex items-center gap-4 py-4 group"
+                                                        className="flex items-center gap-4 pt-4 pb-2 group"
                                                     >
                                                         <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
                                                             <Package className="w-4 h-4 text-stone-600" />
@@ -592,6 +592,36 @@ export default function ProfilePage() {
                                                             <ArrowUpRight className="w-3.5 h-3.5 text-stone-400 transition-all duration-200 group-hover:text-stone-900 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ml-auto mt-1" />
                                                         </div>
                                                     </Link>
+
+                                                    <div className="pb-3 pl-14 flex flex-col gap-1">
+                                                        {repeating === order.id ? (
+                                                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-400">
+                                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                Repetindo...
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleRepeat(order.id)}
+                                                                disabled={repeating !== null}
+                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-40"
+                                                            >
+                                                                <RotateCcw className="w-3.5 h-3.5" />
+                                                                Repetir
+                                                            </button>
+                                                        )}
+                                                        {repeatWarning?.orderId === order.id && (
+                                                            <p className="text-xs text-amber-600 flex items-center gap-1">
+                                                                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                                                {repeatWarning.skipped.length} produto(s) indisponível(is) ignorado(s). Redirecionando...
+                                                            </p>
+                                                        )}
+                                                        {repeatError?.orderId === order.id && (
+                                                            <p className="text-xs text-red-600 flex items-center gap-1">
+                                                                <XCircle className="w-3.5 h-3.5 shrink-0" />
+                                                                {repeatError.message}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </li>
                                             );
                                         })}
