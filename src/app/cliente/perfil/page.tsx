@@ -112,6 +112,7 @@ export default function ProfilePage() {
     const [addrFields, setAddrFields]   = useState<AddrFields>(EMPTY_ADDR);
     const [numberField, setNumberField] = useState("");
     const fetchedCepRef                 = useRef("");
+    const repeatTimeoutRef              = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Repeat order state
     const [repeating, setRepeating]         = useState<string | null>(null);
@@ -122,6 +123,12 @@ export default function ProfilePage() {
     const router = useRouter();
 
     useEffect(() => { setMounted(true); }, []);
+
+    useEffect(() => {
+        return () => {
+            if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         if (!session) return;
@@ -231,10 +238,16 @@ export default function ProfilePage() {
         setRepeatWarning(null);
         setRepeatError(null);
 
-        const { data: itemsData } = await supabase
+        const { data: itemsData, error: itemsError } = await supabase
             .from("order_items")
             .select("product_id, product_name, quantity")
             .eq("order_id", orderId);
+
+        if (itemsError) {
+            setRepeatError({ orderId, message: "Erro ao carregar itens do pedido." });
+            setRepeating(null);
+            return;
+        }
 
         if (!itemsData || itemsData.length === 0) {
             setRepeatError({ orderId, message: "Este pedido não tem itens registrados." });
@@ -243,12 +256,18 @@ export default function ProfilePage() {
         }
 
         const productIds = itemsData.map((i) => i.product_id);
-        const { data: productsData } = await supabase
+        const { data: productsData, error: productsError } = await supabase
             .from("products")
             .select("id, name, unit, price")
             .in("id", productIds)
             .eq("active", true)
             .eq("admin_id", session!.adminId);
+
+        if (productsError) {
+            setRepeatError({ orderId, message: "Erro ao verificar produtos disponíveis." });
+            setRepeating(null);
+            return;
+        }
 
         const activeMap = new Map((productsData ?? []).map((p) => [p.id, p]));
 
@@ -274,7 +293,8 @@ export default function ProfilePage() {
 
         if (skipped.length > 0) {
             setRepeatWarning({ orderId, skipped });
-            setTimeout(() => router.push("/cliente/catalogo"), 2000);
+            if (repeatTimeoutRef.current) clearTimeout(repeatTimeoutRef.current);
+            repeatTimeoutRef.current = setTimeout(() => router.push("/cliente/catalogo"), 2000);
         } else {
             router.push("/cliente/catalogo");
         }
