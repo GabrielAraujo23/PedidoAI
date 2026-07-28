@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     User, Package, MapPin, Settings,
     ChevronRight, Bell, Moon, LogOut, Star,
     CheckCircle, Truck, Clock, Home, Briefcase,
     ArrowUpRight, Check, Loader2, X,
+    RotateCcw, AlertCircle, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -111,7 +113,13 @@ export default function ProfilePage() {
     const [numberField, setNumberField] = useState("");
     const fetchedCepRef                 = useRef("");
 
-    const { clearCart } = useCart();
+    // Repeat order state
+    const [repeating, setRepeating]         = useState<string | null>(null);
+    const [repeatWarning, setRepeatWarning] = useState<{ orderId: string; skipped: string[] } | null>(null);
+    const [repeatError, setRepeatError]     = useState<{ orderId: string; message: string } | null>(null);
+
+    const { clearCart, addItem, updateQuantity } = useCart();
+    const router = useRouter();
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -216,6 +224,60 @@ export default function ProfilePage() {
         setSaving(false); setEditing(false);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
+    }
+
+    async function handleRepeat(orderId: string) {
+        setRepeating(orderId);
+        setRepeatWarning(null);
+        setRepeatError(null);
+
+        const { data: itemsData } = await supabase
+            .from("order_items")
+            .select("product_id, product_name, quantity")
+            .eq("order_id", orderId);
+
+        if (!itemsData || itemsData.length === 0) {
+            setRepeatError({ orderId, message: "Este pedido não tem itens registrados." });
+            setRepeating(null);
+            return;
+        }
+
+        const productIds = itemsData.map((i) => i.product_id);
+        const { data: productsData } = await supabase
+            .from("products")
+            .select("id, name, unit, price")
+            .in("id", productIds)
+            .eq("active", true)
+            .eq("admin_id", session!.adminId);
+
+        const activeMap = new Map((productsData ?? []).map((p) => [p.id, p]));
+
+        const toAdd   = itemsData.filter((i) => activeMap.has(i.product_id));
+        const skipped = itemsData
+            .filter((i) => !activeMap.has(i.product_id))
+            .map((i) => i.product_name as string);
+
+        if (toAdd.length === 0) {
+            setRepeatError({ orderId, message: "Nenhum produto disponível para repetir." });
+            setRepeating(null);
+            return;
+        }
+
+        clearCart();
+        for (const item of toAdd) {
+            const product = activeMap.get(item.product_id)!;
+            addItem({ product_id: product.id, name: product.name, unit: product.unit, price: product.price });
+            updateQuantity(item.product_id, item.quantity as number);
+        }
+
+        setRepeating(null);
+
+        if (skipped.length > 0) {
+            setRepeatWarning({ orderId, skipped });
+            setTimeout(() => router.push("/cliente/catalogo"), 2000);
+        } else {
+            router.push("/cliente/catalogo");
+        }
     }
 
     if (!mounted || sessionLoading || !session) return null;
