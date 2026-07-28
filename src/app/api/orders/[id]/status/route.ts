@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import type { Status } from "@/lib/types";
+import { isNotifiableStatus, buildMessage, sendWhatsApp, NotifiableStatus } from "@/lib/whatsapp";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,7 +41,7 @@ export async function PATCH(
 
     const { data: order, error: orderErr } = await supabase
         .from("orders")
-        .select("id, status, admin_id")
+        .select("id, status, admin_id, client_id")
         .eq("id", orderId)
         .eq("admin_id", session.adminId)
         .single();
@@ -98,6 +99,26 @@ export async function PATCH(
                 await supabase.from("stock_movements").insert(stockMovements);
             }
         }
+    }
+
+    // Notificação WhatsApp (fire-and-forget)
+    if (isNotifiableStatus(status as string)) {
+        void (async () => {
+            const { data: client } = await supabase
+                .from("clients")
+                .select("name, phone")
+                .eq("id", order.client_id)
+                .eq("admin_id", session.adminId)
+                .single();
+            if (client?.phone) {
+                const message = buildMessage(status as NotifiableStatus, client.name, orderId);
+                try {
+                    await sendWhatsApp(client.phone, message);
+                } catch (e) {
+                    console.error("[status] sendWhatsApp threw:", e);
+                }
+            }
+        })().catch(() => {});
     }
 
     return NextResponse.json({ ok: true, status });
