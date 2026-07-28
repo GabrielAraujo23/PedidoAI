@@ -51,6 +51,7 @@ export async function POST(
         .from("clients")
         .select("name, phone")
         .eq("id", order.client_id)
+        .eq("admin_id", session.adminId)
         .single();
 
     if (!client?.phone) return NextResponse.json({ ok: true });
