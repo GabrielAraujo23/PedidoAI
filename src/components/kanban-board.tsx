@@ -102,6 +102,7 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
             });
 
         for (const u of updates) {
+            const original = orders.find((orig) => orig.id === u.id);
             const { error } = await supabase
                 .from("orders")
                 .update({ status: u.status, position: u.position })
@@ -110,6 +111,15 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
                 console.error("[kanban] update error:", error.message);
                 setOrders(snapshot);
                 return;
+            }
+
+            // Notificar apenas quando o status mudou (não em reordenação dentro da coluna)
+            if (original && original.status !== u.status) {
+                fetch(`/api/orders/${u.id}/notify`, {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body:    JSON.stringify({ status: u.status }),
+                }).catch(() => {}); // fire-and-forget — erros de rede ignorados
             }
         }
     }
