@@ -19,6 +19,7 @@ export function buildMessage(status: NotifiableStatus, nome: string, id: string)
 
 export function formatPhone(raw: string): string {
     const digits = raw.replace(/\D/g, "");
+    if (!digits) return "";
     return digits.startsWith("55") ? digits : `55${digits}`;
 }
 
@@ -31,16 +32,31 @@ export async function sendWhatsApp(phone: string, message: string): Promise<void
         return;
     }
 
+    const formatted = formatPhone(phone);
+    if (!formatted) {
+        console.warn("[whatsapp] Número de telefone inválido, mensagem não enviada.");
+        return;
+    }
+
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8_000);
 
-    const res = await fetch(url, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ phone: formatPhone(phone), message }),
-    });
+    try {
+        const res = await fetch(url, {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ phone: formatted, message }),
+            signal:  controller.signal,
+        });
 
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        console.error(`[whatsapp] Z-API erro ${res.status}: ${text}`);
+        if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            console.error(`[whatsapp] Z-API erro ${res.status}: ${text}`);
+        }
+    } catch (err) {
+        console.error("[whatsapp] Falha/timeout ao enviar WhatsApp:", err);
+    } finally {
+        clearTimeout(timer);
     }
 }
