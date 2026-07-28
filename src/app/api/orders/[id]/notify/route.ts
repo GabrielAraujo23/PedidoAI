@@ -56,8 +56,6 @@ export async function POST(
 
     if (!client?.phone) return NextResponse.json({ ok: true });
 
-    console.log(`[notify] order=${orderId} client="${client.name}" phone="${client.phone}" status=${status}`);
-
     const message = buildMessage(status as NotifiableStatus, client.name, orderId);
 
     // Fire-and-forget: resposta volta antes do envio concluir
