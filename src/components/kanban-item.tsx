@@ -1,8 +1,9 @@
 "use client";
 
+import type { ElementType } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckCircle2, Truck, Clock, PackageCheck } from "lucide-react";
+import { CheckCircle2, Truck, Clock, PackageCheck, XCircle } from "lucide-react";
 import { Status } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -12,13 +13,15 @@ interface KanbanItemProps {
     products: string;
     status: Status;
     created_at?: string;
+    cancelled?: boolean;
 }
 
-const STATUS_META: Record<Status, { icon: React.ElementType; color: string; bg: string; bar: string }> = {
+const STATUS_META: Record<Status, { icon: ElementType; color: string; bg: string; bar: string }> = {
     novo:       { icon: Clock,        color: "text-blue-500",    bg: "bg-blue-50",    bar: "bg-blue-400" },
     confirmado: { icon: CheckCircle2, color: "text-amber-500",   bg: "bg-amber-50",   bar: "bg-amber-400" },
     rota:       { icon: Truck,        color: "text-violet-500",  bg: "bg-violet-50",  bar: "bg-violet-400" },
     entregue:   { icon: PackageCheck, color: "text-emerald-500", bg: "bg-emerald-50", bar: "bg-emerald-400" },
+    cancelado:  { icon: XCircle,      color: "text-red-500",     bg: "bg-red-50",     bar: "bg-red-400" },
 };
 
 function formatRelativeTime(dateStr?: string) {
@@ -34,7 +37,7 @@ function formatRelativeTime(dateStr?: string) {
     return `${days}d atrás`;
 }
 
-export function KanbanItem({ id, client, products, status, created_at }: KanbanItemProps) {
+export function KanbanItem({ id, client, products, status, created_at, cancelled }: KanbanItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = { transform: CSS.Transform.toString(transform), transition };
@@ -50,7 +53,8 @@ export function KanbanItem({ id, client, products, status, created_at }: KanbanI
                 "hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5",
                 "active:shadow-xl active:scale-[0.98] cursor-grab active:cursor-grabbing",
                 "transition-all duration-150 overflow-hidden",
-                isDragging && "opacity-50 rotate-1 shadow-2xl scale-105 border-primary/30"
+                isDragging && "opacity-50 rotate-1 shadow-2xl scale-105 border-primary/30",
+                cancelled && "border-red-200/60"
             )}>
                 {/* Left accent bar */}
                 <div className={cn("absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl", meta.bar)} />

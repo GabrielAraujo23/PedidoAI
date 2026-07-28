@@ -30,6 +30,7 @@ const STATUS_LABELS: Record<Status, string> = {
     confirmado: "Confirmado",
     rota: "Em Rota",
     entregue: "Entregue",
+    cancelado: "Cancelado",
 };
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -37,6 +38,7 @@ const STATUS_COLORS: Record<Status, string> = {
     confirmado: "bg-amber-50  text-amber-600  border-amber-100",
     rota:       "bg-violet-50 text-violet-600 border-violet-100",
     entregue:   "bg-emerald-50 text-emerald-600 border-emerald-100",
+    cancelado:  "bg-red-50 text-red-600 border-red-100",
 };
 
 const STATUS_DOT: Record<Status, string> = {
@@ -44,6 +46,7 @@ const STATUS_DOT: Record<Status, string> = {
     confirmado: "bg-amber-400",
     rota:       "bg-violet-500",
     entregue:   "bg-emerald-500",
+    cancelado:  "bg-red-500",
 };
 
 const STAT_CARDS: {

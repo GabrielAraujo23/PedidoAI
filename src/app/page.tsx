@@ -20,17 +20,9 @@ const STATUS_CONFIG: Record<Status, { label: string; tone: string }> = {
     confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60" },
     rota:       { label: "Em rota",    tone: "bg-violet-50 text-violet-700 border-violet-200/60" },
     entregue:   { label: "Entregue",   tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60" },
+    cancelado:  { label: "Cancelado",  tone: "bg-red-50 text-red-700 border-red-200/60" },
 };
 
-const chartData = [
-    { name: "Seg", pedidos: 4 },
-    { name: "Ter", pedidos: 7 },
-    { name: "Qua", pedidos: 5 },
-    { name: "Qui", pedidos: 9 },
-    { name: "Sex", pedidos: 12 },
-    { name: "Sáb", pedidos: 8 },
-    { name: "Dom", pedidos: 3 },
-];
 
 interface DashboardStats {
     totalOrders: number;
@@ -52,6 +44,7 @@ export default function DashboardPage() {
         novoCount: 0,
         recentOrders: [],
     });
+    const [chartData, setChartData] = useState<{ name: string; pedidos: number }[]>([]);
 
     useEffect(() => {
         if (!adminSession) return;
@@ -72,6 +65,34 @@ export default function DashboardPage() {
                     novoCount: orders.filter((o) => o.status === "novo").length,
                     recentOrders: sorted.slice(0, 5) as Order[],
                 });
+
+                // Build real weekly chart data
+                const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                const today = new Date();
+                const weekData = Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() - (6 - i));
+                    return {
+                        name: days[d.getDay()],
+                        date: d.toISOString().slice(0, 10),
+                        pedidos: 0,
+                    };
+                });
+
+                const sevenDaysAgo = weekData[0].date + "T00:00:00.000Z";
+                const { data: recentOrders } = await supabase
+                    .from("orders")
+                    .select("created_at")
+                    .eq("admin_id", adminSession!.adminId)
+                    .gte("created_at", sevenDaysAgo);
+
+                (recentOrders ?? []).forEach((o) => {
+                    const day = o.created_at?.slice(0, 10);
+                    const entry = weekData.find((w) => w.date === day);
+                    if (entry) entry.pedidos++;
+                });
+
+                setChartData(weekData.map(({ name, pedidos }) => ({ name, pedidos })));
             }
         }
         load();
@@ -186,7 +207,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-2.5 py-1 rounded-full">
                             <TrendingUp className="w-3 h-3" />
-                            <span className="font-semibold">+12%</span>
+                            <span className="font-semibold">{chartData.reduce((s, d) => s + d.pedidos, 0)} esta semana</span>
                         </div>
                     </header>
 

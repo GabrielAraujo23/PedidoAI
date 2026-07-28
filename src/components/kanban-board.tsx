@@ -27,6 +27,7 @@ const COLUMNS: { id: Status; title: string; dot: string; badge: string }[] = [
     { id: "confirmado", title: "Confirmado", dot: "bg-orange-400", badge: "bg-orange-50 text-orange-600" },
     { id: "rota",       title: "Em Rota",    dot: "bg-purple-500", badge: "bg-purple-50 text-purple-600" },
     { id: "entregue",   title: "Entregue",   dot: "bg-green-500",  badge: "bg-green-50 text-green-600" },
+    { id: "cancelado",  title: "Cancelado",  dot: "bg-red-400",    badge: "bg-red-50 text-red-700" },
 ];
 
 function DroppableColumn({ id, children }: { id: string; children: React.ReactNode }) {
@@ -62,6 +63,7 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
         const activeId = active.id as string;
         const overId = over.id as string;
         const isColumn = COLUMNS.some((col) => col.id === overId);
+        const snapshot = orders; // for rollback on DB error
 
         let updatedOrders: Order[] = [];
 
@@ -100,13 +102,21 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
             });
 
         for (const u of updates) {
-            await supabase.from("orders").update({ status: u.status, position: u.position }).eq("id", u.id);
+            const { error } = await supabase
+                .from("orders")
+                .update({ status: u.status, position: u.position })
+                .eq("id", u.id);
+            if (error) {
+                console.error("[kanban] update error:", error.message);
+                setOrders(snapshot);
+                return;
+            }
         }
     }
 
     return (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-            <div className="grid grid-cols-2 gap-3 h-full">
+            <div className="grid grid-cols-5 gap-3 h-full">
                 {COLUMNS.map((col) => {
                     const colOrders = orders.filter((o) => o.status === col.id);
                     return (
@@ -126,14 +136,21 @@ export function KanbanBoard({ orders, setOrders }: KanbanBoardProps) {
                             >
                                 <DroppableColumn id={col.id}>
                                     {colOrders.map((order) => (
-                                        <KanbanItem
+                                        <div
                                             key={order.id}
-                                            id={order.id}
-                                            client={order.client}
-                                            products={order.products}
-                                            status={order.status}
-                                            created_at={order.created_at}
-                                        />
+                                            className={cn(
+                                                order.status === "cancelado" && "opacity-60"
+                                            )}
+                                        >
+                                            <KanbanItem
+                                                id={order.id}
+                                                client={order.client}
+                                                products={order.products}
+                                                status={order.status}
+                                                created_at={order.created_at}
+                                                cancelled={order.status === "cancelado"}
+                                            />
+                                        </div>
                                     ))}
                                     {colOrders.length === 0 && (
                                         <p className="text-xs text-slate-400 text-center pt-6">Nenhum pedido</p>

@@ -113,6 +113,13 @@
     display: none;
   }
 
+  /* Barcode scanner scan-line animation */
+  @keyframes scanline {
+    0%   { top: 0%; opacity: 1; }
+    50%  { top: calc(100% - 2px); opacity: 1; }
+    100% { top: 0%; opacity: 1; }
+  }
+
   /* Editorial warm cream + light grain — replaces inline <svg> grain.
      Mobile-safe: no mix-blend, no fixed-position SVG, no feTurbulence at runtime */
   .bg-warm {

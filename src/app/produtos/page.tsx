@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { StockBadge } from "@/components/stock-badge";
 
 const CATEGORIES = [
     "Outros Produtos",
@@ -51,6 +52,8 @@ interface Product {
     price: number;
     active: boolean;
     created_at: string;
+    stock_quantity: number;
+    barcode: string | null;
 }
 
 interface ProductForm {
@@ -373,6 +376,7 @@ export default function ProdutosPage() {
                                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Categoria</th>
                                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Unidade</th>
                                 <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Preço</th>
+                                <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Estoque</th>
                                 <th className="text-center px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                                 <th className="px-4 py-3" />
                             </tr>
@@ -401,6 +405,9 @@ export default function ProdutosPage() {
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{p.unit}</td>
                                     <td className="px-4 py-3 text-right font-semibold text-secondary">{formatCurrency(p.price)}</td>
+                                    <td className="px-4 py-3 text-center hidden md:table-cell">
+                                        <StockBadge quantity={p.stock_quantity} showNumber={false} />
+                                    </td>
                                     <td className="px-4 py-3 text-center">
                                         <button
                                             onClick={() => handleToggleActive(p)}

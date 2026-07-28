@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { ClientSession } from "@/lib/auth-context";
 
+async function fetchClientSession(): Promise<ClientSession | null> {
+    return fetch("/api/auth/client")
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null);
+}
+
 /**
  * Reads the client session from an httpOnly cookie via GET /api/auth/client.
  * Redirects to /login if no valid session is found.
@@ -16,16 +22,14 @@ export function useClientSession(redirectOnMissing = true) {
     const router = useRouter();
 
     useEffect(() => {
-        fetch("/api/auth/client")
-            .then((res) => (res.ok ? res.json() : null))
-            .then((data: ClientSession | null) => {
+        fetchClientSession()
+            .then((data) => {
                 if (!data?.clientId) {
                     if (redirectOnMissing) router.push("/login");
                 } else {
                     setSession(data);
                 }
             })
-            .catch(() => { if (redirectOnMissing) router.push("/login"); })
             .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -36,5 +40,10 @@ export function useClientSession(redirectOnMissing = true) {
         router.push("/login");
     }
 
-    return { session, loading, logout };
+    async function refresh() {
+        const data = await fetchClientSession();
+        if (data?.clientId) setSession(data);
+    }
+
+    return { session, loading, logout, refresh };
 }
