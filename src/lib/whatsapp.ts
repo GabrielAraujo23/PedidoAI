@@ -24,11 +24,12 @@ export function formatPhone(raw: string): string {
 }
 
 export async function sendWhatsApp(phone: string, message: string): Promise<void> {
-    const instanceId = process.env.ZAPI_INSTANCE_ID;
-    const token      = process.env.ZAPI_TOKEN;
+    const instanceId  = process.env.ZAPI_INSTANCE_ID;
+    const token       = process.env.ZAPI_TOKEN;
+    const clientToken = process.env.ZAPI_CLIENT_TOKEN;
 
-    if (!instanceId || !token) {
-        console.warn("[whatsapp] ZAPI_INSTANCE_ID ou ZAPI_TOKEN não configurado.");
+    if (!instanceId || !token || !clientToken) {
+        console.warn("[whatsapp] ZAPI_INSTANCE_ID, ZAPI_TOKEN ou ZAPI_CLIENT_TOKEN não configurado.");
         return;
     }
 
@@ -45,7 +46,7 @@ export async function sendWhatsApp(phone: string, message: string): Promise<void
     try {
         const res = await fetch(url, {
             method:  "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "Client-Token": clientToken },
             body:    JSON.stringify({ phone: formatted, message }),
             signal:  controller.signal,
         });
