@@ -108,7 +108,6 @@ export async function PATCH(
                 .from("clients")
                 .select("name, phone")
                 .eq("id", order.client_id)
-                .eq("admin_id", session.adminId)
                 .single();
             if (client?.phone) {
                 const message = buildMessage(status as NotifiableStatus, client.name, orderId);
