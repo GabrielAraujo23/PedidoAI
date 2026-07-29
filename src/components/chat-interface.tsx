@@ -231,6 +231,9 @@ export function ChatInterface({ onOrderCreated }: { onOrderCreated?: () => void 
 
             if (error) throw error;
 
+            // Notificação WhatsApp fire-and-forget
+            fetch(`/api/cliente/pedido/${nextId}/notificar`, { method: "POST" }).catch(() => {});
+
             logEvent({
                 event_type: "order_created",
                 actor_type: "client",

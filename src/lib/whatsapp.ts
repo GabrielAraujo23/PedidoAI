@@ -1,10 +1,11 @@
-export type NotifiableStatus = "confirmado" | "rota" | "entregue" | "cancelado";
+export type NotifiableStatus = "novo" | "confirmado" | "rota" | "entregue" | "cancelado";
 
 const TEMPLATES: Record<NotifiableStatus, string> = {
-    confirmado: "✅ Olá, {nome}! Seu pedido #{id} foi *confirmado*. Em breve será enviado para entrega.",
-    rota:       "🚚 Olá, {nome}! Seu pedido #{id} está a *caminho*! Fique atento à entrega.",
-    entregue:   "🎉 Olá, {nome}! Seu pedido #{id} foi *entregue*. Obrigado pela preferência!",
-    cancelado:  "❌ Olá, {nome}! Seu pedido #{id} foi *cancelado*. Entre em contato para mais informações.",
+    novo:       "🔔 Olá, {nome}! Recebemos seu pedido *#{id}* e já está na fila. Em breve confirmaremos!",
+    confirmado: "✅ Olá, {nome}! Seu pedido *#{id}* foi *confirmado*. Em breve será enviado para entrega.",
+    rota:       "🚚 Olá, {nome}! Seu pedido *#{id}* está a *caminho*! Fique atento à entrega.",
+    entregue:   "🎉 Olá, {nome}! Seu pedido *#{id}* foi *entregue*. Obrigado pela preferência!",
+    cancelado:  "❌ Olá, {nome}! Seu pedido *#{id}* foi *cancelado*. Entre em contato para mais informações.",
 };
 
 export function isNotifiableStatus(status: string): status is NotifiableStatus {
