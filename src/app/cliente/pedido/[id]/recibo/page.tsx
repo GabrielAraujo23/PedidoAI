@@ -76,28 +76,33 @@ export default function ReciboPedidoPage() {
         if (!session) return;
 
         async function fetchData() {
-            const [{ data: orderData }, { data: itemsData }, { data: clientData }] = await Promise.all([
-                supabase
-                    .from("orders")
-                    .select("id, client, client_id, products, status, created_at")
-                    .eq("id", id)
-                    .eq("client_id", session!.clientId)
-                    .single(),
-                supabase
-                    .from("order_items")
-                    .select("id, product_name, unit, quantity, unit_price, total_price")
-                    .eq("order_id", id),
-                supabase
-                    .from("clients")
-                    .select("name, phone, address")
-                    .eq("id", session!.clientId)
-                    .single(),
-            ]);
+            try {
+                const [{ data: orderData }, { data: itemsData }, { data: clientData }] = await Promise.all([
+                    supabase
+                        .from("orders")
+                        .select("id, client, client_id, products, status, created_at")
+                        .eq("id", id)
+                        .eq("client_id", session!.clientId)
+                        .single(),
+                    supabase
+                        .from("order_items")
+                        .select("id, product_name, unit, quantity, unit_price, total_price")
+                        .eq("order_id", id),
+                    supabase
+                        .from("clients")
+                        .select("name, phone, address")
+                        .eq("id", session!.clientId)
+                        .single(),
+                ]);
 
-            setOrder(orderData as OrderData ?? null);
-            setItems((itemsData as OrderItem[]) ?? []);
-            setClient(clientData as ClientData ?? null);
-            setLoading(false);
+                setOrder(orderData as OrderData ?? null);
+                setItems((itemsData as OrderItem[]) ?? []);
+                setClient(clientData as ClientData ?? null);
+            } catch {
+                setOrder(null);
+            } finally {
+                setLoading(false);
+            }
         }
 
         fetchData();
@@ -105,7 +110,7 @@ export default function ReciboPedidoPage() {
 
     if (!mounted || sessionLoading || !session) return null;
 
-    const totalValue = items.reduce((s, i) => s + Number(i.total_price), 0);
+    const totalValue = items.reduce((acc, item) => acc + Number(item.total_price), 0);
     const hasItems   = items.length > 0;
     const fallbackLines = order?.products.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
 
