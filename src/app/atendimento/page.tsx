@@ -301,9 +301,15 @@ function Step1Client({ adminId, selected, onSelect, onNext }: {
                 .filter(Boolean).join(", ")
             : null;
 
+        const { data: allClients } = await supabase.from("clients").select("id");
+        const nums = (allClients ?? []).map((c: { id: string }) => parseInt(c.id.replace("CL", "")) || 0);
+        const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
+        const newClientId = `CL${String(maxNum + 1).padStart(3, "0")}`;
+
         const { data, error } = await supabase
             .from("clients")
             .insert({
+                id: newClientId,
                 name: newName.trim(),
                 phone: newPhone.trim(),
                 address: fullAddress,
