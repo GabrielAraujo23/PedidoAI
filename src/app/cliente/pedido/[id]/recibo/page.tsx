@@ -202,6 +202,7 @@ export default function ReciboPedidoPage() {
                                         <thead>
                                             <tr className="border-b border-[#E5E7EB]">
                                                 <th className="text-left pb-2 font-medium text-[#6B7280]">Produto</th>
+                                                <th className="text-center pb-2 font-medium text-[#6B7280]">Und.</th>
                                                 <th className="text-center pb-2 font-medium text-[#6B7280]">Qtd</th>
                                                 <th className="text-right pb-2 font-medium text-[#6B7280]">Unit.</th>
                                                 <th className="text-right pb-2 font-medium text-[#6B7280]">Total</th>
@@ -210,10 +211,8 @@ export default function ReciboPedidoPage() {
                                         <tbody className="divide-y divide-[#F3F4F6]">
                                             {items.map((item) => (
                                                 <tr key={item.id}>
-                                                    <td className="py-2.5 font-medium text-[#111827]">
-                                                        {item.product_name}
-                                                        <span className="text-xs text-[#6B7280] font-normal ml-1">({item.unit})</span>
-                                                    </td>
+                                                    <td className="py-2.5 font-medium text-[#111827]">{item.product_name}</td>
+                                                    <td className="py-2.5 text-center text-[#6B7280]">{item.unit}</td>
                                                     <td className="py-2.5 text-center text-[#6B7280]">{item.quantity}</td>
                                                     <td className="py-2.5 text-right text-[#6B7280]">{formatCurrency(Number(item.unit_price))}</td>
                                                     <td className="py-2.5 text-right font-bold text-[#111827]">{formatCurrency(Number(item.total_price))}</td>
@@ -231,7 +230,7 @@ export default function ReciboPedidoPage() {
                             </div>
 
                             {/* Totais */}
-                            {hasItems && totalValue > 0 && (
+                            {hasItems && (
                                 <div className="border-t border-[#E5E7EB] pt-4 space-y-1.5">
                                     <div className="flex justify-between text-sm text-[#6B7280]">
                                         <span>Subtotal</span>
