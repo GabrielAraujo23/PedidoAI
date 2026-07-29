@@ -100,6 +100,8 @@ export default function ReciboPedidoPage() {
                 setClient(clientData as ClientData ?? null);
             } catch {
                 setOrder(null);
+                setItems([]);
+                setClient(null);
             } finally {
                 setLoading(false);
             }
