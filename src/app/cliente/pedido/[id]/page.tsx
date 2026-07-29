@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
     CheckCircle, Clock, Truck, Star,
-    Package, MessageCircle, Plus, Loader2, XCircle,
+    Package, MessageCircle, Plus, Loader2, XCircle, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -369,8 +369,15 @@ export default function OrderTrackingPage() {
                                 )}
 
                                 <Link
+                                    href={`/cliente/pedido/${order.id}/recibo`}
+                                    className="mt-3 flex items-center justify-center gap-2 w-full h-10 bg-[#F97316] text-white rounded-full text-sm font-bold hover:bg-[#F97316]/90 transition-colors"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    Ver Recibo
+                                </Link>
+                                <Link
                                     href="/cliente/catalogo"
-                                    className="mt-4 flex items-center justify-center gap-2 w-full h-10 border border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
+                                    className="mt-2 flex items-center justify-center gap-2 w-full h-10 border border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Novo Pedido
