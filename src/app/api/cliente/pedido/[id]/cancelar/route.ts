@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CLIENT_SESSION_COOKIE, verifyClientSession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
+import { notifyOrderStatus } from "@/lib/notify-order";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,6 +64,8 @@ export async function PATCH(
     if (!updated || updated.length === 0) {
         return err("Pedido não pode ser cancelado neste status.", 409);
     }
+
+    void notifyOrderStatus(id, "cancelado").catch(() => {});
 
     return NextResponse.json({ ok: true });
 }

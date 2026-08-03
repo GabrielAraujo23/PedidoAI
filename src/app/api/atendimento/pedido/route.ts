@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
-import { sendWhatsApp, buildMessage } from "@/lib/whatsapp";
+import { notifyOrderStatus } from "@/lib/notify-order";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -125,17 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Notificação WhatsApp fire-and-forget
-    void (async () => {
-        const { data: client } = await supabase
-            .from("clients")
-            .select("name, phone")
-            .eq("id", client_id)
-            .single();
-        if (client?.phone) {
-            const message = buildMessage("novo", client.name, order.id);
-            await sendWhatsApp(client.phone, message).catch(() => {});
-        }
-    })().catch(() => {});
+    void notifyOrderStatus(order.id, "novo").catch(() => {});
 
     return NextResponse.json({ ok: true, order_id: order.id });
 }

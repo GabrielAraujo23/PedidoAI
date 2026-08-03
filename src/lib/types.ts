@@ -9,6 +9,9 @@ export interface Order {
     client_id?: string | null;
     created_at?: string;
     notes?: string | null;
+    payment_method?: "pix" | "credito" | "debito" | "dinheiro" | null;
+    delivery_type?: "delivery" | "retirada" | null;
+    delivery_fee?: number | null;
 }
 
 export interface Client {

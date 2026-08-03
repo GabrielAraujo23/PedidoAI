@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { CLIENT_SESSION_COOKIE, verifyClientSession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
-import { sendWhatsApp, buildMessage } from "@/lib/whatsapp";
+import { notifyOrderStatus } from "@/lib/notify-order";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,19 +33,7 @@ export async function POST(
 
     if (!order) return NextResponse.json({ ok: true });
 
-    const { data: client } = await supabase
-        .from("clients")
-        .select("name, phone")
-        .eq("id", session.clientId)
-        .single();
-
-    if (!client?.phone) return NextResponse.json({ ok: true });
-
-    const message = buildMessage("novo", client.name, orderId);
-
-    sendWhatsApp(client.phone, message).catch((e) =>
-        console.error("[notificar] sendWhatsApp threw:", e)
-    );
+    await notifyOrderStatus(orderId, "novo");
 
     return NextResponse.json({ ok: true });
 }
