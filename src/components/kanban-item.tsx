@@ -3,9 +3,22 @@
 import type { ElementType } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CheckCircle2, Truck, Clock, PackageCheck, XCircle } from "lucide-react";
+import { CheckCircle2, Truck, Clock, PackageCheck, XCircle, MoreVertical } from "lucide-react";
 import { Status } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {
+    DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+
+const STATUS_LABELS: Record<Status, string> = {
+    novo:       "Novo",
+    confirmado: "Confirmado",
+    rota:       "Em Rota",
+    entregue:   "Entregue",
+    cancelado:  "Cancelado",
+};
+
+const MOVE_ORDER: Status[] = ["novo", "confirmado", "rota", "entregue", "cancelado"];
 
 interface KanbanItemProps {
     id: string;
@@ -14,6 +27,7 @@ interface KanbanItemProps {
     status: Status;
     created_at?: string;
     cancelled?: boolean;
+    onMoveTo?: (status: Status) => void;
 }
 
 const STATUS_META: Record<Status, { icon: ElementType; color: string; bg: string; bar: string }> = {
@@ -37,7 +51,7 @@ function formatRelativeTime(dateStr?: string) {
     return `${days}d atrás`;
 }
 
-export function KanbanItem({ id, client, products, status, created_at, cancelled }: KanbanItemProps) {
+export function KanbanItem({ id, client, products, status, created_at, cancelled, onMoveTo }: KanbanItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
     const style = { transform: CSS.Transform.toString(transform), transition };
@@ -59,9 +73,31 @@ export function KanbanItem({ id, client, products, status, created_at, cancelled
                 {/* Left accent bar */}
                 <div className={cn("absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl", meta.bar)} />
 
+                {onMoveTo && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                type="button"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-10"
+                                aria-label="Mover pedido"
+                            >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onPointerDown={(e) => e.stopPropagation()}>
+                            {MOVE_ORDER.filter((s) => s !== status).map((s) => (
+                                <DropdownMenuItem key={s} onClick={() => onMoveTo(s)}>
+                                    Mover para {STATUS_LABELS[s]}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+
                 <div className="pl-4 pr-3 pt-3 pb-3 space-y-2">
                     {/* Top row: ID + time */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-6">
                         <span className="text-[11px] font-bold text-orange-500 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-md tracking-wide">
                             {formattedId}
                         </span>

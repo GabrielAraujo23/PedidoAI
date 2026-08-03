@@ -160,6 +160,23 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
         }
     }
 
+    /** Move um pedido para um status-alvo, abrindo o modal de confirmação quando necessário. */
+    function moveToStatus(activeId: string, targetStatus: Status) {
+        const activeOrder = orders.find((o) => o.id === activeId);
+        if (!activeOrder || activeOrder.status === targetStatus) return;
+
+        // Confirmar exige os dados de pagamento/entrega para montar a mensagem
+        if (targetStatus === "confirmado") {
+            setPayment("pix");
+            setDelivery("delivery");
+            setFee("0");
+            setPendingMove({ activeId, overId: targetStatus });
+            return;
+        }
+
+        void applyMove(activeId, targetStatus);
+    }
+
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
         if (!over) return;
@@ -167,17 +184,18 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
         const activeId = active.id as string;
         const overId = over.id as string;
 
-        const activeOrder = orders.find((o) => o.id === activeId);
-        if (!activeOrder) return;
-
-        // Status de destino: uma coluna ou o status do card sobre o qual soltou
         const isColumn = COLUMNS.some((col) => col.id === overId);
-        const targetStatus = isColumn
-            ? (overId as Status)
-            : orders.find((o) => o.id === overId)?.status;
+        if (isColumn) {
+            moveToStatus(activeId, overId as Status);
+            return;
+        }
 
-        // Confirmar exige os dados de pagamento/entrega para montar a mensagem
-        if (targetStatus === "confirmado" && activeOrder.status !== "confirmado") {
+        // Soltou sobre outro card: reordenar/mover para o status desse card
+        const overOrder = orders.find((o) => o.id === overId);
+        const activeOrder = orders.find((o) => o.id === activeId);
+        if (!overOrder || !activeOrder) return;
+
+        if (overOrder.status === "confirmado" && activeOrder.status !== "confirmado") {
             setPayment("pix");
             setDelivery("delivery");
             setFee("0");
@@ -237,6 +255,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
                                                     status={order.status}
                                                     created_at={order.created_at}
                                                     cancelled={order.status === "cancelado"}
+                                                    onMoveTo={(target) => moveToStatus(order.id, target)}
                                                 />
                                             </div>
                                         ))}
