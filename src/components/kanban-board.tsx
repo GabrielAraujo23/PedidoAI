@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import {
     DndContext,
     closestCorners,
+    pointerWithin,
+    CollisionDetection,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -85,6 +87,17 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
+
+    // closestCorners sozinho falha ao soltar em colunas vazias: uma coluna vazia
+    // herda altura total via CSS Grid (stretch), então seus cantos ficam mais
+    // distantes do ponteiro do que os cantos de um card compacto na coluna vizinha,
+    // e o drop "escorrega" para a coluna errada. pointerWithin testa se o ponteiro
+    // está de fato dentro do retângulo, resolvendo isso; closestCorners fica só
+    // como fallback para quando o ponteiro sai de toda a área do board.
+    const collisionDetection: CollisionDetection = (args) => {
+        const pointerCollisions = pointerWithin(args);
+        return pointerCollisions.length > 0 ? pointerCollisions : closestCorners(args);
+    };
 
     /** Calcula a lista reordenada de forma síncrona (sem depender do setState). */
     function computeNext(activeId: string, overId: string): Order[] | null {
@@ -190,7 +203,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
 
     return (
         <>
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+            <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragEnd={handleDragEnd}>
                 <div className="grid grid-cols-5 gap-3 h-full">
                     {COLUMNS.map((col) => {
                         const colOrders = visibleOrders.filter((o) => o.status === col.id);
