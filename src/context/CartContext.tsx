@@ -17,6 +17,12 @@ interface CartContextValue {
     addItem: (product: Omit<CartItem, "quantity">) => void;
     removeItem: (product_id: string) => void;
     updateQuantity: (product_id: string, quantity: number) => void;
+    /**
+     * Define a quantidade exata de um produto, inserindo-o no carrinho caso
+     * ainda não esteja. Diferente de updateQuantity, que só altera itens já
+     * presentes — necessário para digitar uma quantidade direto no catálogo.
+     */
+    setQuantity: (product: Omit<CartItem, "quantity">, quantity: number) => void;
     clearCart: () => void;
     totalItems: number;
     totalPrice: number;
@@ -59,6 +65,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
     }, []);
 
+    const setQuantity = useCallback(
+        (product: Omit<CartItem, "quantity">, quantity: number) => {
+            if (quantity <= 0) {
+                setItems((prev) => prev.filter((i) => i.product_id !== product.product_id));
+                return;
+            }
+            setItems((prev) => {
+                const exists = prev.some((i) => i.product_id === product.product_id);
+                if (exists) {
+                    return prev.map((i) =>
+                        i.product_id === product.product_id ? { ...i, quantity } : i
+                    );
+                }
+                return [...prev, { ...product, quantity }];
+            });
+        },
+        []
+    );
+
     const clearCart = useCallback(() => setItems([]), []);
 
     const totalItems = items.reduce((s, i) => s + i.quantity, 0);
@@ -66,7 +91,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <CartContext.Provider
-            value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}
+            value={{ items, addItem, removeItem, updateQuantity, setQuantity, clearCart, totalItems, totalPrice }}
         >
             {children}
         </CartContext.Provider>

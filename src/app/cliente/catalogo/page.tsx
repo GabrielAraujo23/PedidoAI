@@ -6,12 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     LayoutGrid, Waves, Zap, Plug, Wrench,
     Package, Home, Paintbrush, AlignJustify,
-    Minus, Plus, ShoppingCart,
+    Plus, ShoppingCart,
     AlertCircle, Check, ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
+import { QuantityStepper } from "@/components/quantity-stepper";
 import { useCart } from "@/context/CartContext";
 import { useClientSession } from "@/lib/client-session";
 import type { LucideIcon } from "lucide-react";
@@ -69,7 +70,7 @@ export default function CatalogPage() {
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
     const router = useRouter();
-    const { items, addItem, updateQuantity, totalItems, totalPrice } = useCart();
+    const { items, addItem, updateQuantity, setQuantity, totalItems, totalPrice } = useCart();
     const quantityMap = Object.fromEntries(items.map((i) => [i.product_id, i.quantity]));
 
     useEffect(() => { setMounted(true); }, []);
@@ -391,49 +392,29 @@ export default function CatalogPage() {
                                                             {p.unit}
                                                         </p>
 
-                                                        <div className="flex items-end justify-between gap-2 mt-3 pt-3 border-t border-stone-100">
-                                                            <p
-                                                                className="text-stone-900 tabular-nums leading-none"
-                                                                style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "20px" }}
-                                                            >
-                                                                {formatCurrency(p.price)}
-                                                            </p>
+                                                        <div className="mt-3 pt-3 border-t border-stone-100 space-y-2.5">
+                                                            <div className="flex items-end justify-between gap-2">
+                                                                <p
+                                                                    className="text-stone-900 tabular-nums leading-none"
+                                                                    style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "20px" }}
+                                                                >
+                                                                    {formatCurrency(p.price)}
+                                                                </p>
 
-                                                            <div className="flex items-center gap-1.5">
-                                                                <AnimatePresence>
-                                                                    {qty > 0 && (
-                                                                        <motion.div
-                                                                            initial={{ width: 0, opacity: 0 }}
-                                                                            animate={{ width: "auto", opacity: 1 }}
-                                                                            exit={{ width: 0, opacity: 0 }}
-                                                                            transition={{ duration: 0.2 }}
-                                                                            className="flex items-center bg-stone-100 rounded-lg overflow-hidden"
-                                                                        >
-                                                                            <button
-                                                                                onClick={() => updateQuantity(p.id, qty - 1)}
-                                                                                className="w-7 h-7 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"
-                                                                            >
-                                                                                <Minus className="w-3 h-3" />
-                                                                            </button>
-                                                                            <span className="w-5 text-center text-[11px] font-bold text-stone-800 tabular-nums">{qty}</span>
-                                                                            <button
-                                                                                onClick={() => updateQuantity(p.id, qty + 1)}
-                                                                                className="w-7 h-7 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"
-                                                                            >
-                                                                                <Plus className="w-3 h-3" />
-                                                                            </button>
-                                                                        </motion.div>
-                                                                    )}
-                                                                </AnimatePresence>
                                                                 <motion.button
                                                                     whileTap={{ scale: 0.9 }}
+                                                                    aria-label={
+                                                                        qty > 0
+                                                                            ? `Remover ${p.name} do carrinho`
+                                                                            : `Adicionar ${p.name} ao carrinho`
+                                                                    }
                                                                     onClick={() =>
                                                                         qty === 0
                                                                             ? addItem({ product_id: p.id, name: p.name, unit: p.unit, price: p.price })
                                                                             : updateQuantity(p.id, 0)
                                                                     }
                                                                     className={cn(
-                                                                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm",
+                                                                        "w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm cursor-pointer",
                                                                         qty > 0
                                                                             ? "bg-orange-700 text-white hover:bg-orange-800"
                                                                             : "bg-stone-900 text-white hover:bg-stone-800"
@@ -442,6 +423,17 @@ export default function CatalogPage() {
                                                                     {qty > 0 ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> : <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />}
                                                                 </motion.button>
                                                             </div>
+
+                                                            <QuantityStepper
+                                                                value={qty}
+                                                                label={p.name}
+                                                                onChange={(n) =>
+                                                                    setQuantity(
+                                                                        { product_id: p.id, name: p.name, unit: p.unit, price: p.price },
+                                                                        n
+                                                                    )
+                                                                }
+                                                            />
                                                         </div>
                                                     </div>
                                                 </motion.article>

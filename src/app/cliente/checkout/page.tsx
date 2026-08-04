@@ -6,11 +6,12 @@ import Link from "next/link";
 import {
     ChevronRight, MapPin, QrCode,
     CreditCard, Banknote, UtensilsCrossed, Trash2,
-    Minus, Plus, AlertCircle, Check, Loader2, Pencil, ArrowUpRight,
+    AlertCircle, Check, Loader2, Pencil, ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
+import { QuantityStepper } from "@/components/quantity-stepper";
 import { useCart } from "@/context/CartContext";
 import { calculateDistance } from "@/lib/haversine";
 import { useClientSession } from "@/lib/client-session";
@@ -440,21 +441,12 @@ export default function CheckoutPage() {
                                                 </p>
                                             </div>
 
-                                            <div className="flex items-center bg-stone-100 rounded-lg overflow-hidden shrink-0">
-                                                <button
-                                                    onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                                                    className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"
-                                                >
-                                                    <Minus className="w-3 h-3" />
-                                                </button>
-                                                <span className="w-7 text-center text-[12px] font-bold text-stone-900 tabular-nums">{item.quantity}</span>
-                                                <button
-                                                    onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                                                    className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                </button>
-                                            </div>
+                                            <QuantityStepper
+                                                value={item.quantity}
+                                                label={item.name}
+                                                onChange={(n) => updateQuantity(item.product_id, n)}
+                                                className="shrink-0 w-[132px]"
+                                            />
 
                                             <p
                                                 className="text-stone-900 tabular-nums w-24 text-right shrink-0 leading-none"
