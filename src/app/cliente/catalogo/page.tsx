@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
-import { ProductRow, type CatalogProduct } from "@/components/product-row";
+import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { useCart } from "@/context/CartContext";
 import { useClientSession } from "@/lib/client-session";
 import type { LucideIcon } from "lucide-react";
@@ -172,8 +172,8 @@ export default function CatalogPage() {
 
     if (!mounted || sessionLoading || !session) return null;
 
-    const renderRow = (p: CatalogProduct) => (
-        <ProductRow
+    const renderCard = (p: CatalogProduct) => (
+        <ProductCard
             key={p.id}
             product={p}
             quantity={quantityMap[p.id] ?? 0}
@@ -182,6 +182,8 @@ export default function CatalogPage() {
             onQuantityChange={handleQuantityChange}
         />
     );
+
+    const GRID = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5";
 
     return (
         <div
@@ -369,15 +371,16 @@ export default function CatalogPage() {
 
                 {/* Carregando */}
                 {loadingProducts ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                        {Array.from({ length: 9 }).map((_, i) => (
-                            <div key={i} className="flex items-center gap-3 rounded-xl bg-white/50 ring-1 ring-stone-200/60 px-4 py-3">
-                                <div className="w-10 h-10 rounded-lg bg-stone-200/70 animate-pulse shrink-0" />
-                                <div className="flex-1 space-y-2">
+                    <div className={GRID}>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="rounded-2xl overflow-hidden bg-white/50 ring-1 ring-stone-200/60">
+                                <div className="aspect-[5/4] bg-stone-200/50 animate-pulse" />
+                                <div className="p-4 space-y-2.5">
                                     <div className="h-3.5 bg-stone-200/70 rounded w-4/5 animate-pulse" />
                                     <div className="h-2.5 bg-stone-200/60 rounded w-2/5 animate-pulse" />
+                                    <div className="h-5 bg-stone-200/60 rounded w-1/2 animate-pulse mt-3" />
+                                    <div className="h-11 bg-stone-200/50 rounded-xl animate-pulse" />
                                 </div>
-                                <div className="w-[124px] h-11 rounded-xl bg-stone-200/60 animate-pulse shrink-0" />
                             </div>
                         ))}
                     </div>
@@ -425,8 +428,8 @@ export default function CatalogPage() {
                                         <div className="flex-1 h-px bg-stone-300/40" />
                                         <p className="text-[10.5px] tabular-nums text-stone-400">{prods.length}</p>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                                        {prods.map(renderRow)}
+                                    <div className={GRID}>
+                                        {prods.map(renderCard)}
                                     </div>
                                 </section>
                             );
@@ -434,8 +437,8 @@ export default function CatalogPage() {
                     </div>
                 ) : (
                     // Lista plana (busca, categoria única ou ordenação por preço)
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
-                        {filtered.map(renderRow)}
+                    <div className={GRID}>
+                        {filtered.map(renderCard)}
                     </div>
                 )}
             </main>

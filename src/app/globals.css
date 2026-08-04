@@ -113,12 +113,11 @@
     display: none;
   }
 
-  /* Adia a renderização de linhas fora da viewport em listas longas
-     (catálogo tem 200+ produtos). contain-intrinsic-size reserva a altura
-     estimada para que a barra de rolagem não pule enquanto o usuário desce. */
+  /* Adia a renderização do que está fora da viewport em listas longas
+     (catálogo tem 200+ produtos). Quem usa a classe declara a altura
+     estimada em contain-intrinsic-size, para a barra de rolagem não pular. */
   .defer-offscreen {
     content-visibility: auto;
-    contain-intrinsic-size: auto 84px;
   }
 
   /* Respeita quem pediu menos movimento no sistema operacional. */
