@@ -113,6 +113,26 @@
     display: none;
   }
 
+  /* Adia a renderização de linhas fora da viewport em listas longas
+     (catálogo tem 200+ produtos). contain-intrinsic-size reserva a altura
+     estimada para que a barra de rolagem não pule enquanto o usuário desce. */
+  .defer-offscreen {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 84px;
+  }
+
+  /* Respeita quem pediu menos movimento no sistema operacional. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   /* Barcode scanner scan-line animation */
   @keyframes scanline {
     0%   { top: 0%; opacity: 1; }

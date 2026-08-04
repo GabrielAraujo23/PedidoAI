@@ -12,6 +12,13 @@ interface QuantityStepperProps {
     onChange: (quantity: number) => void;
     /** Nome do produto — compõe o rótulo acessível dos controles. */
     label: string;
+    /**
+     * "compact" estreita os botões para caber nas linhas do catálogo.
+     * A altura continua 44px nos dois tamanhos: em lista densa o espaço
+     * apertado é o horizontal, então encolhemos só a largura e o alvo de
+     * toque segue confortável no eixo vertical.
+     */
+    size?: "md" | "compact";
     className?: string;
 }
 
@@ -27,13 +34,20 @@ interface QuantityStepperProps {
  * type="number" muda o valor sem querer ao rolar a página com o cursor em cima,
  * e desenha setinhas de incremento no desktop que brigam com os botões daqui.
  */
-export function QuantityStepper({ value, onChange, label, className }: QuantityStepperProps) {
+export function QuantityStepper({
+    value,
+    onChange,
+    label,
+    size = "md",
+    className,
+}: QuantityStepperProps) {
     // Enquanto o cliente digita mantemos o texto cru, para que apagar o campo
     // não force um "0" no meio da edição. Ao sair/confirmar, normalizamos.
     const [draft, setDraft] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const shown = draft ?? String(value);
+    const btnWidth = size === "compact" ? "w-9" : "w-11";
 
     function commit(raw: string) {
         const digits = raw.replace(/\D/g, "");
@@ -56,7 +70,8 @@ export function QuantityStepper({ value, onChange, label, className }: QuantityS
                 onClick={() => onChange(Math.max(0, value - 1))}
                 disabled={value <= 0}
                 className={cn(
-                    "w-11 h-11 shrink-0 flex items-center justify-center text-stone-600 cursor-pointer",
+                    btnWidth,
+                    "h-11 shrink-0 flex items-center justify-center text-stone-600 cursor-pointer",
                     "hover:bg-stone-200 active:bg-stone-300 transition-colors",
                     "disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-transparent",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-600"
@@ -102,7 +117,8 @@ export function QuantityStepper({ value, onChange, label, className }: QuantityS
                 onClick={() => onChange(Math.min(MAX_QUANTITY, value + 1))}
                 disabled={value >= MAX_QUANTITY}
                 className={cn(
-                    "w-11 h-11 shrink-0 flex items-center justify-center text-stone-600 cursor-pointer",
+                    btnWidth,
+                    "h-11 shrink-0 flex items-center justify-center text-stone-600 cursor-pointer",
                     "hover:bg-stone-200 active:bg-stone-300 transition-colors",
                     "disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-transparent",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-600"
