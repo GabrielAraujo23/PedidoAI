@@ -1,31 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     LayoutGrid, Waves, Zap, Plug, Wrench,
     Package, Home, Paintbrush, AlignJustify,
-    Minus, Plus, ShoppingCart,
-    AlertCircle, Check, ArrowUpRight,
+    ShoppingCart, AlertCircle, Check, ArrowUpRight,
+    ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowDownAZ, SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
+import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { useCart } from "@/context/CartContext";
 import { useClientSession } from "@/lib/client-session";
 import type { LucideIcon } from "lucide-react";
-
-interface Product {
-    id: string;
-    name: string;
-    description: string | null;
-    category: string;
-    subcategory: string | null;
-    unit: string;
-    price: number;
-    active: boolean;
-}
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
     "Todos":                    LayoutGrid,
@@ -39,7 +29,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
     "Vigas e Cantoneiras":      AlignJustify,
 };
 
-// Subtle warm tones for product card image area — no candy gradients
+// Tons quentes por categoria — servem de código visual no selo e no filete.
 const CATEGORY_TONES: Record<string, { bg: string; ink: string }> = {
     "Canos":                    { bg: "#EFE4D2", ink: "#8B6F4E" },
     "Eletricidade e Cabos":     { bg: "#EADCC8", ink: "#9C7E5A" },
@@ -51,9 +41,20 @@ const CATEGORY_TONES: Record<string, { bg: string; ink: string }> = {
     "Vigas e Cantoneiras":      { bg: "#DED3BD", ink: "#6F5A40" },
 };
 
-function tone(cat: string) {
-    return CATEGORY_TONES[cat] ?? { bg: "#EFE6D5", ink: "#7C6748" };
-}
+const DEFAULT_TONE = { bg: "#EFE6D5", ink: "#7C6748" };
+
+/** Altura do ClientHeader (sticky top-0, miolo h-[76px]). */
+const HEADER_H = 76;
+
+const WARM = "#F7F2EA";
+
+type SortKey = "nome" | "menor" | "maior";
+
+const SORTS: { key: SortKey; label: string; icon: LucideIcon }[] = [
+    { key: "nome",  label: "A–Z",          icon: ArrowDownAZ },
+    { key: "menor", label: "Menor preço",  icon: ArrowUpNarrowWide },
+    { key: "maior", label: "Maior preço",  icon: ArrowDownWideNarrow },
+];
 
 function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -62,15 +63,21 @@ function formatCurrency(v: number) {
 export default function CatalogPage() {
     const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<CatalogProduct[]>([]);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [search, setSearch] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("Todos");
+    const [sort, setSort] = useState<SortKey>("nome");
+    const [onlyInCart, setOnlyInCart] = useState(false);
     const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
     const router = useRouter();
-    const { items, addItem, updateQuantity, totalItems, totalPrice } = useCart();
-    const quantityMap = Object.fromEntries(items.map((i) => [i.product_id, i.quantity]));
+    const { items, setQuantity, totalItems, totalPrice } = useCart();
+
+    const quantityMap = useMemo(
+        () => Object.fromEntries(items.map((i) => [i.product_id, i.quantity])),
+        [items]
+    );
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -85,7 +92,7 @@ export default function CatalogPage() {
             .order("name", { ascending: true })
             .then(({ data, error }) => {
                 if (error) setToast({ type: "error", message: "Erro ao carregar produtos." });
-                else setProducts((data as Product[]) ?? []);
+                else setProducts((data as CatalogProduct[]) ?? []);
                 setLoadingProducts(false);
             });
     }, [session]);
@@ -96,26 +103,87 @@ export default function CatalogPage() {
         return () => clearTimeout(t);
     }, [toast]);
 
-    const categories = ["Todos", ...Array.from(new Set(products.map((p) => p.category)))];
+    // Se o cliente esvazia o carrinho com o filtro "no carrinho" ligado,
+    // desliga sozinho para não deixar a tela vazia sem explicação.
+    useEffect(() => {
+        if (onlyInCart && items.length === 0) setOnlyInCart(false);
+    }, [onlyInCart, items.length]);
 
-    const filtered = products.filter((p) => {
-        const q = search.toLowerCase();
-        const matchSearch =
-            p.name.toLowerCase().includes(q) ||
-            (p.subcategory ?? "").toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q);
-        const matchCat = selectedCategory === "Todos" || p.category === selectedCategory;
-        return matchSearch && matchCat;
-    });
+    // O cabeçalho de categoria gruda logo abaixo do trilho de filtros. A altura
+    // do trilho muda com a largura da tela (os chips quebram de linha), então
+    // medimos em vez de cravar um número que desalinha em algum breakpoint.
+    const railRef = useRef<HTMLDivElement>(null);
+    const [railH, setRailH] = useState(0);
 
-    const grouped = filtered.reduce<Record<string, Product[]>>((acc, p) => {
-        (acc[p.category] ??= []).push(p);
-        return acc;
-    }, {});
+    useEffect(() => {
+        const el = railRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(([entry]) => {
+            setRailH(Math.round(entry.contentRect.height));
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
+    const categories = useMemo(
+        () => ["Todos", ...Array.from(new Set(products.map((p) => p.category)))],
+        [products]
+    );
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        const list = products.filter((p) => {
+            const matchSearch =
+                !q ||
+                p.name.toLowerCase().includes(q) ||
+                (p.subcategory ?? "").toLowerCase().includes(q) ||
+                p.category.toLowerCase().includes(q);
+            const matchCat = selectedCategory === "Todos" || p.category === selectedCategory;
+            const matchCart = !onlyInCart || (quantityMap[p.id] ?? 0) > 0;
+            return matchSearch && matchCat && matchCart;
+        });
+
+        if (sort === "menor") return [...list].sort((a, b) => a.price - b.price);
+        if (sort === "maior") return [...list].sort((a, b) => b.price - a.price);
+        return [...list].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    }, [products, search, selectedCategory, onlyInCart, quantityMap, sort]);
+
+    // Só agrupamos por categoria quando faz sentido: em "Todos", sem busca e
+    // ordenado por nome. Ordenar por preço entre grupos esconderia o barato.
+    const showGroups = selectedCategory === "Todos" && sort === "nome" && !search.trim() && !onlyInCart;
+
+    const grouped = useMemo(() => {
+        if (!showGroups) return null;
+        return filtered.reduce<Record<string, CatalogProduct[]>>((acc, p) => {
+            (acc[p.category] ??= []).push(p);
+            return acc;
+        }, {});
+    }, [filtered, showGroups]);
+
+    const handleQuantityChange = useCallback(
+        (product: CatalogProduct, quantity: number) => {
+            setQuantity(
+                { product_id: product.id, name: product.name, unit: product.unit, price: product.price },
+                quantity
+            );
+        },
+        [setQuantity]
+    );
 
     if (!mounted || sessionLoading || !session) return null;
 
-    const headerH = "64px";
+    const renderCard = (p: CatalogProduct) => (
+        <ProductCard
+            key={p.id}
+            product={p}
+            quantity={quantityMap[p.id] ?? 0}
+            icon={CATEGORY_ICONS[p.category] ?? Package}
+            tone={CATEGORY_TONES[p.category] ?? DEFAULT_TONE}
+            onQuantityChange={handleQuantityChange}
+        />
+    );
+
+    const GRID = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5";
 
     return (
         <div
@@ -126,14 +194,14 @@ export default function CatalogPage() {
             <AnimatePresence>
                 {toast && (
                     <motion.div
+                        role="status"
+                        aria-live="polite"
                         initial={{ opacity: 0, y: -16, x: "-50%" }}
                         animate={{ opacity: 1, y: 0, x: "-50%" }}
                         exit={{ opacity: 0, y: -16, x: "-50%" }}
                         className={cn(
                             "fixed top-20 left-1/2 z-[60] flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-xl text-[13px] font-semibold",
-                            toast.type === "success"
-                                ? "bg-emerald-700 text-white"
-                                : "bg-red-700 text-white"
+                            toast.type === "success" ? "bg-emerald-700 text-white" : "bg-red-700 text-white"
                         )}
                     >
                         {toast.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
@@ -144,47 +212,49 @@ export default function CatalogPage() {
 
             <ClientHeader session={session} searchValue={search} onSearchChange={setSearch} />
 
-            {/* ── Hero ───────────────────────────────────────────────── */}
-            <section className="relative z-10 max-w-[1320px] mx-auto px-5 sm:px-8 pt-12 sm:pt-16 pb-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    className="max-w-[820px]"
+            {/* ── Cabeçalho editorial ─────────────────────────────────────
+                O catálogo é tela de uso diário, não landing page: no celular o
+                herói fica enxuto para o primeiro produto aparecer sem rolagem.
+                No desktop sobra altura, então ele respira. */}
+            <section className="relative z-10 max-w-[1320px] mx-auto px-5 sm:px-8 pt-5 sm:pt-14 pb-4 sm:pb-6">
+                <p className="text-[10px] sm:text-[10.5px] uppercase tracking-[0.28em] text-stone-500 mb-2 sm:mb-3 font-semibold">
+                    Olá, {session.name.split(" ")[0]} · {products.length} {products.length === 1 ? "item" : "itens"}
+                </p>
+                <h1
+                    className="text-[27px] sm:text-[58px] leading-[1.02] sm:leading-[0.98] tracking-tight text-stone-900"
+                    style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                 >
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-stone-500 mb-4 font-semibold">
-                        Olá, {session.name.split(" ")[0]} · {products.length} {products.length === 1 ? "item" : "itens"} disponíveis
-                    </p>
-                    <h1
-                        className="text-[44px] sm:text-[64px] leading-[0.96] tracking-tight text-stone-900"
-                        style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
-                    >
-                        O que vamos{" "}
-                        <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
-                            construir
-                        </em>{" "}
-                        hoje?
-                    </h1>
-                    <p className="text-[15px] text-stone-600 mt-5 leading-relaxed max-w-[520px]">
-                        Escolha os materiais, monte seu pedido e a gente entrega na sua obra.
-                        Tudo direto pelo app, sem complicação.
-                    </p>
-                </motion.div>
+                    O que vamos{" "}
+                    <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                        construir
+                    </em>{" "}
+                    hoje?
+                </h1>
+                {/* Texto de boas-vindas só onde há altura sobrando */}
+                <p className="hidden sm:block text-[15px] text-stone-600 mt-4 leading-relaxed max-w-[460px]">
+                    Escolha os materiais, defina as quantidades e a gente entrega na sua obra.
+                </p>
             </section>
 
-            {/* ── Sticky filter rail ─────────────────────────────────── */}
+            {/* ── Trilho fixo: categorias + ordenação ─────────────────── */}
             <div
+                ref={railRef}
                 className="sticky z-30"
                 style={{
-                    top: headerH,
+                    top: HEADER_H,
                     background: "rgba(247, 242, 234, 0.96)",
-                    borderBottom: "1px solid rgba(120, 113, 108, 0.12)",
+                    borderBottom: "1px solid rgba(120, 113, 108, 0.14)",
                     backdropFilter: "blur(8px)",
                     WebkitBackdropFilter: "blur(8px)",
                 }}
             >
                 <div className="max-w-[1320px] mx-auto px-5 sm:px-8">
-                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-3">
+                    {/* Categorias */}
+                    <div
+                        className="flex gap-1.5 overflow-x-auto scrollbar-hide pt-3 pb-2"
+                        role="tablist"
+                        aria-label="Categorias"
+                    >
                         {categories.map((cat) => {
                             const Icon = CATEGORY_ICONS[cat] ?? Package;
                             const isActive = selectedCategory === cat;
@@ -194,9 +264,13 @@ export default function CatalogPage() {
                             return (
                                 <button
                                     key={cat}
+                                    role="tab"
+                                    aria-selected={isActive}
                                     onClick={() => setSelectedCategory(cat)}
                                     className={cn(
-                                        "group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12.5px] whitespace-nowrap shrink-0 transition-all duration-200 border",
+                                        "group inline-flex items-center gap-2 px-3.5 h-9 rounded-full text-[12.5px] whitespace-nowrap shrink-0 border cursor-pointer",
+                                        "transition-colors duration-200",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F2EA]",
                                         isActive
                                             ? "bg-stone-900 text-white border-stone-900 shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
                                             : "bg-transparent text-stone-600 border-stone-300/70 hover:border-stone-500 hover:text-stone-900"
@@ -204,68 +278,114 @@ export default function CatalogPage() {
                                 >
                                     <Icon className={cn("w-3 h-3", isActive ? "text-orange-400" : "text-stone-400 group-hover:text-stone-700")} />
                                     <span className="font-medium">{cat}</span>
-                                    <span className={cn(
-                                        "tabular-nums text-[10.5px] tracking-wider",
-                                        isActive ? "text-white/40" : "text-stone-400"
-                                    )}>
+                                    <span className={cn("tabular-nums text-[10.5px] tracking-wider", isActive ? "text-white/45" : "text-stone-400")}>
                                         {count}
                                     </span>
                                 </button>
                             );
                         })}
                     </div>
+
+                    {/* Ordenação + atalho para o carrinho */}
+                    <div className="flex items-center gap-2 pb-2.5 overflow-x-auto scrollbar-hide">
+                        <SlidersHorizontal className="w-3 h-3 text-stone-400 shrink-0" aria-hidden />
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold shrink-0 mr-0.5">
+                            Ordenar
+                        </span>
+                        {SORTS.map(({ key, label, icon: Icon }) => {
+                            const isActive = sort === key;
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => setSort(key)}
+                                    aria-pressed={isActive}
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11.5px] font-medium whitespace-nowrap shrink-0 cursor-pointer",
+                                        "transition-colors duration-200",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600",
+                                        isActive
+                                            ? "bg-stone-200/80 text-stone-900"
+                                            : "text-stone-500 hover:text-stone-900 hover:bg-stone-200/50"
+                                    )}
+                                >
+                                    <Icon className="w-3 h-3" />
+                                    {label}
+                                </button>
+                            );
+                        })}
+
+                        {items.length > 0 && (
+                            <>
+                                <span className="w-px h-4 bg-stone-300/70 shrink-0 mx-1" aria-hidden />
+                                <button
+                                    onClick={() => setOnlyInCart((v) => !v)}
+                                    aria-pressed={onlyInCart}
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11.5px] font-medium whitespace-nowrap shrink-0 cursor-pointer",
+                                        "transition-colors duration-200",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600",
+                                        onlyInCart
+                                            ? "bg-orange-700 text-white"
+                                            : "text-orange-800 bg-orange-100/70 hover:bg-orange-200/70"
+                                    )}
+                                >
+                                    <ShoppingCart className="w-3 h-3" />
+                                    No carrinho
+                                    <span className="tabular-nums opacity-70">{items.length}</span>
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* ── Body ───────────────────────────────────────────────── */}
-            <main className="relative z-10 max-w-[1320px] mx-auto px-5 sm:px-8 py-10 pb-44">
+            {/* ── Corpo ───────────────────────────────────────────────── */}
+            <main className="relative z-10 max-w-[1320px] mx-auto px-5 sm:px-8 py-4 sm:py-8 pb-44">
 
-                {/* Section heading */}
-                <div className="flex items-baseline justify-between mb-8 pb-4 border-b border-stone-300/40">
-                    <div>
+                {/* Título da seção — uma linha só no celular, para não empurrar a lista */}
+                <div className="flex items-baseline justify-between gap-4 mb-4 sm:mb-6 pb-2.5 sm:pb-3.5 border-b border-stone-300/50">
+                    <div className="min-w-0 flex items-baseline gap-2.5 sm:block">
                         <h2
-                            className="text-[26px] sm:text-[30px] tracking-tight text-stone-900"
+                            className="text-[17px] sm:text-[28px] tracking-tight text-stone-900 truncate shrink-0"
                             style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                         >
-                            {selectedCategory === "Todos" ? "Catálogo completo" : selectedCategory}
+                            {onlyInCart
+                                ? "Seu carrinho"
+                                : selectedCategory === "Todos" ? "Catálogo completo" : selectedCategory}
                         </h2>
-                        <p className="text-[12px] text-stone-500 mt-1 uppercase tracking-[0.18em] font-medium">
+                        <p className="text-[10.5px] sm:text-[11.5px] text-stone-500 sm:mt-1 uppercase tracking-[0.18em] font-medium truncate">
                             {filtered.length} {filtered.length === 1 ? "resultado" : "resultados"}
-                            {search && <span className="normal-case tracking-normal"> · para &ldquo;{search}&rdquo;</span>}
+                            {search && <span className="normal-case tracking-normal"> · &ldquo;{search}&rdquo;</span>}
                         </p>
                     </div>
 
-                    {selectedCategory !== "Todos" && (
+                    {(selectedCategory !== "Todos" || onlyInCart) && (
                         <button
-                            onClick={() => setSelectedCategory("Todos")}
-                            className="text-[12px] uppercase tracking-[0.18em] font-semibold text-stone-500 hover:text-stone-900 transition-colors"
+                            onClick={() => { setSelectedCategory("Todos"); setOnlyInCart(false); }}
+                            className="text-[10.5px] sm:text-[11.5px] uppercase tracking-[0.18em] font-semibold text-stone-500 hover:text-stone-900 transition-colors shrink-0 cursor-pointer"
                         >
                             Ver todos →
                         </button>
                     )}
                 </div>
 
-                {/* Loading */}
+                {/* Carregando */}
                 {loadingProducts ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                    <div className={GRID}>
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="rounded-2xl overflow-hidden bg-white/40 border border-stone-200/60">
+                            <div key={i} className="rounded-2xl overflow-hidden bg-white/50 ring-1 ring-stone-200/60">
                                 <div className="aspect-[5/4] bg-stone-200/50 animate-pulse" />
                                 <div className="p-4 space-y-2.5">
-                                    <div className="h-3 bg-stone-200/60 rounded w-1/3 animate-pulse" />
-                                    <div className="h-4 bg-stone-200/60 rounded w-4/5 animate-pulse" />
-                                    <div className="h-4 bg-stone-200/60 rounded w-1/3 animate-pulse" />
+                                    <div className="h-3.5 bg-stone-200/70 rounded w-4/5 animate-pulse" />
+                                    <div className="h-2.5 bg-stone-200/60 rounded w-2/5 animate-pulse" />
+                                    <div className="h-5 bg-stone-200/60 rounded w-1/2 animate-pulse mt-3" />
+                                    <div className="h-11 bg-stone-200/50 rounded-xl animate-pulse" />
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.97 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex flex-col items-center justify-center py-32 text-center"
-                    >
+                    <div className="flex flex-col items-center justify-center py-28 text-center">
                         <div className="w-16 h-16 rounded-full bg-stone-200/60 flex items-center justify-center mb-5">
                             <Package className="w-7 h-7 text-stone-400" />
                         </div>
@@ -281,181 +401,49 @@ export default function CatalogPage() {
                         {search && (
                             <button
                                 onClick={() => setSearch("")}
-                                className="mt-5 text-[12px] uppercase tracking-[0.2em] font-semibold text-orange-700 hover:text-orange-900 transition-colors"
+                                className="mt-5 text-[12px] uppercase tracking-[0.2em] font-semibold text-orange-700 hover:text-orange-900 transition-colors cursor-pointer"
                             >
                                 Limpar busca
                             </button>
                         )}
-                    </motion.div>
-                ) : (
-                    <div className="space-y-14">
-                        {Object.entries(grouped).map(([category, prods], groupIndex) => {
+                    </div>
+                ) : grouped ? (
+                    // Agrupado por categoria
+                    <div className="space-y-10">
+                        {Object.entries(grouped).map(([category, prods]) => {
                             const CatIcon = CATEGORY_ICONS[category] ?? Package;
                             return (
-                                <motion.section
-                                    key={category}
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: groupIndex * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                                >
-                                    {/* Category divider */}
-                                    {selectedCategory === "Todos" && (
-                                        <div className="flex items-baseline gap-4 mb-6">
-                                            <CatIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                                            <p className="text-[11px] uppercase tracking-[0.25em] font-semibold text-stone-500">
-                                                {category}
-                                            </p>
-                                            <div className="flex-1 h-px bg-stone-300/40" />
-                                            <p className="text-[11px] tabular-nums text-stone-400">
-                                                {prods.length}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Product grid */}
-                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-                                        {prods.map((p, i) => {
-                                            const qty = quantityMap[p.id] ?? 0;
-                                            const Icon = CATEGORY_ICONS[p.category] ?? Package;
-                                            const t = tone(p.category);
-                                            return (
-                                                <motion.article
-                                                    key={p.id}
-                                                    initial={{ opacity: 0, y: 12 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    transition={{
-                                                        delay: groupIndex * 0.04 + i * 0.02,
-                                                        duration: 0.32,
-                                                        ease: [0.22, 1, 0.36, 1],
-                                                    }}
-                                                    className={cn(
-                                                        "group relative rounded-2xl overflow-hidden bg-white transition-all duration-300",
-                                                        qty > 0
-                                                            ? "ring-2 ring-stone-900 shadow-[0_8px_30px_rgba(28,25,23,0.10)]"
-                                                            : "ring-1 ring-stone-200/70 hover:ring-stone-300 hover:shadow-[0_8px_24px_rgba(28,25,23,0.06)] hover:-translate-y-0.5"
-                                                    )}
-                                                >
-                                                    {/* Image area — warm flat tone */}
-                                                    <div
-                                                        className="relative aspect-[5/4] flex items-center justify-center overflow-hidden"
-                                                        style={{ background: t.bg }}
-                                                    >
-                                                        {/* Quantity ribbon */}
-                                                        <AnimatePresence>
-                                                            {qty > 0 && (
-                                                                <motion.div
-                                                                    initial={{ scale: 0.5, opacity: 0 }}
-                                                                    animate={{ scale: 1, opacity: 1 }}
-                                                                    exit={{ scale: 0.5, opacity: 0 }}
-                                                                    transition={{ type: "spring", damping: 18, stiffness: 320 }}
-                                                                    className="absolute top-3 right-3 min-w-[24px] h-6 px-2 bg-stone-900 text-white rounded-full flex items-center justify-center text-[11px] font-bold tabular-nums z-10"
-                                                                >
-                                                                    {qty}
-                                                                </motion.div>
-                                                            )}
-                                                        </AnimatePresence>
-
-                                                        {/* Eyebrow category label */}
-                                                        <p
-                                                            className="absolute top-3 left-3 text-[9px] uppercase tracking-[0.22em] font-bold"
-                                                            style={{ color: t.ink }}
-                                                        >
-                                                            {p.category.split(" ")[0]}
-                                                        </p>
-
-                                                        {/* Icon stamp */}
-                                                        <Icon
-                                                            className="w-12 h-12 transition-transform duration-500 ease-out group-hover:scale-110 group-hover:rotate-3"
-                                                            style={{ color: t.ink, opacity: 0.45 }}
-                                                            strokeWidth={1.4}
-                                                        />
-
-                                                        {/* Subtle bottom hairline */}
-                                                        <div className="absolute bottom-0 left-0 right-0 h-px bg-stone-900/[0.04]" />
-                                                    </div>
-
-                                                    {/* Body */}
-                                                    <div className="p-3.5 sm:p-4">
-                                                        <p className="font-semibold text-stone-900 text-[13.5px] leading-snug line-clamp-2 mb-0.5">
-                                                            {p.name}
-                                                        </p>
-                                                        {p.subcategory && (
-                                                            <p
-                                                                className="text-[11.5px] text-stone-500 leading-tight"
-                                                                style={{ fontStyle: "italic", fontFamily: "var(--font-display)" }}
-                                                            >
-                                                                {p.subcategory}
-                                                            </p>
-                                                        )}
-                                                        <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400 font-medium mt-1.5">
-                                                            {p.unit}
-                                                        </p>
-
-                                                        <div className="flex items-end justify-between gap-2 mt-3 pt-3 border-t border-stone-100">
-                                                            <p
-                                                                className="text-stone-900 tabular-nums leading-none"
-                                                                style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "20px" }}
-                                                            >
-                                                                {formatCurrency(p.price)}
-                                                            </p>
-
-                                                            <div className="flex items-center gap-1.5">
-                                                                <AnimatePresence>
-                                                                    {qty > 0 && (
-                                                                        <motion.div
-                                                                            initial={{ width: 0, opacity: 0 }}
-                                                                            animate={{ width: "auto", opacity: 1 }}
-                                                                            exit={{ width: 0, opacity: 0 }}
-                                                                            transition={{ duration: 0.2 }}
-                                                                            className="flex items-center bg-stone-100 rounded-lg overflow-hidden"
-                                                                        >
-                                                                            <button
-                                                                                onClick={() => updateQuantity(p.id, qty - 1)}
-                                                                                className="w-7 h-7 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"
-                                                                            >
-                                                                                <Minus className="w-3 h-3" />
-                                                                            </button>
-                                                                            <span className="w-5 text-center text-[11px] font-bold text-stone-800 tabular-nums">{qty}</span>
-                                                                            <button
-                                                                                onClick={() => updateQuantity(p.id, qty + 1)}
-                                                                                className="w-7 h-7 flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"
-                                                                            >
-                                                                                <Plus className="w-3 h-3" />
-                                                                            </button>
-                                                                        </motion.div>
-                                                                    )}
-                                                                </AnimatePresence>
-                                                                <motion.button
-                                                                    whileTap={{ scale: 0.9 }}
-                                                                    onClick={() =>
-                                                                        qty === 0
-                                                                            ? addItem({ product_id: p.id, name: p.name, unit: p.unit, price: p.price })
-                                                                            : updateQuantity(p.id, 0)
-                                                                    }
-                                                                    className={cn(
-                                                                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm",
-                                                                        qty > 0
-                                                                            ? "bg-orange-700 text-white hover:bg-orange-800"
-                                                                            : "bg-stone-900 text-white hover:bg-stone-800"
-                                                                    )}
-                                                                >
-                                                                    {qty > 0 ? <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> : <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />}
-                                                                </motion.button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </motion.article>
-                                            );
-                                        })}
+                                <section key={category} aria-labelledby={`cat-${category}`}>
+                                    <div
+                                        className="flex items-baseline gap-3 mb-3 sticky z-20 py-2"
+                                        style={{ top: HEADER_H + railH, background: WARM }}
+                                    >
+                                        <CatIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" aria-hidden />
+                                        <p
+                                            id={`cat-${category}`}
+                                            className="text-[10.5px] uppercase tracking-[0.25em] font-semibold text-stone-500"
+                                        >
+                                            {category}
+                                        </p>
+                                        <div className="flex-1 h-px bg-stone-300/40" />
+                                        <p className="text-[10.5px] tabular-nums text-stone-400">{prods.length}</p>
                                     </div>
-                                </motion.section>
+                                    <div className={GRID}>
+                                        {prods.map(renderCard)}
+                                    </div>
+                                </section>
                             );
                         })}
+                    </div>
+                ) : (
+                    // Lista plana (busca, categoria única ou ordenação por preço)
+                    <div className={GRID}>
+                        {filtered.map(renderCard)}
                     </div>
                 )}
             </main>
 
-            {/* ── Sticky cart bar ─────────────────────────────────────── */}
+            {/* ── Barra fixa do carrinho ──────────────────────────────── */}
             <AnimatePresence>
                 {totalItems > 0 && (
                     <motion.div
@@ -478,11 +466,11 @@ export default function CatalogPage() {
                                         key={item.product_id}
                                         style={{ zIndex: 3 - i }}
                                         className="w-8 h-8 rounded-full border-2 border-stone-900 flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                                        // Slight gradient feel using a derived tone
-                                        // (uses item index to vary)
                                     >
-                                        <div className="w-full h-full rounded-full flex items-center justify-center"
-                                             style={{ background: `hsl(${20 + i * 15}, 35%, 30%)` }}>
+                                        <div
+                                            className="w-full h-full rounded-full flex items-center justify-center"
+                                            style={{ background: `hsl(${20 + i * 15}, 35%, 30%)` }}
+                                        >
                                             {item.name.charAt(0).toUpperCase()}
                                         </div>
                                     </div>
@@ -508,7 +496,7 @@ export default function CatalogPage() {
 
                             <button
                                 onClick={() => router.push("/cliente/checkout")}
-                                className="group inline-flex items-center gap-1.5 bg-white text-stone-900 px-4 sm:px-5 h-10 rounded-xl text-[13px] font-semibold tracking-wide hover:bg-stone-100 transition-all duration-200 shrink-0"
+                                className="group inline-flex items-center gap-1.5 bg-white text-stone-900 px-4 sm:px-5 h-10 rounded-xl text-[13px] font-semibold tracking-wide hover:bg-stone-100 transition-colors duration-200 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
                             >
                                 <span className="hidden sm:inline">Finalizar</span>
                                 <ShoppingCart className="w-4 h-4 sm:hidden" />

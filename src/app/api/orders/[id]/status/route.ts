@@ -3,7 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import type { Status } from "@/lib/types";
-import { isNotifiableStatus, buildMessage, sendWhatsApp, NotifiableStatus } from "@/lib/whatsapp";
+import { isNotifiableStatus, type NotifiableStatus } from "@/lib/whatsapp";
+import { notifyOrderStatus } from "@/lib/notify-order";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +16,9 @@ function err(msg: string, status = 400) {
     return NextResponse.json({ error: msg }, { status });
 }
 
-const VALID_STATUSES: Status[] = ["novo", "confirmado", "rota", "entregue"];
+const VALID_STATUSES: Status[] = ["novo", "confirmado", "rota", "entregue", "cancelado"];
+const VALID_PAYMENTS = ["pix", "credito", "debito", "dinheiro"];
+const VALID_DELIVERY_TYPES = ["delivery", "retirada"];
 
 export async function PATCH(
     request: NextRequest,
@@ -32,9 +35,28 @@ export async function PATCH(
     let body: unknown;
     try { body = await request.json(); } catch { return err("JSON inválido."); }
 
-    const { status } = body as { status: unknown };
+    const { status, position, payment_method, delivery_type, delivery_fee } = body as {
+        status: unknown;
+        position?: unknown;
+        payment_method?: unknown;
+        delivery_type?: unknown;
+        delivery_fee?: unknown;
+    };
+
     if (!VALID_STATUSES.includes(status as Status)) {
         return err("Status inválido.");
+    }
+    if (position !== undefined && (typeof position !== "number" || !Number.isFinite(position))) {
+        return err("Posição inválida.");
+    }
+    if (payment_method !== undefined && !VALID_PAYMENTS.includes(payment_method as string)) {
+        return err("Forma de pagamento inválida.");
+    }
+    if (delivery_type !== undefined && !VALID_DELIVERY_TYPES.includes(delivery_type as string)) {
+        return err("Tipo de entrega inválido.");
+    }
+    if (delivery_fee !== undefined && (typeof delivery_fee !== "number" || !Number.isFinite(delivery_fee) || delivery_fee < 0)) {
+        return err("Taxa de entrega inválida.");
     }
 
     const { id: orderId } = await params;
@@ -48,13 +70,22 @@ export async function PATCH(
 
     if (orderErr || !order) return err("Pedido não encontrado.", 404);
 
+    const patch: Record<string, unknown> = { status };
+    if (position !== undefined)       patch.position       = position;
+    if (payment_method !== undefined) patch.payment_method = payment_method;
+    if (delivery_type !== undefined)  patch.delivery_type  = delivery_type;
+    if (delivery_fee !== undefined)   patch.delivery_fee   = delivery_fee;
+
     const { error: updateError } = await supabase
         .from("orders")
-        .update({ status })
+        .update(patch)
         .eq("id", orderId)
         .eq("admin_id", session.adminId);
 
-    if (updateError) return err("Erro ao atualizar status.", 500);
+    if (updateError) {
+        console.error("[status] update error:", updateError.message);
+        return err("Erro ao atualizar status.", 500);
+    }
 
     if (status === "entregue" && order.status !== "entregue") {
         const { data: orderItems } = await supabase
@@ -101,23 +132,9 @@ export async function PATCH(
         }
     }
 
-    // Notificação WhatsApp (fire-and-forget)
-    if (isNotifiableStatus(status as string)) {
-        void (async () => {
-            const { data: client } = await supabase
-                .from("clients")
-                .select("name, phone")
-                .eq("id", order.client_id)
-                .single();
-            if (client?.phone) {
-                const message = buildMessage(status as NotifiableStatus, client.name, orderId);
-                try {
-                    await sendWhatsApp(client.phone, message);
-                } catch (e) {
-                    console.error("[status] sendWhatsApp threw:", e);
-                }
-            }
-        })().catch(() => {});
+    // Notificação WhatsApp (fire-and-forget) — apenas quando o status realmente mudou
+    if (order.status !== status && isNotifiableStatus(status as string)) {
+        void notifyOrderStatus(orderId, status as NotifiableStatus).catch(() => {});
     }
 
     return NextResponse.json({ ok: true, status });

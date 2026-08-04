@@ -317,7 +317,7 @@ export default function PedidosPage() {
 
                 {/* Kanban */}
                 {(view === "hybrid" || view === "kanban") && (
-                    <KanbanBoard orders={filteredOrders} setOrders={setOrders} />
+                    <KanbanBoard orders={orders} visibleOrders={filteredOrders} setOrders={setOrders} />
                 )}
 
                 {/* Detailed report */}

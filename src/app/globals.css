@@ -113,6 +113,25 @@
     display: none;
   }
 
+  /* Adia a renderização do que está fora da viewport em listas longas
+     (catálogo tem 200+ produtos). Quem usa a classe declara a altura
+     estimada em contain-intrinsic-size, para a barra de rolagem não pular. */
+  .defer-offscreen {
+    content-visibility: auto;
+  }
+
+  /* Respeita quem pediu menos movimento no sistema operacional. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   /* Barcode scanner scan-line animation */
   @keyframes scanline {
     0%   { top: 0%; opacity: 1; }
