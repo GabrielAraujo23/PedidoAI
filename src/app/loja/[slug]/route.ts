@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { TENANT_COOKIE, signTenant, tenantCookieOptions } from "@/lib/session-cookie";
 import { slugify } from "@/lib/slug";
 import { handleRouteError } from "@/lib/api-auth";
+import { isTenantActive } from "@/lib/tenant";
 
 /**
  * GET /loja/<slug> — entrada pública da loja.
@@ -49,6 +50,12 @@ export async function GET(
         // loja qualquer é exatamente o palpite silencioso que estamos matando:
         // ele acabaria fazendo pedido no lugar errado sem perceber.
         if (!data?.admin_id) return notFoundPage(slug);
+
+        // Loja não liberada (ou suspensa) responde o MESMO 404 de loja
+        // inexistente. Bloquear só o painel deixaria uma loja cortada
+        // recebendo pedidos por este link — e não é ao cliente final que se
+        // explica que o lojista não pagou.
+        if (!(await isTenantActive(data.admin_id))) return notFoundPage(slug);
 
         const res = NextResponse.redirect(new URL("/login", request.url));
         const signed = await signTenant({

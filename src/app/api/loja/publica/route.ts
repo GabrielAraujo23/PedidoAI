@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { handleRouteError } from "@/lib/api-auth";
 import { TENANT_COOKIE, verifyTenant } from "@/lib/session-cookie";
 import { slugify } from "@/lib/slug";
+import { isTenantActive, listActiveAdminIds } from "@/lib/tenant";
 
 const PUBLIC_FIELDS =
     "admin_id, store_name, slug, latitude, longitude, delivery_radius_km, delivery_rate_per_km";
@@ -51,31 +52,38 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // Sem nenhuma pista: só responde se a instalação tiver uma loja só.
-        // Pedimos 2 linhas justamente para saber se existe uma segunda.
-        const { data: stores, error } = await db
-            .from("store_settings")
-            .select(PUBLIC_FIELDS)
-            .order("created_at", { ascending: true })
-            .limit(2);
+        // Sem nenhuma pista: só responde se a instalação tiver UMA loja ativa.
+        // Pedimos 2 ids justamente para saber se existe uma segunda.
+        const ativos = await listActiveAdminIds(2);
+        if (ativos.length !== 1) {
+            return NextResponse.json({ store: null, needsStore: ativos.length > 1 });
+        }
 
-        if (error) {
-            console.error("[GET /api/loja/publica]", error.message);
+        const { data: unica, error: unicaErr } = await db
+            .from("store_settings").select(PUBLIC_FIELDS).eq("admin_id", ativos[0]).maybeSingle();
+
+        if (unicaErr) {
+            console.error("[GET /api/loja/publica]", unicaErr.message);
             return NextResponse.json({ store: null });
         }
-        if (stores?.length !== 1) return NextResponse.json({ store: null, needsStore: (stores?.length ?? 0) > 1 });
-
-        return NextResponse.json({ store: stores[0] });
+        return NextResponse.json({ store: unica ?? null });
     } catch (e) {
         return handleRouteError(e, "GET /api/loja/publica");
     }
 }
 
-async function respond(query: PromiseLike<{ data: unknown; error: { message: string } | null }>) {
+async function respond(
+    query: PromiseLike<{ data: unknown; error: { message: string } | null }>
+) {
     const { data, error } = await query;
     if (error) {
         console.error("[GET /api/loja/publica]", error.message);
         return NextResponse.json({ store: null });
     }
-    return NextResponse.json({ store: data ?? null });
+    const store = (data ?? null) as { admin_id?: string | null } | null;
+    // Uma loja não liberada não existe para o cliente final.
+    if (!store?.admin_id || !(await isTenantActive(store.admin_id))) {
+        return NextResponse.json({ store: null });
+    }
+    return NextResponse.json({ store });
 }

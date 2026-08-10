@@ -9,6 +9,7 @@ import { validatePhone, validateName, truncate, LIMITS } from "@/lib/validators"
 import { checkOrigin } from "@/lib/csrf";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { handleRouteError } from "@/lib/api-auth";
+import { isTenantActive, listActiveAdminIds } from "@/lib/tenant";
 
 function ok(data: object)               { return NextResponse.json(data); }
 function err(msg: string, status = 400) { return NextResponse.json({ error: msg }, { status }); }
@@ -93,32 +94,30 @@ type TenantResult =
  *      e o cliente era cadastrado na loja errada em silêncio.
  */
 async function resolveTenant(request: NextRequest, bodyAdminId: unknown): Promise<TenantResult> {
+    // Toda pista precisa apontar para uma loja ATIVA. Um link antigo
+    // `?admin=<uuid>` de loja suspensa cadastraria cliente numa loja que não
+    // pode vender — e o cliente só descobriria no checkout.
     if (typeof bodyAdminId === "string" && bodyAdminId.trim()) {
-        return { ok: true, adminId: bodyAdminId.trim() };
+        const id = bodyAdminId.trim();
+        if (await isTenantActive(id)) return { ok: true, adminId: id };
+        return { ok: false, response: err("Esta loja não está disponível no momento.", 404) };
     }
 
     const cookie = request.cookies.get(TENANT_COOKIE)?.value;
     if (cookie) {
         const tenant = await verifyTenant(cookie);
-        if (tenant?.adminId) return { ok: true, adminId: tenant.adminId };
+        if (tenant?.adminId && (await isTenantActive(tenant.adminId))) {
+            return { ok: true, adminId: tenant.adminId };
+        }
     }
 
-    // Pedimos 2 linhas de propósito: precisamos saber se existe uma segunda
-    // loja, não apenas qual é a primeira.
-    const { data: stores, error } = await getSupabaseAdmin()
-        .from("store_settings")
-        .select("admin_id")
-        .not("admin_id", "is", null)
-        .order("created_at", { ascending: true })
-        .limit(2);
+    // Pedimos 2 ids de propósito: precisamos saber se existe uma segunda loja
+    // ativa, não apenas qual é a primeira.
+    const ativos = await listActiveAdminIds(2);
 
-    if (error) console.error("[resolveTenant] store_settings query error:", error.message);
+    if (ativos.length === 1) return { ok: true, adminId: ativos[0] };
 
-    if (stores?.length === 1 && stores[0].admin_id) {
-        return { ok: true, adminId: stores[0].admin_id };
-    }
-
-    if (!stores?.length) {
+    if (ativos.length === 0) {
         return { ok: false, response: err("Nenhuma loja disponível para cadastro.", 503) };
     }
 
