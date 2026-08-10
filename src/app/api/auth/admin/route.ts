@@ -5,6 +5,7 @@ import { rateLimit, getClientIP, LIMITS } from "@/lib/rate-limit";
 import { checkOrigin } from "@/lib/csrf";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { handleRouteError } from "@/lib/api-auth";
+import { isTenantStatus, isAdminRole, type TenantStatus, type AdminRole } from "@/lib/tenant-status";
 
 /**
  * Server-side admin authentication.
@@ -27,9 +28,12 @@ function tooMany(resetAt: number) {
     );
 }
 
-async function okWithSession(data: { adminId: string; email: string }) {
+async function okWithSession(data: {
+    adminId: string; email: string; role: AdminRole; status: TenantStatus;
+}) {
     const signed = await signSession(data);
-    const res = NextResponse.json(data);
+    // O cliente so precisa de adminId e email; role e status ficam no cookie.
+    const res = NextResponse.json({ adminId: data.adminId, email: data.email });
     res.cookies.set(SESSION_COOKIE, signed, sessionCookieOptions());
     return res;
 }
@@ -87,7 +91,7 @@ async function handleSignIn({ email, password }: Record<string, unknown>, ip: st
 
     const { data: admin } = await getSupabaseAdmin()
         .from("admins")
-        .select("id, email, password_hash")
+        .select("id, email, password_hash, role, status")
         .eq("email", email.trim().toLowerCase())
         .single();
 
@@ -101,7 +105,16 @@ async function handleSignIn({ email, password }: Record<string, unknown>, ip: st
         return err("Credenciais inválidas.", 401);
     }
 
-    return okWithSession({ adminId: admin.id, email: admin.email });
+    if (!isAdminRole(admin.role) || !isTenantStatus(admin.status)) {
+        console.error("[handleSignIn] role/status inválido:", admin.id, admin.role, admin.status);
+        return err("Conta em estado inconsistente. Contate o suporte.", 500);
+    }
+
+    // O login FUNCIONA para conta pendente/suspensa: ela precisa entrar para
+    // ver a tela de acompanhamento. Quem barra e o portao seguinte.
+    return okWithSession({
+        adminId: admin.id, email: admin.email, role: admin.role, status: admin.status,
+    });
 }
 
 // ── Sign up ───────────────────────────────────────────────────────────────────
@@ -138,7 +151,9 @@ async function handleSignUp({ email, password }: Record<string, unknown>, ip: st
         return err("Erro ao definir senha. Tente novamente.", 500);
     }
 
-    return okWithSession({ adminId: existing.id, email: existing.email });
+    return okWithSession({
+        adminId: existing.id, email: existing.email, role: "lojista", status: "ativa",
+    });
 }
 
 // ── Forgot: request reset code ────────────────────────────────────────────────

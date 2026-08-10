@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-    SESSION_COOKIE, verifySession, type SessionPayload,
+    SESSION_COOKIE, verifySession,
     CLIENT_SESSION_COOKIE, verifyClientSession, type ClientSessionPayload,
 } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getAdminAuthState, type AdminAuthState } from "@/lib/tenant";
+import { canUsePanel } from "@/lib/tenant-status";
 
 /**
  * Guardas de autenticação para as rotas de API.
@@ -53,8 +56,14 @@ type Guard<T> =
     | { ok: true; session: T }
     | { ok: false; response: NextResponse };
 
-/** Exige sessão de administrador. Valida CSRF em requisições que alteram estado. */
-export async function requireAdmin(request: NextRequest): Promise<Guard<SessionPayload>> {
+/**
+ * Sessao de admin valida, SEM olhar o ciclo de vida.
+ *
+ * Existe para a tela de acompanhamento: uma conta `pendente` precisa entrar
+ * para ver em que pe esta o pedido dela. Todo o resto do painel usa
+ * requireAdmin(), que barra quem nao esta ativa.
+ */
+export async function requireAdminSession(request: NextRequest): Promise<Guard<AdminAuthState>> {
     if (request.method !== "GET" && !checkOrigin(request)) {
         return { ok: false, response: jsonError("Forbidden", 403) };
     }
@@ -65,7 +74,65 @@ export async function requireAdmin(request: NextRequest): Promise<Guard<SessionP
     const session = await verifySession(cookie);
     if (!session) return { ok: false, response: jsonError("Sessão inválida.", 401) };
 
-    return { ok: true, session };
+    // Estado vivo, nao o do cookie: e aqui que uma suspensao morde.
+    const live = await getAdminAuthState(session.adminId);
+    if (!live) return { ok: false, response: jsonError("Conta não encontrada.", 401) };
+
+    return { ok: true, session: live };
+}
+
+/** Exige sessao de admin de uma tenant ATIVA. Portao padrao do painel. */
+export async function requireAdmin(request: NextRequest): Promise<Guard<AdminAuthState>> {
+    const auth = await requireAdminSession(request);
+    if (!auth.ok) return auth;
+
+    if (!canUsePanel(auth.session.status)) {
+        return {
+            ok: false,
+            response: NextResponse.json(
+                {
+                    error: "Sua loja ainda não está liberada.",
+                    code: "TENANT_INATIVA",
+                    status: auth.session.status,
+                },
+                { status: 403 }
+            ),
+        };
+    }
+
+    return auth;
+}
+
+/**
+ * Exige o dono do sistema.
+ *
+ * Um lojista ativo tem cookie perfeitamente valido — so o papel o separa da
+ * fila de contratacoes. E o papel sai do banco, nunca do cookie.
+ */
+export async function requireOwner(request: NextRequest): Promise<Guard<AdminAuthState>> {
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return auth;
+
+    if (auth.session.role !== "owner") {
+        // Sem NENHUM owner no banco, ninguém consegue aprovar contratação e a
+        // fila fica inalcançável. Dizer exatamente o que rodar poupa a caçada.
+        const { count } = await getSupabaseAdmin()
+            .from("admins").select("id", { count: "exact", head: true }).eq("role", "owner");
+
+        if (!count) {
+            return {
+                ok: false,
+                response: jsonError(
+                    "Nenhum dono definido. Execute no Supabase: " +
+                    "UPDATE admins SET role = 'owner' WHERE email = '<seu e-mail>'; (migration 026)",
+                    500
+                ),
+            };
+        }
+        return { ok: false, response: jsonError("Acesso restrito.", 403) };
+    }
+
+    return auth;
 }
 
 /** Exige sessão de cliente final. Valida CSRF em requisições que alteram estado. */
