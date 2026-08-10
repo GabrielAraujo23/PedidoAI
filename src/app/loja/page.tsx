@@ -19,6 +19,7 @@ import {
     validateLatitude, validateLongitude, validateCategory, validateBusinessHours,
     sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS,
 } from "@/lib/validators";
+import { slugify, isValidSlug, SLUG_MAX } from "@/lib/slug";
 import { logEvent, logError } from "@/lib/logger";
 
 // ── Input masks ────────────────────────────────────────────────────────────
@@ -54,6 +55,22 @@ function maskCep(v: string): string {
     return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+/**
+ * Máscara do endereço público. Não usa `slugify` direto porque ele corta o
+ * hífen final — a cada tecla o lojista perderia o separador que acabou de
+ * digitar em "deposito-". A forma definitiva é decidida no salvamento.
+ */
+function maskSlug(v: string): string {
+    return v
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")   // remove os acentos separados pelo NFD
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/-{2,}/g, "-")
+        .replace(/^-+/, "")
+        .slice(0, SLUG_MAX);
+}
+
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const TAX_REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI"];
@@ -62,6 +79,8 @@ const TAX_REGIMES = ["Simples Nacional", "Lucro Presumido", "Lucro Real", "MEI"]
 
 interface FormState {
     storeName: string;
+    /** Endereço público da loja: /loja/<slug>. */
+    slug: string;
     cnpj: string;
     // address kept as derived formatted string (backward compat)
     address: string;
@@ -86,7 +105,7 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-    storeName: "", cnpj: "", address: "",
+    storeName: "", slug: "", cnpj: "", address: "",
     cep: "", street: "", number: "", complement: "",
     neighborhood: "", city: "", state: "",
     phone: "", businessHours: "", deliveryRate: "", deliveryRadius: "",
@@ -95,6 +114,23 @@ const EMPTY: FormState = {
 };
 
 type ToastState = { type: "success" | "error"; message: string } | null;
+
+type SlugFeedback = { status: "idle" | "checking" | "ok" | "error"; message: string };
+
+/**
+ * Veredito sobre o endereço que não depende do servidor. Devolve `null` quando
+ * o formato está bom e a única dúvida que resta — se outra loja já o usa — só
+ * o banco responde.
+ */
+function localSlugFeedback(candidate: string, saved: string): SlugFeedback | null {
+    if (!candidate) return { status: "idle", message: "" };
+    if (candidate === saved) return { status: "ok", message: "Este é o endereço atual da sua loja." };
+    const check = isValidSlug(candidate);
+    if (!check.ok) return { status: "error", message: check.error };
+    return null;
+}
+
+function SkelField() { return <Skeleton className="h-10 w-full rounded-md" />; }
 
 // ── Validation ─────────────────────────────────────────────────────────────
 
@@ -152,6 +188,15 @@ export default function LojaPage() {
     const [coordsNotFound, setCoordsNotFound] = useState(false);
     const fetchedCepRef = useRef("");
 
+    // Slug state
+    const [savedSlug, setSavedSlug] = useState("");
+    // Resposta da checagem remota, guardada junto do slug que foi consultado:
+    // sem isso, uma resposta atrasada descreveria um texto que já mudou.
+    const [remoteSlug, setRemoteSlug] = useState<{ slug: string; feedback: SlugFeedback } | null>(null);
+    // Origem lida no primeiro render do cliente. No servidor fica vazia, mas
+    // este bloco só aparece depois do load, então não há hydration mismatch.
+    const [origin] = useState(() => (typeof window === "undefined" ? "" : window.location.origin));
+
     const adminId = useRef<string | null>(null);
 
     // ── Load ──────────────────────────────────────────────────────────────
@@ -166,8 +211,10 @@ export default function LojaPage() {
             .then(({ settings: data }) => {
                 if (data) {
                     setSettingId(data.id);
+                    setSavedSlug(data.slug ?? "");
                     setForm({
                         storeName: data.store_name ?? "",
+                        slug: data.slug ?? "",
                         cnpj: data.cnpj ?? "",
                         address: data.address ?? "",
                         cep: data.cep ?? "",
@@ -208,6 +255,46 @@ export default function LojaPage() {
         window.addEventListener("beforeunload", handler);
         return () => window.removeEventListener("beforeunload", handler);
     }, [dirty]);
+
+    // ── Slug: validação ao vivo ───────────────────────────────────────────
+    // O que dá para responder sem rede (vazio, igual ao atual, formato errado)
+    // é derivado no render. O efeito só existe para a pergunta que exige o
+    // servidor — "já está em uso?" — e espera 400ms para não disparar uma
+    // requisição por tecla digitada.
+
+    const candidateSlug = slugify(form.slug);
+    const localSlug = localSlugFeedback(candidateSlug, savedSlug);
+    const needsRemoteCheck = localSlug === null;
+
+    const slugFeedback: SlugFeedback = localSlug
+        ?? (remoteSlug?.slug === candidateSlug
+            ? remoteSlug.feedback
+            : { status: "checking", message: "" });
+
+    useEffect(() => {
+        if (!needsRemoteCheck) return;
+
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            let feedback: SlugFeedback;
+            try {
+                const res = await fetch(`/api/loja/slug?valor=${encodeURIComponent(candidateSlug)}`);
+                const json = await res.json();
+                if (!res.ok) {
+                    feedback = { status: "error", message: json.error ?? "Não foi possível verificar o endereço." };
+                } else if (json.available) {
+                    feedback = { status: "ok", message: "Endereço disponível." };
+                } else {
+                    feedback = { status: "error", message: json.error ?? "Este endereço já está em uso." };
+                }
+            } catch {
+                feedback = { status: "error", message: "Não foi possível verificar o endereço. Tente novamente." };
+            }
+            if (!cancelled) setRemoteSlug({ slug: candidateSlug, feedback });
+        }, 400);
+
+        return () => { cancelled = true; clearTimeout(timer); };
+    }, [candidateSlug, needsRemoteCheck]);
 
     // ── Toast auto-dismiss ───────────────────────────────────────────────
 
@@ -351,6 +438,13 @@ export default function LojaPage() {
             return;
         }
 
+        // Endereço com problema conhecido: o PUT devolveria 400/409 de qualquer
+        // forma, e junto perderia o resto do formulário por um campo só.
+        if (slugFeedback.status === "error") {
+            setToast({ type: "error", message: slugFeedback.message || "Corrija o endereço da loja antes de salvar." });
+            return;
+        }
+
         // Derive formatted address string for backward compat
         const formattedAddress = form.street
             ? `${form.street}${form.number ? `, ${form.number}` : ""}${form.neighborhood ? `, ${form.neighborhood}` : ""}${form.city ? ` - ${form.city}` : ""}${form.state ? `/${form.state}` : ""}`
@@ -359,6 +453,7 @@ export default function LojaPage() {
         setSaving(true);
         const payload = {
             store_name:           form.storeName     ? truncate(form.storeName, LIMITS.store_name)       : null,
+            slug:                 candidateSlug      || null,
             cnpj:                 form.cnpj          || null,
             address:              formattedAddress   ? truncate(formattedAddress, 255)                   : null,
             cep:                  form.cep           || null,
@@ -382,7 +477,7 @@ export default function LojaPage() {
         };
 
         // Upsert pelo tenant do cookie — a API ignora qualquer id enviado.
-        let data: { id: string } | null = null;
+        let data: { id: string; slug?: string | null } | null = null;
         let error: { code?: string; message?: string } | null = null;
         try {
             const res = await fetch("/api/loja", {
@@ -392,7 +487,7 @@ export default function LojaPage() {
             });
             const json = await res.json();
             if (!res.ok) error = { message: json.error ?? "Erro ao salvar" };
-            else data = json.settings as { id: string };
+            else data = json.settings as { id: string; slug?: string | null };
         } catch (e) {
             error = { message: (e as Error).message };
         }
@@ -406,6 +501,13 @@ export default function LojaPage() {
             setToast({ type: "error", message: `Erro ao salvar: ${detail}` });
         } else {
             if (!settingId && data) setSettingId(data.id);
+            // O banco é quem diz qual endereço vigora agora — o campo passa a
+            // exibir a forma normalizada, e o aviso de "link antigo" some.
+            if (data) {
+                const persisted = data.slug ?? "";
+                setSavedSlug(persisted);
+                setForm((f) => ({ ...f, slug: persisted }));
+            }
             logEvent({ event_type: "store_settings_saved", actor_type: "admin", resource_type: "store_settings", resource_id: settingId ?? (data as { id: string } | null)?.id ?? undefined });
             setDirty(false);
             setToast({ type: "success", message: "Configurações salvas com sucesso!" });
@@ -427,9 +529,13 @@ export default function LojaPage() {
         setField("categories", form.categories.filter((c) => c !== cat));
     }
 
-    // ── Skeleton field ────────────────────────────────────────────────────
-
-    function SkelField() { return <Skeleton className="h-10 w-full rounded-md" />; }
+    // ── Slug: textos derivados ────────────────────────────────────────────
+    // O prefixo mostra o host sem o esquema ("pedidoai.vercel.app/loja/") para
+    // caber no campo; o link copiado é sempre absoluto, com https.
+    const slugPrefix = `${origin.replace(/^https?:\/\//, "")}/loja/`;
+    const publicLink = candidateSlug ? `${origin}/loja/${candidateSlug}` : "";
+    // O link só está no ar quando o que está na tela é o que está no banco.
+    const linkIsLive = Boolean(candidateSlug) && candidateSlug === savedSlug;
 
     // ── Render ────────────────────────────────────────────────────────────
 
@@ -449,8 +555,10 @@ export default function LojaPage() {
                 </div>
             )}
 
-            {/* Link do cliente */}
-            {adminId.current && (
+            {/* Endereço público da loja */}
+            {/* Condiciona pela sessão, não pelo ref: ler ref durante o render
+                não redispara a árvore quando ele muda. */}
+            {adminSession?.adminId && (
                 <Card className="border-primary/20 bg-primary/5">
                     <CardContent className="pt-5 pb-4">
                         <div className="flex items-start gap-3">
@@ -458,26 +566,93 @@ export default function LojaPage() {
                                 <Link2 className="w-4 h-4 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-secondary mb-0.5">Link para seus clientes</p>
-                                <p className="text-xs text-muted-foreground mb-2">Compartilhe este link para que seus clientes façam pedidos.</p>
-                                <div className="flex items-center gap-2">
-                                    <code className="text-xs bg-white/80 border border-primary/20 rounded-lg px-3 py-1.5 text-primary font-mono truncate flex-1">
-                                        {typeof window !== "undefined" ? `${window.location.origin}/login?admin=${adminId.current}` : ""}
-                                    </code>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="shrink-0 border-primary/30 hover:bg-primary/10"
-                                        onClick={() => {
-                                            if (typeof window !== "undefined") {
-                                                navigator.clipboard.writeText(`${window.location.origin}/login?admin=${adminId.current}`);
-                                                setToast({ type: "success", message: "Link copiado!" });
-                                            }
-                                        }}
-                                    >
-                                        <Copy className="w-3.5 h-3.5" />
-                                    </Button>
-                                </div>
+                                <p className="text-sm font-semibold text-secondary mb-0.5">Endereço da sua loja</p>
+                                <p className="text-xs text-muted-foreground mb-2">
+                                    Escolha o endereço que seus clientes vão usar para fazer pedidos.
+                                </p>
+
+                                {loading ? <SkelField /> : (
+                                    <>
+                                        {/* Campo com o prefixo fixo do link */}
+                                        <Label htmlFor="store-slug" className="sr-only">Endereço da loja</Label>
+                                        <div className={cn(
+                                            "flex items-stretch rounded-lg border bg-white/80 overflow-hidden",
+                                            "focus-within:ring-2 focus-within:ring-primary/50",
+                                            slugFeedback.status === "error" ? "border-red-400"
+                                                : slugFeedback.status === "ok" ? "border-emerald-400"
+                                                    : "border-primary/20",
+                                        )}>
+                                            <span className="px-3 py-1.5 text-xs font-mono text-muted-foreground bg-black/[0.03] border-r border-primary/10 whitespace-nowrap self-center shrink-0 hidden sm:block">
+                                                {slugPrefix}
+                                            </span>
+                                            <input
+                                                id="store-slug"
+                                                value={form.slug}
+                                                onChange={(e) => setField("slug", maskSlug(e.target.value))}
+                                                placeholder="minha-loja"
+                                                maxLength={SLUG_MAX}
+                                                autoComplete="off"
+                                                spellCheck={false}
+                                                aria-invalid={slugFeedback.status === "error"}
+                                                aria-describedby="store-slug-hint"
+                                                className="flex-1 min-w-0 bg-transparent px-3 py-1.5 text-xs font-mono text-primary placeholder:text-muted-foreground/60 focus:outline-none"
+                                            />
+                                            <span className="pr-3 flex items-center shrink-0">
+                                                {slugFeedback.status === "checking" && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                                                {slugFeedback.status === "ok" && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                                                {slugFeedback.status === "error" && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
+                                            </span>
+                                        </div>
+
+                                        <p
+                                            id="store-slug-hint"
+                                            aria-live="polite"
+                                            className={cn(
+                                                "text-xs mt-1.5",
+                                                slugFeedback.status === "error" ? "text-red-500"
+                                                    : slugFeedback.status === "ok" ? "text-emerald-600"
+                                                        : "text-muted-foreground",
+                                            )}
+                                        >
+                                            {slugFeedback.message || "Use letras minúsculas, números e hífen. Ex: deposito-izomar"}
+                                        </p>
+
+                                        {/* Link completo + copiar */}
+                                        <div className="flex items-center gap-2 mt-3">
+                                            <code className="text-xs bg-white/80 border border-primary/20 rounded-lg px-3 py-1.5 text-primary font-mono truncate flex-1">
+                                                {publicLink || `${slugPrefix}minha-loja`}
+                                            </code>
+                                            {/* Copiar só o que já funciona: um link
+                                                ainda não salvo levaria a lugar nenhum. */}
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                aria-label="Copiar link da loja"
+                                                title={linkIsLive ? "Copiar link da loja" : "Salve o novo endereço para copiar o link"}
+                                                disabled={!linkIsLive}
+                                                className="shrink-0 border-primary/30 hover:bg-primary/10 cursor-pointer disabled:cursor-not-allowed"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(publicLink);
+                                                    setToast({ type: "success", message: "Link copiado!" });
+                                                }}
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                            </Button>
+                                        </div>
+
+                                        {/* O aviso só aparece quando há mesmo um link antigo em risco. */}
+                                        {savedSlug && candidateSlug !== savedSlug ? (
+                                            <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2 mt-2">
+                                                ⚠️ Ao salvar, o link anterior (<span className="font-mono">/loja/{savedSlug}</span>) deixa de funcionar.
+                                                Quem já tiver o link antigo vai precisar do novo.
+                                            </p>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                Ao trocar o endereço, o link anterior deixa de funcionar.
+                                            </p>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </CardContent>
