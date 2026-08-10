@@ -377,12 +377,17 @@ export default function LoginPage() {
 
             {/* Top brand bar */}
             <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
-                <div className="flex items-center">
-                    <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[280px] h-auto object-contain" />
+                <div className="flex items-center shrink-0">
+                    {/* Logo menor no celular para abrir espaço ao nome da loja */}
+                    <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[170px] sm:w-[280px] h-auto object-contain" />
                 </div>
                 {/* Nome da loja resolvida — é o retorno visível de ter entrado
-                    por /loja/<slug>: o cliente confere que é a loja certa. */}
-                <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500 hidden sm:block text-right max-w-[220px] truncate">
+                    por /loja/<slug>: o cliente confere que é a loja certa antes
+                    de digitar o telefone. Visível também no celular: o link
+                    chega por WhatsApp, então é ali que quase todo cliente entra
+                    — esconder a confirmação justamente no celular anularia o
+                    motivo de existir o slug. */}
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 text-right max-w-[150px] sm:max-w-[220px] truncate">
                     {storeName || "Loja Aberta"}
                 </span>
             </header>
