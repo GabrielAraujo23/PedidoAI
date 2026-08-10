@@ -6,8 +6,7 @@ import {
     AlertCircle, Check, Package, Tag, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
-import { validateProductName, validatePrice, validateDescription, truncate, LIMITS } from "@/lib/validators";
+import { validateProductName, validatePrice, validateDescription, LIMITS } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -108,7 +107,6 @@ export default function ProdutosPage() {
 
     useEffect(() => {
         if (adminSession) fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [adminSession]);
 
     useEffect(() => {
@@ -119,15 +117,16 @@ export default function ProdutosPage() {
 
     async function fetchProducts() {
         setLoading(true);
-        const { data, error } = await supabase
-            .from("products")
-            .select("*")
-            .eq("admin_id", adminSession!.adminId)
-            .order("category", { ascending: true })
-            .order("name", { ascending: true });
-        if (error) setToast({ type: "error", message: `Erro ao carregar: ${error.message}` });
-        else setProducts((data as Product[]) ?? []);
-        setLoading(false);
+        try {
+            const res = await fetch("/api/produtos");
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao carregar");
+            setProducts((json.products as Product[]) ?? []);
+        } catch (e) {
+            setToast({ type: "error", message: `Erro ao carregar: ${(e as Error).message}` });
+        } finally {
+            setLoading(false);
+        }
     }
 
     const filtered = products.filter((p) => {
@@ -183,75 +182,83 @@ export default function ProdutosPage() {
         const descVal = validateDescription(form.description);
         if (!descVal.ok) { setFormError(descVal.error); return; }
 
-        const priceNum = parseFloat(form.price.replace(/\./g, "").replace(",", "."));
-
         setSaving(true);
+        // A API revalida tudo isto no servidor e deriva o admin_id do cookie —
+        // aqui a validação existe só para dar retorno imediato no formulário.
         const payload = {
-            name: truncate(form.name.trim(), LIMITS.product_name),
-            description: form.description.trim() ? truncate(form.description.trim(), LIMITS.description) : null,
+            name: form.name.trim(),
+            description: form.description.trim() || null,
             category: form.category,
             subcategory: form.subcategory.trim() || null,
             unit: form.unit,
-            price: priceNum,
+            price: form.price,
             active: form.active,
-            updated_at: new Date().toISOString(),
         };
 
-        let savedId: string | undefined = editingId ?? undefined;
-        let error;
+        try {
+            const res = await fetch(
+                editingId ? `/api/produtos/${editingId}` : "/api/produtos",
+                {
+                    method: editingId ? "PATCH" : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                }
+            );
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro desconhecido.");
 
-        if (editingId) {
-            ({ error } = await supabase.from("products").update(payload).eq("id", editingId));
-        } else {
-            const result = await supabase.from("products").insert({ ...payload, admin_id: adminSession!.adminId }).select("id").single();
-            error = result.error;
-            if (result.data) savedId = (result.data as { id: string }).id;
-        }
-
-        if (error) {
-            logError("product_save", error);
-            setFormError(`Erro: ${(error as { message?: string }).message ?? "Erro desconhecido."}`);
-        } else {
             logEvent({
                 event_type: editingId ? "product_updated" : "product_created",
                 actor_type: "admin",
                 resource_type: "product",
-                resource_id: savedId,
+                resource_id: json.product?.id ?? editingId ?? undefined,
                 metadata: { category: form.category },
             });
             setShowModal(false);
             setToast({ type: "success", message: editingId ? "Produto atualizado!" : "Produto criado com sucesso!" });
             await fetchProducts();
+        } catch (e) {
+            logError("product_save", e);
+            setFormError(`Erro: ${(e as Error).message}`);
+        } finally {
+            setSaving(false);
         }
-        setSaving(false);
     }
 
     async function handleToggleActive(p: Product) {
-        const { error } = await supabase.from("products").update({ active: !p.active }).eq("id", p.id);
-        if (error) {
-            logError("product_toggle", error);
-            return;
+        // Otimista: reverte se a API recusar.
+        setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, active: !p.active } : x));
+        try {
+            const res = await fetch(`/api/produtos/${p.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ active: !p.active }),
+            });
+            if (!res.ok) throw new Error((await res.json()).error ?? "falha");
+            logEvent({ event_type: "product_toggled", actor_type: "admin", resource_type: "product", resource_id: p.id, metadata: { active: !p.active } });
+        } catch (e) {
+            logError("product_toggle", e);
+            setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, active: p.active } : x));
+            setToast({ type: "error", message: "Não foi possível alterar o produto." });
         }
-        logEvent({ event_type: "product_toggled", actor_type: "admin", resource_type: "product", resource_id: p.id, metadata: { active: !p.active } });
-        setProducts((prev) =>
-            prev.map((x) => x.id === p.id ? { ...x, active: !p.active } : x)
-        );
     }
 
     async function handleDelete() {
         if (!deleteId) return;
         setDeleting(true);
-        const { error } = await supabase.from("products").delete().eq("id", deleteId);
-        if (error) {
-            logError("product_delete", error);
-            setToast({ type: "error", message: "Erro ao excluir produto." });
-        } else {
+        try {
+            const res = await fetch(`/api/produtos/${deleteId}`, { method: "DELETE" });
+            if (!res.ok) throw new Error((await res.json()).error ?? "falha");
             logEvent({ event_type: "product_deleted", actor_type: "admin", resource_type: "product", resource_id: deleteId });
             setProducts((prev) => prev.filter((p) => p.id !== deleteId));
             setToast({ type: "success", message: "Produto excluído." });
+        } catch (e) {
+            logError("product_delete", e);
+            setToast({ type: "error", message: "Erro ao excluir produto." });
+        } finally {
+            setDeleteId(null);
+            setDeleting(false);
         }
-        setDeleteId(null);
-        setDeleting(false);
     }
 
     // ── Render ─────────────────────────────────────────────────────────────────
