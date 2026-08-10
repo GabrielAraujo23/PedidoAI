@@ -24,7 +24,7 @@ ok()     { echo "ok: $1"; }
 echo "== 1. cadastro =="
 curl -sS -c "$TMP/lojista.txt" -o "$TMP/cadastro.json" -w '%{http_code}' \
     -H "Content-Type: application/json" -H "Origin: $BASE" \
-    -d "{\"email\":\"$EMAIL\",\"password\":\"senha-de-teste-123\",\"storeName\":\"Loja Teste $SUFIXO\",\"cnpj\":\"\",\"phone\":\"(11) 99999-9999\",\"address\":\"Rua Teste, 1, Centro, São Paulo/SP\",\"slug\":\"$SLUG\",\"acceptedTerms\":true}" \
+    -d "{\"email\":\"$EMAIL\",\"password\":\"SenhaDeTeste123\",\"storeName\":\"Loja Teste $SUFIXO\",\"cnpj\":\"\",\"phone\":\"(11) 99999-9999\",\"address\":\"Rua Teste, 1, Centro, São Paulo/SP\",\"slug\":\"$SLUG\",\"acceptedTerms\":true}" \
     "$BASE/api/contratar" > "$TMP/code" || true
 [ "$(cat "$TMP/code")" = "200" ] || falhou "cadastro devolveu $(cat "$TMP/code"): $(cat "$TMP/cadastro.json")"
 ok "conta criada como pendente"

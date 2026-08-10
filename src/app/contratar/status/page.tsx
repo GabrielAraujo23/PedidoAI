@@ -41,7 +41,17 @@ export default function ContratarStatusPage() {
     useEffect(() => {
         fetch("/api/contratar/status")
             .then((r) => r.json())
-            .then((payload: StatusPayload) => setData(payload))
+            .then((payload: StatusPayload) => {
+                // Liberado enquanto esta aba estava aberta. A rota acabou de
+                // reemitir o cookie com o status novo, então o painel agora
+                // aceita a sessão — e esta tela não tem mais o que dizer.
+                // Sem isto o lojista aprovado continuaria lendo "em análise".
+                if (payload.status === "ativa") {
+                    window.location.href = "/";
+                    return;
+                }
+                setData(payload);
+            })
             .catch(() => { /* a tela ainda diz algo sem os dados */ })
             .finally(() => setLoading(false));
     }, []);
