@@ -8,10 +8,14 @@ export async function GET(request: NextRequest) {
     const auth = await requireAdmin(request);
     if (!auth.ok) return auth.response;
 
-    const { data, error } = await getSupabaseAdmin()
+    // ?active=1 — usado pelo Atendimento, que só oferece produtos vendáveis.
+    let query = getSupabaseAdmin()
         .from("products")
         .select("*")
-        .eq("admin_id", auth.session.adminId)
+        .eq("admin_id", auth.session.adminId);
+    if (request.nextUrl.searchParams.get("active") === "1") query = query.eq("active", true);
+
+    const { data, error } = await query
         .order("category", { ascending: true })
         .order("name", { ascending: true });
 

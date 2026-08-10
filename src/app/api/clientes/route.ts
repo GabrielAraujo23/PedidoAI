@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin, readJson, jsonError, handleRouteError } from "@/lib/api-auth";
-import { validateName, validatePhone, truncate, LIMITS } from "@/lib/validators";
+import { validateName, validatePhone, truncate, escapeLike, LIMITS } from "@/lib/validators";
 
 /**
  * GET /api/clientes — clientes da loja autenticada, mais a projeção mínima de
@@ -16,6 +16,26 @@ export async function GET(request: NextRequest) {
 
         const { adminId } = auth.session;
         const db = getSupabaseAdmin();
+
+        // ?q= — busca usada pelo Atendimento. Devolve só os clientes, sem o
+        // agregado de pedidos, que a busca não usa.
+        const q = request.nextUrl.searchParams.get("q")?.trim();
+        if (q) {
+            if (q.length < 2) return NextResponse.json({ clients: [] });
+            const safe = escapeLike(q);
+            const { data, error } = await db
+                .from("clients")
+                .select("id, name, phone, address")
+                .eq("admin_id", adminId)
+                .or(`name.ilike.%${safe}%,phone.ilike.%${safe}%`)
+                .limit(8);
+
+            if (error) {
+                console.error("[GET /api/clientes?q]", error.message);
+                return jsonError("Erro na busca.", 500);
+            }
+            return NextResponse.json({ clients: data ?? [] });
+        }
 
         const [clientsRes, ordersRes] = await Promise.all([
             db.from("clients").select("*").eq("admin_id", adminId).order("created_at", { ascending: false }),

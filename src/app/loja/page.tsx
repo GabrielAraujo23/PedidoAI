@@ -161,12 +161,9 @@ export default function LojaPage() {
 
         if (!adminId.current) { setLoading(false); return; }
 
-        supabase
-            .from("store_settings")
-            .select("*")
-            .eq("admin_id", adminId.current)
-            .single()
-            .then(({ data }) => {
+        fetch("/api/loja")
+            .then((r) => r.json())
+            .then(({ settings: data }) => {
                 if (data) {
                     setSettingId(data.id);
                     setForm({
@@ -361,7 +358,6 @@ export default function LojaPage() {
 
         setSaving(true);
         const payload = {
-            admin_id: adminId.current,
             store_name:           form.storeName     ? truncate(form.storeName, LIMITS.store_name)       : null,
             cnpj:                 form.cnpj          || null,
             address:              formattedAddress   ? truncate(formattedAddress, 255)                   : null,
@@ -385,9 +381,21 @@ export default function LojaPage() {
             updated_at: new Date().toISOString(),
         };
 
-        const { data, error } = settingId
-            ? await supabase.from("store_settings").update(payload).eq("id", settingId).select("id").single()
-            : await supabase.from("store_settings").insert(payload).select("id").single();
+        // Upsert pelo tenant do cookie — a API ignora qualquer id enviado.
+        let data: { id: string } | null = null;
+        let error: { code?: string; message?: string } | null = null;
+        try {
+            const res = await fetch("/api/loja", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const json = await res.json();
+            if (!res.ok) error = { message: json.error ?? "Erro ao salvar" };
+            else data = json.settings as { id: string };
+        } catch (e) {
+            error = { message: (e as Error).message };
+        }
 
         if (error) {
             logError("store_settings_save", error);
