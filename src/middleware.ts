@@ -21,6 +21,12 @@ import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
  * /api/loja/publica devolve só coordenadas e taxa de entrega, necessárias na
  * tela de login antes de existir qualquer sessão. O /api/loja (sem /publica)
  * continua protegido.
+ *
+ * "/loja/" (COM a barra final) é a entrada pública por slug — o link que o
+ * lojista compartilha. A barra é o que separa as duas coisas: a tela de
+ * configuração da loja é "/loja", e "/loja".startsWith("/loja/") é false,
+ * então ela continua exigindo sessão de admin. Parece frágil e não é; só não
+ * remova essa barra.
  */
 const PUBLIC_PREFIXES = [
     "/login",
@@ -29,6 +35,7 @@ const PUBLIC_PREFIXES = [
     "/api/auth/",
     "/api/cliente/",
     "/api/loja/publica",
+    "/loja/",
     "/register",
     "/loginadmin",
 ];

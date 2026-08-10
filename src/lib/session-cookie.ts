@@ -6,9 +6,11 @@
 
 export const SESSION_COOKIE        = "pedidoai_session";
 export const CLIENT_SESSION_COOKIE = "pedidoai_client";
+export const TENANT_COOKIE         = "pedidoai_tenant";
 
 const MAX_AGE        = 60 * 60 * 24;      // Admin session: 24 hours
 const CLIENT_MAX_AGE = 60 * 60 * 24 * 30; // Client session: 30 days
+const TENANT_MAX_AGE = 60 * 60 * 24 * 30; // Tenant do visitante: 30 days
 
 export interface SessionPayload {
     adminId: string;
@@ -20,6 +22,16 @@ export interface ClientSessionPayload {
     name: string;
     phone: string;
     adminId: string;
+}
+
+/**
+ * Loja que o visitante escolheu ao abrir /loja/<slug>, antes de existir
+ * qualquer sessão. É o que diz em qual loja um cliente novo se cadastra.
+ */
+export interface TenantPayload {
+    adminId: string;
+    slug: string;
+    storeName: string;
 }
 
 function getSecret(): string {
@@ -105,6 +117,32 @@ export function clientSessionCookieOptions(maxAge = CLIENT_MAX_AGE) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict" as const,
+        path: "/",
+        maxAge,
+    };
+}
+
+// ── Tenant (loja escolhida pelo visitante) ────────────────────────────────────
+
+export async function signTenant(data: TenantPayload): Promise<string> {
+    return signPayload(data);
+}
+
+export async function verifyTenant(cookie: string): Promise<TenantPayload | null> {
+    return verifyPayload<TenantPayload>(cookie);
+}
+
+export function tenantCookieOptions(maxAge = TENANT_MAX_AGE) {
+    return {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        // "lax", e não "strict" como as sessões: o link da loja chega por
+        // WhatsApp, Instagram ou QR code. Com "strict" o navegador não
+        // mandaria o cookie na primeira navegação vinda de fora, e o cliente
+        // cairia em /login sem saber de que loja se trata — justamente o que
+        // esta feature existe para evitar. O conteúdo é assinado por HMAC,
+        // então "lax" não abre espaço para forjar loja.
+        sameSite: "lax" as const,
         path: "/",
         maxAge,
     };
