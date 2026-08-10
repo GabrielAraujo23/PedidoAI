@@ -4,6 +4,8 @@
  * Never import this in client components.
  */
 
+import { isTenantStatus, isAdminRole, type TenantStatus, type AdminRole } from "@/lib/tenant-status";
+
 export const SESSION_COOKIE        = "pedidoai_session";
 export const CLIENT_SESSION_COOKIE = "pedidoai_client";
 export const TENANT_COOKIE         = "pedidoai_tenant";
@@ -14,7 +16,9 @@ const TENANT_MAX_AGE = 60 * 60 * 24 * 30; // Tenant do visitante: 30 days
 
 export interface SessionPayload {
     adminId: string;
-    email: string;
+    email:   string;
+    role:    AdminRole;
+    status:  TenantStatus;
 }
 
 export interface ClientSessionPayload {
@@ -88,8 +92,21 @@ export async function signSession(data: SessionPayload): Promise<string> {
     return signPayload(data);
 }
 
+/**
+ * Verifica a assinatura E o formato do payload.
+ *
+ * Um cookie emitido antes da migration 026 tem assinatura perfeitamente
+ * valida e nenhum `status` — aceitá-lo deixaria uma sessão sem portão de
+ * ciclo de vida circulando por até 24h. Melhor tratar como inválido: o
+ * middleware limpa o cookie e a pessoa faz login de novo.
+ */
 export async function verifySession(cookie: string): Promise<SessionPayload | null> {
-    return verifyPayload<SessionPayload>(cookie);
+    const payload = await verifyPayload<SessionPayload>(cookie);
+    if (!payload || typeof payload.adminId !== "string" || typeof payload.email !== "string") {
+        return null;
+    }
+    if (!isAdminRole(payload.role) || !isTenantStatus(payload.status)) return null;
+    return payload;
 }
 
 export function sessionCookieOptions(maxAge = MAX_AGE) {
