@@ -32,8 +32,12 @@ async function okWithSession(data: {
     adminId: string; email: string; role: AdminRole; status: TenantStatus;
 }) {
     const signed = await signSession(data);
-    // O cliente so precisa de adminId e email; role e status ficam no cookie.
-    const res = NextResponse.json({ adminId: data.adminId, email: data.email });
+    // `role` vai no corpo porque a sidebar precisa dele para decidir se mostra
+    // o item de Contratações, e sem isso ele só chegaria no reload seguinte.
+    // Não é segredo — a pessoa sabe se é dona do sistema. `status` fica só no
+    // cookie: nenhuma tela do painel precisa dele (quem não está ativa nem
+    // chega ao painel).
+    const res = NextResponse.json({ adminId: data.adminId, email: data.email, role: data.role });
     res.cookies.set(SESSION_COOKIE, signed, sessionCookieOptions());
     return res;
 }

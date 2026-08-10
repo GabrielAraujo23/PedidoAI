@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { validateEmail, validatePassword } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
 import { useAuth } from "@/lib/auth-context";
+import { isAdminRole } from "@/lib/tenant-status";
 
 type Mode = "signin" | "forgot_email" | "forgot_code" | "forgot_newpass";
 
@@ -58,8 +59,10 @@ export default function AcessoPage() {
 
     const router = useRouter();
 
-    function saveSession(adminId: string, email: string) {
-        setAdminSession({ adminId, email });
+    function saveSession(adminId: string, email: string, role: unknown) {
+        // Papel desconhecido cai em "lojista": errar para menos apenas esconde
+        // um link, enquanto errar para mais mostraria um item que leva a 403.
+        setAdminSession({ adminId, email, role: isAdminRole(role) ? role : "lojista" });
     }
 
     async function handleSignIn(e: React.FormEvent) {
@@ -85,7 +88,7 @@ export default function AcessoPage() {
             }
 
             logEvent({ event_type: "admin_login_success", actor_type: "admin", actor_id: data.adminId });
-            saveSession(data.adminId, data.email);
+            saveSession(data.adminId, data.email, data.role);
             router.push("/");
         } catch {
             setError("Erro de conexão. Tente novamente.");

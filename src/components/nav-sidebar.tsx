@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -14,6 +15,7 @@ import {
     Warehouse,
     X,
     PhoneCall,
+    ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -28,6 +30,16 @@ const menuItems = [
     { icon: Store,            label: "Loja",             href: "/loja" },
 ];
 
+/**
+ * Item exclusivo do dono do sistema. Fica fora de `menuItems` porque não é
+ * "mais uma tela do painel": é a administração do PedidoAI em si, e um lojista
+ * não deve nem descobrir que ela existe. Esconder é cosmético — quem impede o
+ * acesso é o requireOwner() no servidor, que confere o papel no banco.
+ */
+const OWNER_ITEM = {
+    icon: ClipboardCheck, label: "Contratações", href: "/pedido-ai-admin/contratacoes",
+};
+
 interface NavSidebarProps {
     isOpen?: boolean;
     onClose?: () => void;
@@ -39,6 +51,22 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
 
     const displayEmail = adminSession?.email ?? "";
     const initial = displayEmail.charAt(0).toUpperCase();
+    const isOwner = adminSession?.role === "owner";
+
+    // Contratações esperando decisão. Não existe e-mail neste projeto, então
+    // este número é o único aviso de que alguém pediu para contratar — sem ele
+    // o dono só descobre um pedido novo se lembrar de abrir a fila.
+    const [pendentes, setPendentes] = useState(0);
+
+    useEffect(() => {
+        if (!isOwner) return;
+        fetch("/api/pedido-ai-admin/contratacoes?status=pendente")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d: { contratacoes?: unknown[] } | null) => setPendentes(d?.contratacoes?.length ?? 0))
+            .catch(() => { /* o menu funciona sem o contador */ });
+        // `pathname` na dependência: o número é relido a cada navegação, então
+        // aprovar alguém na fila e sair da tela já mostra o contador certo.
+    }, [isOwner, pathname]);
 
     return (
         <aside
@@ -97,6 +125,38 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
                         </Link>
                     );
                 })}
+
+                {isOwner && (
+                    <>
+                        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-stone-400 px-2 pt-5 pb-2">
+                            Sistema
+                        </p>
+                        <Link
+                            href={OWNER_ITEM.href}
+                            onClick={onClose}
+                            className={cn(
+                                "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-[13.5px]",
+                                pathname === OWNER_ITEM.href
+                                    ? "bg-stone-900 text-white shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
+                                    : "text-stone-600 hover:bg-white/70 hover:text-stone-900"
+                            )}
+                        >
+                            <OWNER_ITEM.icon className={cn(
+                                "w-4 h-4 shrink-0 transition-colors",
+                                pathname === OWNER_ITEM.href ? "text-orange-400" : "text-stone-400 group-hover:text-stone-700"
+                            )} />
+                            <span className="font-medium flex-1">{OWNER_ITEM.label}</span>
+                            {pendentes > 0 && (
+                                <span
+                                    className="min-w-[20px] h-5 px-1.5 rounded-full bg-orange-600 text-white text-[11px] font-semibold flex items-center justify-center"
+                                    title={`${pendentes} contratação(ões) aguardando decisão`}
+                                >
+                                    {pendentes}
+                                </span>
+                            )}
+                        </Link>
+                    </>
+                )}
             </nav>
 
             {/* Footer */}
