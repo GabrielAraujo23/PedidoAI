@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { CLIENT_SESSION_COOKIE, verifyClientSession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import { notifyOrderStatus } from "@/lib/notify-order";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 export async function POST(
     request: NextRequest,
@@ -24,7 +19,7 @@ export async function POST(
 
     const { id: orderId } = await params;
 
-    const { data: order } = await supabase
+    const { data: order } = await getSupabaseAdmin()
         .from("orders")
         .select("id")
         .eq("id", orderId)

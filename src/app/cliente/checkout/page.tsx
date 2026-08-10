@@ -9,13 +9,12 @@ import {
     AlertCircle, Check, Loader2, Pencil, ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { useCart } from "@/context/CartContext";
 import { calculateDistance } from "@/lib/haversine";
 import { useClientSession } from "@/lib/client-session";
-import { sanitizeExternalCoords, sanitizeExternalText, truncate, LIMITS } from "@/lib/validators";
+import { sanitizeExternalCoords, sanitizeExternalText, LIMITS } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
 
 type PaymentMethod = "pix" | "cartao" | "dinheiro" | "vr";
@@ -94,29 +93,18 @@ export default function CheckoutPage() {
     useEffect(() => {
         if (!session) return;
 
-        supabase
-            .from("store_settings")
-            .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
-            .eq("admin_id", session.adminId)
-            .single()
-            .then(({ data }) => {
-                const lat = data?.latitude ? parseFloat(data.latitude) : 0;
-                const lng = data?.longitude ? parseFloat(data.longitude) : 0;
+        fetch("/api/cliente/checkout")
+            .then((r) => r.json())
+            .then(({ store, client: data }) => {
+                const lat = store?.latitude ? parseFloat(store.latitude) : 0;
+                const lng = store?.longitude ? parseFloat(store.longitude) : 0;
                 if (lat && lng) {
                     setStoreCoords({
                         lat, lng,
-                        radius: parseFloat(data?.delivery_radius_km ?? "20") || 20,
-                        rate:   parseFloat(data?.delivery_rate_per_km ?? "3")  || 3,
+                        radius: parseFloat(store?.delivery_radius_km ?? "20") || 20,
+                        rate:   parseFloat(store?.delivery_rate_per_km ?? "3")  || 3,
                     });
                 }
-            });
-
-        supabase
-            .from("clients")
-            .select("*")
-            .eq("id", session.clientId)
-            .single()
-            .then(({ data }) => {
                 if (data?.cep && data?.street) {
                     setAddrForm({
                         cep:          data.cep,
@@ -127,18 +115,22 @@ export default function CheckoutPage() {
                         number:       data.number       || "",
                         complement:   data.complement   || "",
                     });
+                    if (data.latitude && data.longitude) {
+                        setCustomerCoords({ lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) });
+                    }
+                    fetchedCepRef.current = String(data.cep).replace(/\D/g, "");
                     setCepStatus("ok");
                     setAddrLoadState("found");
-                    if (data.latitude && data.longitude) {
-                        setCustomerCoords({
-                            lat: parseFloat(String(data.latitude)),
-                            lng: parseFloat(String(data.longitude)),
-                        });
-                    }
                 } else {
                     setAddrLoadState("none");
                 }
+            })
+            .catch((e) => {
+                console.error("[checkout] load:", e);
+                // Sem isto a tela fica presa no spinner para sempre.
+                setAddrLoadState("none");
             });
+
     }, [session]);
 
     useEffect(() => {
@@ -209,15 +201,19 @@ export default function CheckoutPage() {
                 if (coords) {
                     setCustomerCoords(coords);
                     if (sessionRef.current) {
-                        await supabase.from("clients").update({
-                            cep:          digits,
-                            street:       sanitizeExternalText(viaData.logradouro, LIMITS.street),
-                            neighborhood: sanitizeExternalText(viaData.bairro,     LIMITS.neighborhood),
-                            city:         sanitizeExternalText(viaData.localidade,  LIMITS.city),
-                            state:        sanitizeExternalText(viaData.uf,          LIMITS.state),
-                            latitude:     coords.lat,
-                            longitude:    coords.lng,
-                        }).eq("id", sessionRef.current.clientId);
+                        await fetch("/api/cliente/checkout", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                cep:          digits,
+                                street:       sanitizeExternalText(viaData.logradouro, LIMITS.street),
+                                neighborhood: sanitizeExternalText(viaData.bairro,     LIMITS.neighborhood),
+                                city:         sanitizeExternalText(viaData.localidade,  LIMITS.city),
+                                state:        sanitizeExternalText(viaData.uf,          LIMITS.state),
+                                latitude:     coords.lat,
+                                longitude:    coords.lng,
+                            }),
+                        }).catch(() => null);
                     }
                 }
             }
@@ -272,42 +268,35 @@ export default function CheckoutPage() {
         if (!session || items.length === 0) return;
         setPlacing(true);
 
-        await supabase.from("clients").update({
-            number:     addrForm.number     || null,
-            complement: addrForm.complement || null,
-        }).eq("id", session.clientId);
-
-        const { data: allOrders } = await supabase.from("orders").select("id, status");
-        const ids = (allOrders ?? []).map((o: { id: string }) => parseInt(o.id) || 0);
-        const nextId = String((ids.length > 0 ? Math.max(...ids) : 0) + 1);
-        const novoCount = (allOrders ?? []).filter((o: { status: string }) => o.status === "novo").length;
-        const productsStr = items.map((i) => `${i.quantity}x ${i.name}`).join(", ");
-
-        const { data: orderData, error } = await supabase
-            .from("orders")
-            .insert({
-                id:           nextId,
-                client:       truncate(session.name, LIMITS.name),
-                client_id:    session.clientId,
-                products:     productsStr,
-                status:       "novo",
-                position:     novoCount,
-                cep:          addrForm.cep.replace(/\D/g, "") || null,
-                street:       addrForm.street       ? truncate(addrForm.street, LIMITS.street)             : null,
-                number:       addrForm.number       ? truncate(addrForm.number, LIMITS.address_number)     : null,
-                complement:   addrForm.complement   ? truncate(addrForm.complement, LIMITS.complement)     : null,
-                neighborhood: addrForm.neighborhood ? truncate(addrForm.neighborhood, LIMITS.neighborhood) : null,
-                city:         addrForm.city         ? truncate(addrForm.city, LIMITS.city)                 : null,
-                state:        addrForm.state        ? truncate(addrForm.state, LIMITS.state)               : null,
-                distance_km:  distanceKm,
-                delivery_fee: deliveryStatus === "ok" ? deliveryFee : null,
-                admin_id:     session.adminId || null,
-            })
-            .select("id")
-            .single();
-
-        if (error || !orderData) {
-            logError("order_checkout", error ?? "no order data");
+        let orderId: string;
+        try {
+            const res = await fetch("/api/cliente/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: items.map((i) => ({
+                        product_id: i.product_id,
+                        name:       i.name,
+                        unit:       i.unit,
+                        quantity:   i.quantity,
+                        price:      i.price,
+                    })),
+                    cep:          addrForm.cep.replace(/\D/g, "") || null,
+                    street:       addrForm.street       || null,
+                    number:       addrForm.number       || null,
+                    complement:   addrForm.complement   || null,
+                    neighborhood: addrForm.neighborhood || null,
+                    city:         addrForm.city         || null,
+                    state:        addrForm.state        || null,
+                    distance_km:  distanceKm,
+                    delivery_fee: deliveryStatus === "ok" ? deliveryFee : null,
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao criar pedido.");
+            orderId = json.order_id as string;
+        } catch (e) {
+            logError("order_checkout", e);
             logEvent({
                 event_type: "order_failed",
                 actor_type: "client",
@@ -319,28 +308,16 @@ export default function CheckoutPage() {
             return;
         }
 
-        const { error: itemsError } = await supabase.from("order_items").insert(
-            items.map((i) => ({
-                order_id:     orderData.id,
-                product_id:   i.product_id,
-                product_name: i.name,
-                unit:         i.unit,
-                quantity:     i.quantity,
-                unit_price:   i.price,
-            }))
-        );
-        if (itemsError) logError("order_items_insert", itemsError);
-
         logEvent({
             event_type: "order_created",
             actor_type: "client",
             actor_id: session.clientId,
             resource_type: "order",
-            resource_id: orderData.id,
+            resource_id: orderId,
             metadata: { item_count: items.length, channel: "checkout" },
         });
         clearCart();
-        router.push(`/cliente/pedido/${orderData.id}`);
+        router.push(`/cliente/pedido/${orderId}`);
     }
 
     const orderTotal = totalPrice + deliveryFee;

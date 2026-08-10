@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
         if (typeof body !== "object" || body === null) return err("Invalid request", 400);
         const { action } = body as Record<string, unknown>;
 
+        if (action === "lookup")   return await handleLookup(body as Record<string, unknown>);
         if (action === "login")    return await handleLogin(body as Record<string, unknown>);
         if (action === "register") return await handleRegister(body as Record<string, unknown>, ip);
 
@@ -67,6 +68,32 @@ export async function POST(request: NextRequest) {
     } catch (e) {
         return handleRouteError(e, "POST /api/auth/client");
     }
+}
+
+// ── Lookup ────────────────────────────────────────────────────────────────────
+
+/**
+ * Diz apenas se um telefone já tem cadastro, e o primeiro nome para a saudação.
+ *
+ * A tela de login usava isto consultando a tabela `clients` direto do
+ * navegador, o que devolvia o registro inteiro — endereço, id, tudo. Como o
+ * login é só por telefone, alguém poderia varrer números e coletar dados.
+ * Aqui devolvemos o mínimo, e o rate limit de client_auth já se aplica.
+ */
+async function handleLookup({ phone, adminId }: Record<string, unknown>) {
+    const phoneVal = validatePhone(typeof phone === "string" ? phone : "", true);
+    if (!phoneVal.ok) return err(phoneVal.error, 400);
+
+    let query = getSupabaseAdmin()
+        .from("clients")
+        .select("name, admin_id")
+        .eq("phone", (phone as string).trim());
+    if (typeof adminId === "string" && adminId) query = query.eq("admin_id", adminId);
+
+    const { data } = await query.limit(1);
+
+    if (!data?.length) return ok({ exists: false });
+    return ok({ exists: true, name: data[0].name, adminId: data[0].admin_id });
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────

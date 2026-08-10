@@ -1,14 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
 import {
     sendWhatsApp, buildMessage,
     type NotifiableStatus, type MessageContext, type PaymentMethod, type DeliveryType,
 } from "@/lib/whatsapp";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 interface OrderRow {
     client_id: string | null;
@@ -42,7 +37,7 @@ function buildAddress(order: OrderRow, clientAddress: string | null): string | n
  */
 export async function notifyOrderStatus(orderId: string, status: NotifiableStatus): Promise<void> {
     try {
-        const { data: order } = await supabase
+        const { data: order } = await getSupabaseAdmin()
             .from("orders")
             .select("client_id, products, street, number, complement, neighborhood, city, state, delivery_fee, payment_method, delivery_type, admin_id")
             .eq("id", orderId)
@@ -50,7 +45,7 @@ export async function notifyOrderStatus(orderId: string, status: NotifiableStatu
 
         if (!order?.client_id) return;
 
-        const { data: client } = await supabase
+        const { data: client } = await getSupabaseAdmin()
             .from("clients")
             .select("name, phone, address")
             .eq("id", order.client_id)
@@ -62,12 +57,12 @@ export async function notifyOrderStatus(orderId: string, status: NotifiableStatu
 
         if (status === "novo" || status === "confirmado") {
             const [itemsRes, settingsRes] = await Promise.all([
-                supabase
+                getSupabaseAdmin()
                     .from("order_items")
                     .select("product_name, quantity, unit, total_price")
                     .eq("order_id", orderId),
                 order.admin_id
-                    ? supabase
+                    ? getSupabaseAdmin()
                         .from("store_settings")
                         .select("delivery_time_min, delivery_time_max")
                         .eq("admin_id", order.admin_id)

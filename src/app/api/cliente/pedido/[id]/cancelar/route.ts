@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { CLIENT_SESSION_COOKIE, verifyClientSession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { notifyOrderStatus } from "@/lib/notify-order";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function err(msg: string, status: number) {
     return NextResponse.json({ error: msg }, { status });
@@ -34,7 +29,7 @@ export async function PATCH(
     const { id } = await params;
 
     // Fetch order to verify ownership and current status
-    const { data: orderRow, error: fetchErr } = await supabase
+    const { data: orderRow, error: fetchErr } = await getSupabaseAdmin()
         .from("orders")
         .select("id, status")
         .eq("id", id)
@@ -48,7 +43,7 @@ export async function PATCH(
     }
 
     // Race-safe UPDATE: triple condition guards against concurrent requests
-    const { data: updated, error: updateErr } = await supabase
+    const { data: updated, error: updateErr } = await getSupabaseAdmin()
         .from("orders")
         .update({ status: "cancelado" })
         .eq("id", id)

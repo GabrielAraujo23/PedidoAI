@@ -8,7 +8,6 @@ import {
     Package, MessageCircle, Plus, Loader2, XCircle, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
 import { useClientSession } from "@/lib/client-session";
@@ -78,23 +77,15 @@ export default function OrderTrackingPage() {
         if (!session) return;
 
         async function fetchOrder() {
-            const { data: orderData } = await supabase
-                .from("orders")
-                .select("*")
-                .eq("id", id)
-                .eq("client_id", session!.clientId)
-                .single();
-
-            if (!orderData) { setLoading(false); return; }
-            setOrder(orderData as OrderData);
-
-            // Fetch order_items (may not exist for old orders)
-            const { data: itemsData } = await supabase
-                .from("order_items")
-                .select("id, product_name, unit, quantity, unit_price, total_price")
-                .eq("order_id", id);
-
-            setItems((itemsData as OrderItem[]) ?? []);
+            try {
+                const res = await fetch(`/api/cliente/pedido/${encodeURIComponent(id)}`);
+                if (!res.ok) { setLoading(false); return; }
+                const json = await res.json();
+                setOrder(json.order as OrderData);
+                setItems((json.items as OrderItem[]) ?? []);
+            } catch (e) {
+                console.error("[pedido] fetch:", e);
+            }
             setLoading(false);
         }
 

@@ -10,11 +10,25 @@ import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
  * - /register    — legacy redirect page
  * - /loginadmin  — legacy redirect page
  */
+/**
+ * Caminhos que NÃO exigem sessão de administrador.
+ *
+ * "Público" aqui significa apenas "não é o admin quem autentica". As rotas em
+ * /api/cliente/ fazem a própria checagem com requireClient() e o cookie de
+ * sessão do cliente; se ficassem de fora desta lista, o middleware pediria
+ * sessão de admin e o app do cliente receberia 401 em tudo.
+ *
+ * /api/loja/publica devolve só coordenadas e taxa de entrega, necessárias na
+ * tela de login antes de existir qualquer sessão. O /api/loja (sem /publica)
+ * continua protegido.
+ */
 const PUBLIC_PREFIXES = [
     "/login",
     "/acesso",
     "/cliente/",
     "/api/auth/",
+    "/api/cliente/",
+    "/api/loja/publica",
     "/register",
     "/loginadmin",
 ];

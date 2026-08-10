@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { FileText, Printer, ArrowLeft, Package } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientSession } from "@/lib/client-session";
 import { cn } from "@/lib/utils";
@@ -77,27 +76,13 @@ export default function ReciboPedidoPage() {
 
         async function fetchData() {
             try {
-                const [{ data: orderData }, { data: itemsData }, { data: clientData }] = await Promise.all([
-                    supabase
-                        .from("orders")
-                        .select("id, client, client_id, products, status, created_at")
-                        .eq("id", id)
-                        .eq("client_id", session!.clientId)
-                        .single(),
-                    supabase
-                        .from("order_items")
-                        .select("id, product_name, unit, quantity, unit_price, total_price")
-                        .eq("order_id", id),
-                    supabase
-                        .from("clients")
-                        .select("name, phone, address")
-                        .eq("id", session!.clientId)
-                        .single(),
-                ]);
+                const res = await fetch(`/api/cliente/pedido/${encodeURIComponent(id)}`);
+                if (!res.ok) throw new Error("pedido nao encontrado");
+                const json = await res.json();
 
-                setOrder(orderData as OrderData ?? null);
-                setItems((itemsData as OrderItem[]) ?? []);
-                setClient(clientData as ClientData ?? null);
+                setOrder((json.order as OrderData) ?? null);
+                setItems((json.items as OrderItem[]) ?? []);
+                setClient((json.client as ClientData) ?? null);
             } catch {
                 setOrder(null);
                 setItems([]);

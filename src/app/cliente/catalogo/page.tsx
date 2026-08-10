@@ -10,7 +10,6 @@ import {
     ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowDownAZ, SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { ClientHeader } from "@/components/client-header";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { useCart } from "@/context/CartContext";
@@ -83,18 +82,14 @@ export default function CatalogPage() {
 
     useEffect(() => {
         if (!session) return;
-        supabase
-            .from("products")
-            .select("*")
-            .eq("active", true)
-            .eq("admin_id", session.adminId)
-            .order("category", { ascending: true })
-            .order("name", { ascending: true })
-            .then(({ data, error }) => {
-                if (error) setToast({ type: "error", message: "Erro ao carregar produtos." });
-                else setProducts((data as CatalogProduct[]) ?? []);
-                setLoadingProducts(false);
-            });
+        fetch("/api/cliente/catalogo")
+            .then((r) => r.json())
+            .then((j) => {
+                if (j.error) setToast({ type: "error", message: "Erro ao carregar produtos." });
+                else setProducts((j.products as CatalogProduct[]) ?? []);
+            })
+            .catch(() => setToast({ type: "error", message: "Erro ao carregar produtos." }))
+            .finally(() => setLoadingProducts(false));
     }, [session]);
 
     useEffect(() => {
