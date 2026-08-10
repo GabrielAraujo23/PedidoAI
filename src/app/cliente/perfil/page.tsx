@@ -11,7 +11,6 @@ import {
     RotateCcw, AlertCircle, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
@@ -133,25 +132,14 @@ export default function ProfilePage() {
     useEffect(() => {
         if (!session) return;
 
-        supabase
-            .from("clients")
-            .select("id, name, phone, address, created_at")
-            .eq("id", session.clientId)
-            .single()
-            .then(({ data }) => {
-                if (data) setClient(data as ClientData);
-            });
-
-        supabase
-            .from("orders")
-            .select("id, products, status, created_at")
-            .eq("client_id", session.clientId)
-            .order("created_at", { ascending: false })
-            .limit(8)
-            .then(({ data }) => {
-                setOrders((data as OrderSummary[]) ?? []);
-                setLoadingOrders(false);
-            });
+        fetch("/api/cliente/perfil")
+            .then((r) => r.json())
+            .then((j) => {
+                if (j.client) setClient(j.client as ClientData);
+                setOrders((j.orders as OrderSummary[]) ?? []);
+            })
+            .catch((e) => console.error("[perfil] load:", e))
+            .finally(() => setLoadingOrders(false));
     }, [session]);
 
     async function handleLogout() {
@@ -222,12 +210,8 @@ export default function ProfilePage() {
         const data = await res.json() as { ok?: boolean; error?: string };
         if (!res.ok) { setSaveError(data.error ?? "Erro ao salvar."); setSaving(false); return; }
         await refresh();
-        const { data: updated } = await supabase
-            .from("clients")
-            .select("id, name, phone, address, created_at")
-            .eq("id", session!.clientId)
-            .single();
-        if (updated) setClient(updated as ClientData);
+        const reload = await fetch("/api/cliente/perfil").then((r) => r.json()).catch(() => null);
+        if (reload?.client) setClient(reload.client as ClientData);
         setSaving(false); setEditing(false);
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
@@ -238,43 +222,23 @@ export default function ProfilePage() {
         setRepeatWarning(null);
         setRepeatError(null);
 
-        const { data: itemsData, error: itemsError } = await supabase
-            .from("order_items")
-            .select("product_id, product_name, quantity")
-            .eq("order_id", orderId);
-
-        if (itemsError) {
+        let payload: { items: { product_id: string; name: string; unit: string; price: number; quantity: number }[]; skipped: string[] };
+        try {
+            const res = await fetch(`/api/cliente/pedido/${encodeURIComponent(orderId)}/repetir`);
+            const json = await res.json();
+            if (!res.ok) {
+                setRepeatError({ orderId, message: json.error ?? "Erro ao repetir pedido." });
+                setRepeating(null);
+                return;
+            }
+            payload = json;
+        } catch {
             setRepeatError({ orderId, message: "Erro ao carregar itens do pedido." });
             setRepeating(null);
             return;
         }
 
-        if (!itemsData || itemsData.length === 0) {
-            setRepeatError({ orderId, message: "Este pedido não tem itens registrados." });
-            setRepeating(null);
-            return;
-        }
-
-        const productIds = itemsData.map((i) => i.product_id);
-        const { data: productsData, error: productsError } = await supabase
-            .from("products")
-            .select("id, name, unit, price")
-            .in("id", productIds)
-            .eq("active", true)
-            .eq("admin_id", session!.adminId);
-
-        if (productsError) {
-            setRepeatError({ orderId, message: "Erro ao verificar produtos disponíveis." });
-            setRepeating(null);
-            return;
-        }
-
-        const activeMap = new Map((productsData ?? []).map((p) => [p.id, p]));
-
-        const toAdd   = itemsData.filter((i) => activeMap.has(i.product_id));
-        const skipped = itemsData
-            .filter((i) => !activeMap.has(i.product_id))
-            .map((i) => i.product_name as string);
+        const { items: toAdd, skipped } = payload;
 
         if (toAdd.length === 0) {
             setRepeatError({ orderId, message: "Nenhum produto disponível para repetir." });
@@ -284,9 +248,8 @@ export default function ProfilePage() {
 
         clearCart();
         for (const item of toAdd) {
-            const product = activeMap.get(item.product_id)!;
-            addItem({ product_id: product.id, name: product.name, unit: product.unit, price: product.price });
-            updateQuantity(item.product_id, item.quantity as number);
+            addItem({ product_id: item.product_id, name: item.name, unit: item.unit, price: item.price });
+            updateQuantity(item.product_id, item.quantity);
         }
 
         setRepeating(null);

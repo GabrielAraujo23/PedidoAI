@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import type { Status } from "@/lib/types";
 import { isNotifiableStatus, type NotifiableStatus } from "@/lib/whatsapp";
 import { notifyOrderStatus } from "@/lib/notify-order";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function err(msg: string, status = 400) {
     return NextResponse.json({ error: msg }, { status });
@@ -61,7 +56,7 @@ export async function PATCH(
 
     const { id: orderId } = await params;
 
-    const { data: order, error: orderErr } = await supabase
+    const { data: order, error: orderErr } = await getSupabaseAdmin()
         .from("orders")
         .select("id, status, admin_id, client_id")
         .eq("id", orderId)
@@ -76,7 +71,7 @@ export async function PATCH(
     if (delivery_type !== undefined)  patch.delivery_type  = delivery_type;
     if (delivery_fee !== undefined)   patch.delivery_fee   = delivery_fee;
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await getSupabaseAdmin()
         .from("orders")
         .update(patch)
         .eq("id", orderId)
@@ -88,7 +83,7 @@ export async function PATCH(
     }
 
     if (status === "entregue" && order.status !== "entregue") {
-        const { data: orderItems } = await supabase
+        const { data: orderItems } = await getSupabaseAdmin()
             .from("order_items")
             .select("product_id, product_name, quantity")
             .eq("order_id", orderId);
@@ -99,7 +94,7 @@ export async function PATCH(
             for (const item of orderItems) {
                 if (!item.product_id) continue;
 
-                const { data: prod } = await supabase
+                const { data: prod } = await getSupabaseAdmin()
                     .from("products")
                     .select("stock_quantity")
                     .eq("id", item.product_id)
@@ -108,7 +103,7 @@ export async function PATCH(
 
                 if (prod) {
                     const debited = Math.min(prod.stock_quantity, Number(item.quantity));
-                    await supabase
+                    await getSupabaseAdmin()
                         .from("products")
                         .update({ stock_quantity: prod.stock_quantity - debited })
                         .eq("id", item.product_id)
@@ -127,7 +122,7 @@ export async function PATCH(
             }
 
             if (stockMovements.length > 0) {
-                await supabase.from("stock_movements").insert(stockMovements);
+                await getSupabaseAdmin().from("stock_movements").insert(stockMovements);
             }
         }
     }

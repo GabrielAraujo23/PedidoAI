@@ -18,9 +18,8 @@ import {
     Phone, MapPin, Package, History, UserPlus, ShoppingBag, CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { Client, Order, Status } from "@/lib/types";
-import { validateName, validatePhone, truncate, LIMITS } from "@/lib/validators";
+import { validateName, validatePhone, LIMITS } from "@/lib/validators";
 import { useAuth } from "@/lib/auth-context";
 
 const STATUS_LABELS: Record<Status, string> = {
@@ -72,12 +71,19 @@ export default function ClientesPage() {
     async function loadAll() {
         setLoading(true);
 
-        const [{ data: clientsData }, { data: ordersData }] = await Promise.all([
-            supabase.from("clients").select("*").eq("admin_id", adminSession!.adminId).order("created_at", { ascending: false }),
-            supabase.from("orders").select("client_id, created_at").eq("admin_id", adminSession!.adminId),
-        ]);
+        let clientsData: Client[] | null = null;
+        let ordersData: { client_id: string | null; created_at: string }[] | null = null;
+        try {
+            const res = await fetch("/api/clientes");
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao carregar");
+            clientsData = json.clients as Client[];
+            ordersData  = json.orders as { client_id: string | null; created_at: string }[];
+        } catch (e) {
+            console.error("[clientes] loadAll:", e);
+        }
 
-        const cl = (clientsData as Client[]) ?? [];
+        const cl = clientsData ?? [];
         setClients(cl);
 
         if (ordersData) {
@@ -120,38 +126,44 @@ export default function ClientesPage() {
         if (!phoneVal.ok) return;
         setCreating(true);
 
-        const { data: allClients } = await supabase.from("clients").select("id").eq("admin_id", adminSession!.adminId);
-        const ids = (allClients ?? []).map((c: { id: string }) => parseInt(c.id.replace("CL", ""), 10)).filter(Boolean);
-        const nextNum = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-        const nextId = `CL${String(nextNum).padStart(3, "0")}`;
+        // A API gera o id e deriva o admin_id do cookie de sessão.
+        try {
+            const res = await fetch("/api/clientes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: newName.trim(),
+                    phone: newPhone.trim() || null,
+                    address: newAddress.trim() || null,
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao cadastrar");
 
-        const newClient: Client = {
-            id: nextId,
-            name: truncate(newName.trim(), LIMITS.name),
-            phone: newPhone.trim() ? truncate(newPhone.trim(), LIMITS.phone) : null,
-            address: newAddress.trim() ? truncate(newAddress.trim(), 255) : null,
-        };
-
-        const { error } = await supabase.from("clients").insert({ ...newClient, admin_id: adminSession!.adminId });
-
-        if (!error) {
-            setClients((prev) => [newClient, ...prev]);
+            setClients((prev) => [json.client as Client, ...prev]);
             setMetrics((m) => m ? { ...m, total: m.total + 1 } : m);
             setAddOpen(false);
             setNewName(""); setNewPhone(""); setNewAddress("");
+        } catch (e) {
+            console.error("[clientes] create:", e);
+        } finally {
+            setCreating(false);
         }
-
-        setCreating(false);
     }
 
     async function handleViewHistory(client: Client) {
         setSelectedClient(client);
         setClientOrders([]);
         setHistoryOpen(true);
-        const { data } = await supabase
-            .from("orders").select("*").eq("client_id", client.id).eq("admin_id", adminSession!.adminId)
-            .order("created_at", { ascending: false });
-        setClientOrders((data as Order[]) ?? []);
+        try {
+            const res = await fetch(`/api/clientes/${encodeURIComponent(client.id)}/pedidos`);
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao carregar histórico");
+            setClientOrders((json.orders as Order[]) ?? []);
+        } catch (e) {
+            console.error("[clientes] history:", e);
+            setClientOrders([]);
+        }
     }
 
     function formatDate(iso: string | undefined) {

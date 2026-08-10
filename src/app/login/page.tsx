@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Phone, User, MapPin, Loader2, ArrowLeft, AlertCircle, Check, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { calculateDistance } from "@/lib/haversine";
 import type { Client } from "@/lib/types";
 import {
@@ -104,12 +103,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!adminId) return;
-        supabase
-            .from("store_settings")
-            .select("latitude, longitude, delivery_radius_km, delivery_rate_per_km")
-            .eq("admin_id", adminId)
-            .single()
-            .then(({ data }) => {
+        fetch(`/api/loja/publica?admin=${encodeURIComponent(adminId)}`)
+            .then((r) => r.json())
+            .then(({ store: data }) => {
                 const lat = data?.latitude ? parseFloat(data.latitude) : 0;
                 const lng = data?.longitude ? parseFloat(data.longitude) : 0;
                 if (lat && lng) {
@@ -217,17 +213,26 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        let query = supabase.from("clients").select("*").eq("phone", phone.trim());
-        if (adminId) query = query.eq("admin_id", adminId);
-        const { data: clients } = await query.limit(1);
+        // A API devolve só { exists, name, adminId } — o registro completo
+        // não precisa (e não deve) trafegar antes da sessão existir.
+        let found: { exists: boolean; name?: string; adminId?: string } = { exists: false };
+        try {
+            const res = await fetch("/api/auth/client", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "lookup", phone: phone.trim(), adminId }),
+            });
+            if (res.ok) found = await res.json();
+        } catch (e) {
+            console.error("[login] lookup:", e);
+        }
 
         setLoading(false);
 
-        if (clients && clients.length > 0) {
-            const found = clients[0] as Client & { admin_id?: string };
-            foundAdminIdRef.current = found.admin_id ?? "";
-            logEvent({ event_type: "client_login", actor_type: "client", actor_id: found.id });
-            setFoundClient(found);
+        if (found.exists) {
+            foundAdminIdRef.current = found.adminId ?? "";
+            logEvent({ event_type: "client_login", actor_type: "client" });
+            setFoundClient({ id: "", name: found.name ?? "", phone: phone.trim(), address: null });
             setStep("returning");
         } else {
             setStep("new_client");

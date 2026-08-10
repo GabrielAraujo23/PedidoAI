@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, MapPin, Search, User, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { sanitizeExternalText, LIMITS } from "@/lib/validators";
 
@@ -167,7 +166,6 @@ export default function AtendimentoPage() {
 
             {step === 1 && (
                 <Step1Client
-                    adminId={adminSession.adminId}
                     selected={selectedClient}
                     onSelect={setSelectedClient}
                     onNext={() => setStep(2)}
@@ -199,8 +197,7 @@ export default function AtendimentoPage() {
 }
 
 // ── Step 1: Client Search + Inline Create with CEP ────────────────────────────
-function Step1Client({ adminId, selected, onSelect, onNext }: {
-    adminId: string;
+function Step1Client({ selected, onSelect, onNext }: {
     selected: SelectedClient | null;
     onSelect: (c: SelectedClient | null) => void;
     onNext: () => void;
@@ -278,14 +275,16 @@ function Step1Client({ adminId, selected, onSelect, onNext }: {
         setQuery(q);
         if (q.trim().length < 2) { setResults([]); return; }
         setSearching(true);
-        const { data } = await supabase
-            .from("clients")
-            .select("id, name, phone, address")
-            .eq("admin_id", adminId)
-            .or(`name.ilike.%${q}%,phone.ilike.%${q}%`)
-            .limit(8);
-        setResults((data ?? []) as SelectedClient[]);
-        setSearching(false);
+        try {
+            const res = await fetch(`/api/clientes?q=${encodeURIComponent(q)}`);
+            const json = await res.json();
+            setResults((json.clients ?? []) as SelectedClient[]);
+        } catch (e) {
+            console.error("[atendimento] busca:", e);
+            setResults([]);
+        } finally {
+            setSearching(false);
+        }
     }
 
     async function createClient() {
@@ -301,22 +300,26 @@ function Step1Client({ adminId, selected, onSelect, onNext }: {
                 .filter(Boolean).join(", ")
             : null;
 
-        const { data: allClients } = await supabase.from("clients").select("id");
-        const nums = (allClients ?? []).map((c: { id: string }) => parseInt(c.id.replace("CL", "")) || 0);
-        const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
-        const newClientId = `CL${String(maxNum + 1).padStart(3, "0")}`;
-
-        const { data, error } = await supabase
-            .from("clients")
-            .insert({
-                id: newClientId,
-                name: newName.trim(),
-                phone: newPhone.trim(),
-                address: fullAddress,
-                admin_id: adminId,
-            })
-            .select("id, name, phone, address")
-            .single();
+        // A API gera o id e escopa pelo cookie. O caminho antigo lia TODOS os
+        // clientes de TODAS as lojas para calcular MAX(CL###)+1.
+        let data: SelectedClient | null = null;
+        let error: { message: string } | null = null;
+        try {
+            const res = await fetch("/api/clientes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: newName.trim(),
+                    phone: newPhone.trim(),
+                    address: fullAddress,
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) error = { message: json.error ?? "Erro ao cadastrar" };
+            else data = json.client as SelectedClient;
+        } catch (e) {
+            error = { message: (e as Error).message };
+        }
 
         if (error || !data) {
             setCreateError(error?.message ?? "Erro ao cadastrar cliente.");
@@ -567,17 +570,14 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
     const [search, setSearch]       = useState("");
 
     useEffect(() => {
-        supabase
-            .from("products")
-            .select("id, name, category, unit, price, active")
-            .eq("admin_id", adminId)
-            .eq("active", true)
-            .order("name")
-            .then(({ data, error }) => {
-                if (error) setLoadError(error.message);
-                else setProducts((data ?? []) as Product[]);
-                setLoading(false);
-            });
+        fetch("/api/produtos?active=1")
+            .then((r) => r.json())
+            .then((j) => {
+                if (j.error) setLoadError(j.error);
+                else setProducts((j.products ?? []) as Product[]);
+            })
+            .catch((e) => setLoadError((e as Error).message))
+            .finally(() => setLoading(false));
     }, [adminId]);
 
     const categories = ["Todos", ...Array.from(new Set(products.map((p) => p.category))).sort()];

@@ -33,7 +33,6 @@ export const LIMITS = {
     category:      50,
     product_name: 120,
     description:  500,
-    chat_message: 500,
     coupon:        20,
 } as const;
 
@@ -210,14 +209,7 @@ export function validateDeliveryRadius(v: string | number): ValidationResult {
     return OK;
 }
 
-// ── Mensagem de chat ────────────────────────────────────────
-
-export function validateChatMessage(v: string): ValidationResult {
-    if (v.length > LIMITS.chat_message) return fail(`Mensagem deve ter no máximo ${LIMITS.chat_message} caracteres.`);
-    return OK;
-}
-
-// ── Quantidade de produto (chat / carrinho) ─────────────────
+// ── Quantidade de produto (carrinho) ────────────────────────
 
 export function validateQuantity(v: number): ValidationResult {
     if (!Number.isInteger(v) || v < 1) return fail("Quantidade deve ser um número inteiro positivo.");

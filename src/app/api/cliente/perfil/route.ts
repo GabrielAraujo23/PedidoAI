@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import {
     CLIENT_SESSION_COOKIE, clientSessionCookieOptions,
     signClientSession, verifyClientSession,
@@ -8,15 +7,46 @@ import type { ClientSessionPayload } from "@/lib/session-cookie";
 import { validateName, validatePhone, truncate } from "@/lib/validators";
 import { checkOrigin } from "@/lib/csrf";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function err(msg: string, status = 400) {
     return NextResponse.json({ error: msg }, { status });
+}
+
+/**
+ * GET /api/cliente/perfil — dados do cliente autenticado e seus pedidos
+ * recentes, numa chamada só (a tela usa os dois juntos).
+ */
+export async function GET(request: NextRequest) {
+    const cookie = request.cookies.get(CLIENT_SESSION_COOKIE)?.value;
+    if (!cookie) return err("Não autenticado.", 401);
+
+    const session = await verifyClientSession(cookie);
+    if (!session) return err("Sessão inválida.", 401);
+
+    const db = getSupabaseAdmin();
+    const [clientRes, ordersRes] = await Promise.all([
+        db.from("clients")
+            .select("id, name, phone, address, created_at")
+            .eq("id", session.clientId)
+            .maybeSingle(),
+        db.from("orders")
+            .select("id, products, status, created_at")
+            .eq("client_id", session.clientId)
+            .order("created_at", { ascending: false })
+            .limit(8),
+    ]);
+
+    if (clientRes.error || ordersRes.error) {
+        console.error("[GET /api/cliente/perfil]", clientRes.error?.message ?? ordersRes.error?.message);
+        return err("Erro ao carregar perfil.", 500);
+    }
+
+    return NextResponse.json({
+        client: clientRes.data ?? null,
+        orders: ordersRes.data ?? [],
+    });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -60,7 +90,7 @@ export async function PATCH(request: NextRequest) {
         : undefined;
 
     // Unicidade: checa se outro cliente neste admin já usa esse telefone
-    const { data: conflict } = await supabase
+    const { data: conflict } = await getSupabaseAdmin()
         .from("clients")
         .select("id")
         .eq("phone", cleanPhone)
@@ -72,7 +102,7 @@ export async function PATCH(request: NextRequest) {
     const updatePayload: Record<string, unknown> = { name: cleanName, phone: cleanPhone };
     if (cleanAddress !== undefined) updatePayload.address = cleanAddress;
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await getSupabaseAdmin()
         .from("clients")
         .update(updatePayload)
         .eq("id", session.clientId)

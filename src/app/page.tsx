@@ -11,7 +11,6 @@ import {
     Tooltip, ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { Order, Status } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 
@@ -49,51 +48,54 @@ export default function DashboardPage() {
     useEffect(() => {
         if (!adminSession) return;
         async function load() {
-            const [{ data: orders }, { data: clients }] = await Promise.all([
-                supabase.from("orders").select("id, client, products, status").eq("admin_id", adminSession!.adminId),
-                supabase.from("clients").select("id").eq("admin_id", adminSession!.adminId),
-            ]);
-
-            if (orders) {
-                const sorted = [...orders].sort(
-                    (a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0)
-                );
-                setStats({
-                    totalOrders: orders.length,
-                    totalClients: clients?.length ?? 0,
-                    rotaCount: orders.filter((o) => o.status === "rota").length,
-                    novoCount: orders.filter((o) => o.status === "novo").length,
-                    recentOrders: sorted.slice(0, 5) as Order[],
-                });
-
-                // Build real weekly chart data
-                const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-                const today = new Date();
-                const weekData = Array.from({ length: 7 }, (_, i) => {
-                    const d = new Date(today);
-                    d.setDate(today.getDate() - (6 - i));
-                    return {
-                        name: days[d.getDay()],
-                        date: d.toISOString().slice(0, 10),
-                        pedidos: 0,
-                    };
-                });
-
-                const sevenDaysAgo = weekData[0].date + "T00:00:00.000Z";
-                const { data: recentOrders } = await supabase
-                    .from("orders")
-                    .select("created_at")
-                    .eq("admin_id", adminSession!.adminId)
-                    .gte("created_at", sevenDaysAgo);
-
-                (recentOrders ?? []).forEach((o) => {
-                    const day = o.created_at?.slice(0, 10);
-                    const entry = weekData.find((w) => w.date === day);
-                    if (entry) entry.pedidos++;
-                });
-
-                setChartData(weekData.map(({ name, pedidos }) => ({ name, pedidos })));
+            let payload: {
+                orders: { id: string; client: string; products: string; status: string }[];
+                clientsCount: number;
+                weekOrders: { created_at: string }[];
+            };
+            try {
+                const res = await fetch("/api/dashboard");
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error ?? "Erro ao carregar");
+                payload = json;
+            } catch (e) {
+                console.error("[dashboard] load:", e);
+                return;
             }
+
+            const { orders, clientsCount, weekOrders } = payload;
+
+            const sorted = [...orders].sort(
+                (a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0)
+            );
+            setStats({
+                totalOrders: orders.length,
+                totalClients: clientsCount,
+                rotaCount: orders.filter((o) => o.status === "rota").length,
+                novoCount: orders.filter((o) => o.status === "novo").length,
+                recentOrders: sorted.slice(0, 5) as Order[],
+            });
+
+            // Build real weekly chart data
+            const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+            const today = new Date();
+            const weekData = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(today);
+                d.setDate(today.getDate() - (6 - i));
+                return {
+                    name: days[d.getDay()],
+                    date: d.toISOString().slice(0, 10),
+                    pedidos: 0,
+                };
+            });
+
+            weekOrders.forEach((o) => {
+                const day = o.created_at?.slice(0, 10);
+                const entry = weekData.find((w) => w.date === day);
+                if (entry) entry.pedidos++;
+            });
+
+            setChartData(weekData.map(({ name, pedidos }) => ({ name, pedidos })));
         }
         load();
     }, [adminSession]);

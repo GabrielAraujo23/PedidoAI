@@ -1,14 +1,9 @@
 // src/app/api/estoque/ajuste/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function err(msg: string, status = 400) {
     return NextResponse.json({ error: msg }, { status });
@@ -33,7 +28,7 @@ export async function POST(request: NextRequest) {
     if (mode !== "set" && mode !== "add" && mode !== "remove") return err("mode deve ser 'set', 'add' ou 'remove'.");
     if (!notes || typeof notes !== "string" || notes.trim().length < 3) return err("notes obrigatório (mín. 3 caracteres).");
 
-    const { data: product, error: fetchErr } = await supabase
+    const { data: product, error: fetchErr } = await getSupabaseAdmin()
         .from("products")
         .select("id, name, stock_quantity, admin_id")
         .eq("id", product_id)
@@ -56,7 +51,7 @@ export async function POST(request: NextRequest) {
         movementQty = -(product.stock_quantity - newQty);
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await getSupabaseAdmin()
         .from("products")
         .update({ stock_quantity: newQty })
         .eq("id", product_id)
@@ -64,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     if (updateError) return err("Erro ao atualizar estoque.", 500);
 
-    await supabase.from("stock_movements").insert({
+    await getSupabaseAdmin().from("stock_movements").insert({
         admin_id: session.adminId,
         product_id,
         product_name: product.name,

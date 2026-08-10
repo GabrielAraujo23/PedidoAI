@@ -1,14 +1,9 @@
 // src/app/api/estoque/receber/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function err(msg: string, status = 400) {
     return NextResponse.json({ error: msg }, { status });
@@ -59,7 +54,7 @@ export async function POST(request: NextRequest) {
 
         if (!productId) {
             // Create new product
-            const { data: newProduct, error: insertError } = await supabase
+            const { data: newProduct, error: insertError } = await getSupabaseAdmin()
                 .from("products")
                 .insert({
                     name: item.name,
@@ -83,7 +78,7 @@ export async function POST(request: NextRequest) {
             productId = newProduct.id;
         } else {
             // Increment existing product stock
-            const { data: prod, error: selectError } = await supabase
+            const { data: prod, error: selectError } = await getSupabaseAdmin()
                 .from("products")
                 .select("stock_quantity")
                 .eq("id", productId)
@@ -97,7 +92,7 @@ export async function POST(request: NextRequest) {
                 continue;
             }
 
-            const { error: updateError } = await supabase
+            const { error: updateError } = await getSupabaseAdmin()
                 .from("products")
                 .update({ stock_quantity: prod.stock_quantity + qty })
                 .eq("id", productId)
@@ -112,7 +107,7 @@ export async function POST(request: NextRequest) {
 
             // Backfill barcode if product has none
             if (item.barcode) {
-                await supabase
+                await getSupabaseAdmin()
                     .from("products")
                     .update({ barcode: item.barcode })
                     .eq("id", productId)
@@ -135,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (movements.length > 0) {
-        const { error: movError } = await supabase.from("stock_movements").insert(movements);
+        const { error: movError } = await getSupabaseAdmin().from("stock_movements").insert(movements);
         if (movError) {
             console.error("[receber] Erro ao inserir movimentos:", movError.message);
             return NextResponse.json(
@@ -146,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (chave_acesso) {
-        await supabase.from("nfe_imports").insert({
+        await getSupabaseAdmin().from("nfe_imports").insert({
             admin_id: session.adminId,
             chave_acesso,
             supplier_name: supplier_name ?? null,

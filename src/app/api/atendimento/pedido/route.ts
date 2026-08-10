@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
 import { checkOrigin } from "@/lib/csrf";
 import { notifyOrderStatus } from "@/lib/notify-order";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function err(msg: string, status = 400) {
     return NextResponse.json({ error: msg }, { status });
@@ -49,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify client belongs to this admin
-    const { data: clientRow, error: clientErr } = await supabase
+    const { data: clientRow, error: clientErr } = await getSupabaseAdmin()
         .from("clients")
         .select("id")
         .eq("id", client_id)
@@ -59,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (clientErr || !clientRow) return err("Cliente não encontrado.", 404);
 
     // Compute next position and next numeric ID (orders.id is text, e.g. "1", "2"...)
-    const { data: lastOrder } = await supabase
+    const { data: lastOrder } = await getSupabaseAdmin()
         .from("orders")
         .select("id, position")
         .eq("admin_id", session.adminId)
@@ -70,7 +65,7 @@ export async function POST(request: NextRequest) {
     const position = (lastOrder?.position ?? 0) + 1;
 
     // Derive next ID across ALL orders (not just this admin's) to avoid collisions
-    const { data: globalMax } = await supabase
+    const { data: globalMax } = await getSupabaseAdmin()
         .from("orders")
         .select("id")
         .order("id", { ascending: false })
@@ -85,7 +80,7 @@ export async function POST(request: NextRequest) {
         .join(", ");
 
     // Insert order
-    const { data: order, error: orderErr } = await supabase
+    const { data: order, error: orderErr } = await getSupabaseAdmin()
         .from("orders")
         .insert({
             id: nextId,
@@ -106,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert order_items — do NOT include total_price (GENERATED column)
-    const { error: itemsErr } = await supabase.from("order_items").insert(
+    const { error: itemsErr } = await getSupabaseAdmin().from("order_items").insert(
         items.map((i) => ({
             order_id: order.id,
             product_id: i.product_id,
@@ -120,7 +115,7 @@ export async function POST(request: NextRequest) {
     if (itemsErr) {
         console.error("[atendimento/pedido] insert items:", itemsErr.message);
         // Roll back the orphaned order
-        await supabase.from("orders").delete().eq("id", order.id);
+        await getSupabaseAdmin().from("orders").delete().eq("id", order.id);
         return err("Erro ao inserir itens.", 500);
     }
 
