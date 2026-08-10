@@ -19,7 +19,6 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
 import { Order, Status } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 
@@ -162,12 +161,10 @@ export default function PedidosPage() {
 
     useEffect(() => {
         if (!adminSession) return;
-        supabase
-            .from("orders")
-            .select("*")
-            .eq("admin_id", adminSession.adminId)
-            .order("position", { ascending: true })
-            .then(({ data }) => { if (data) setOrders(data as Order[]); });
+        fetch("/api/pedidos")
+            .then((r) => r.json())
+            .then((j) => { if (j.orders) setOrders(j.orders as Order[]); })
+            .catch((e) => console.error("[pedidos] load:", e));
     }, [adminSession]);
 
     const counts = useMemo(() => {
@@ -191,21 +188,29 @@ export default function PedidosPage() {
     async function handleCreateOrder() {
         if (!newClient.trim() || !newProducts.trim()) return;
         setCreating(true);
-        const nextId    = String(Math.max(0, ...orders.map((o) => parseInt(o.id) || 0)) + 1);
-        const newOrder: Order = {
-            id: nextId,
-            client: newClient.trim(),
-            products: newProducts.trim(),
-            status: newStatus,
-            position: orders.filter((o) => o.status === newStatus).length,
-        };
-        const { error } = await supabase.from("orders").insert({ ...newOrder, admin_id: adminSession!.adminId });
-        if (!error) {
-            setOrders((prev) => [...prev, newOrder]);
+        // O id vem do servidor: numerar a partir da lista carregada em tela
+        // repetia números quando dois pedidos eram criados ao mesmo tempo,
+        // e ignorava pedidos de outras lojas na mesma sequência global.
+        try {
+            const res = await fetch("/api/pedidos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    client: newClient.trim(),
+                    products: newProducts.trim(),
+                    status: newStatus,
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao criar pedido");
+            setOrders((prev) => [...prev, json.order as Order]);
             setDialogOpen(false);
             setNewClient(""); setNewProducts(""); setNewStatus("novo");
+        } catch (e) {
+            console.error("[pedidos] create:", e);
+        } finally {
+            setCreating(false);
         }
-        setCreating(false);
     }
 
     return (
