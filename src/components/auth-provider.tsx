@@ -9,7 +9,12 @@ import { NavSidebar } from "@/components/nav-sidebar";
 import { AuthContext, AdminSession } from "@/lib/auth-context";
 
 // Public paths: no admin session required
-const PUBLIC_PREFIXES = ["/login", "/acesso", "/cliente/"];
+// "/contratar" cobre a página de cadastro E a tela de acompanhamento. Aqui
+// "público" significa apenas "sem sidebar e sem redirecionar para /login" —
+// quem policia o acesso a /contratar/status é o middleware, que já exige
+// sessão. Um lojista pendente não deve ver a sidebar do painel que ainda não
+// pode usar.
+const PUBLIC_PREFIXES = ["/login", "/acesso", "/cliente/", "/contratar"];
 
 function isPublicPath(pathname: string) {
     return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
