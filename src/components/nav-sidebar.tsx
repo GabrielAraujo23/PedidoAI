@@ -9,7 +9,6 @@ import {
     Users,
     Store,
     LogOut,
-    MessageSquare,
     ShieldCheck,
     ShoppingBag,
     Warehouse,
@@ -26,7 +25,6 @@ const menuItems = [
     { icon: ShoppingBag,      label: "Produtos",         href: "/produtos" },
     { icon: Warehouse,        label: "Estoque",          href: "/estoque" },
     { icon: PhoneCall,        label: "Atendimento",      href: "/atendimento" },
-    { icon: MessageSquare,    label: "Chat Inteligente", href: "/chat" },
     { icon: Store,            label: "Loja",             href: "/loja" },
 ];
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { hashPasswordServer, verifyPasswordServer, generateSecureTokenServer, safeCompareStrings } from "@/lib/server-crypto";
 import { signSession, sessionCookieOptions, SESSION_COOKIE } from "@/lib/session-cookie";
 import { rateLimit, getClientIP, LIMITS } from "@/lib/rate-limit";
 import { checkOrigin } from "@/lib/csrf";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 /**
  * Server-side admin authentication.
@@ -13,11 +13,6 @@ import { checkOrigin } from "@/lib/csrf";
  * Uses SUPABASE_SERVICE_ROLE_KEY when available (bypasses RLS safely on the server).
  * Falls back to anon key only if the service role key is not configured.
  */
-const supabaseServer = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
 
 function ok(data: object)               { return NextResponse.json(data); }
 function err(msg: string, status = 400) { return NextResponse.json({ error: msg }, { status }); }
@@ -93,7 +88,7 @@ async function handleSignIn({ email, password }: Record<string, unknown>, ip: st
         return err("Credenciais inválidas.", 401);
     }
 
-    const { data: admin } = await supabaseServer
+    const { data: admin } = await getSupabaseAdmin()
         .from("admins")
         .select("id, email, password_hash")
         .eq("email", email.trim().toLowerCase())
@@ -122,7 +117,7 @@ async function handleSignUp({ email, password }: Record<string, unknown>, ip: st
         return err("Dados inválidos.", 400);
     }
 
-    const { data: existing } = await supabaseServer
+    const { data: existing } = await getSupabaseAdmin()
         .from("admins")
         .select("id, email, password_hash")
         .eq("email", email.trim().toLowerCase())
@@ -137,7 +132,7 @@ async function handleSignUp({ email, password }: Record<string, unknown>, ip: st
 
     const password_hash = await hashPasswordServer(password);
 
-    const { error: updateError } = await supabaseServer
+    const { error: updateError } = await getSupabaseAdmin()
         .from("admins")
         .update({ password_hash })
         .eq("id", existing.id);
@@ -162,7 +157,7 @@ async function handleForgotRequest({ email }: Record<string, unknown>, ip: strin
     const rlEmail = rateLimit(`forgot_req_email:${emailKey}`, 3, 60 * 60 * 1000);
     if (!rlEmail.allowed) return ok({ ok: true }); // Silent — no enumeration
 
-    const { data: admin } = await supabaseServer
+    const { data: admin } = await getSupabaseAdmin()
         .from("admins")
         .select("id")
         .eq("email", email.trim().toLowerCase())
@@ -172,7 +167,7 @@ async function handleForgotRequest({ email }: Record<string, unknown>, ip: strin
         const token   = generateSecureTokenServer();
         const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
-        await supabaseServer
+        await getSupabaseAdmin()
             .from("admins")
             .update({ reset_token: token, reset_expires: expires })
             .eq("id", admin.id);
@@ -195,7 +190,7 @@ async function handleForgotVerify({ email, code }: Record<string, unknown>, ip: 
         return err("Código inválido ou expirado.", 400);
     }
 
-    const { data: admin } = await supabaseServer
+    const { data: admin } = await getSupabaseAdmin()
         .from("admins")
         .select("reset_token, reset_expires")
         .eq("email", email.trim().toLowerCase())
@@ -223,7 +218,7 @@ async function handleForgotReset({ email, code, password }: Record<string, unkno
     }
 
     // Re-verify code server-side before allowing password reset
-    const { data: admin } = await supabaseServer
+    const { data: admin } = await getSupabaseAdmin()
         .from("admins")
         .select("id, reset_token, reset_expires")
         .eq("email", email.trim().toLowerCase())
@@ -239,7 +234,7 @@ async function handleForgotReset({ email, code, password }: Record<string, unkno
 
     const password_hash = await hashPasswordServer(password);
 
-    const { error: updateError } = await supabaseServer
+    const { error: updateError } = await getSupabaseAdmin()
         .from("admins")
         .update({ password_hash, reset_token: null, reset_expires: null })
         .eq("id", admin.id);

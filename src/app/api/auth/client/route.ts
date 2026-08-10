@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import {
     CLIENT_SESSION_COOKIE, clientSessionCookieOptions,
     signClientSession, verifyClientSession, ClientSessionPayload,
@@ -7,12 +6,7 @@ import {
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { validatePhone, validateName, truncate, LIMITS } from "@/lib/validators";
 import { checkOrigin } from "@/lib/csrf";
-
-const supabaseServer = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 function ok(data: object)               { return NextResponse.json(data); }
 function err(msg: string, status = 400) { return NextResponse.json({ error: msg }, { status }); }
@@ -84,8 +78,17 @@ export async function POST(request: NextRequest) {
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Loja padrão para cadastros que chegam sem `?admin=` na URL.
+ *
+ * LIMITAÇÃO CONHECIDA (multi-tenant): isto devolve o admin mais antigo. Com
+ * uma loja só está correto; com várias, um cliente novo que abra a URL sem o
+ * parâmetro é cadastrado na loja errada em silêncio. A correção de verdade é
+ * dar a cada tenant um slug/subdomínio próprio (loja.pedidoai.com) para que
+ * nunca exista pedido sem loja definida — está previsto para a Fase 1.
+ */
 async function getDefaultAdminId(): Promise<string | null> {
-    const { data: admins, error: adminsErr } = await supabaseServer
+    const { data: admins, error: adminsErr } = await getSupabaseAdmin()
         .from("admins")
         .select("id")
         .order("created_at", { ascending: true })
@@ -95,7 +98,7 @@ async function getDefaultAdminId(): Promise<string | null> {
 
     // Fallback: derive admin from store_settings (covers cases where admins
     // table is locked by RLS or empty but a store is configured)
-    const { data: stores, error: storesErr } = await supabaseServer
+    const { data: stores, error: storesErr } = await getSupabaseAdmin()
         .from("store_settings")
         .select("admin_id")
         .not("admin_id", "is", null)
@@ -110,16 +113,46 @@ async function handleLogin({ phone, adminId }: Record<string, unknown>) {
     if (!phoneVal.ok) return err(phoneVal.error, 400);
 
     const cleanPhone = (phone as string).trim();
-    let query = supabaseServer
+    const wantedAdminId = typeof adminId === "string" && adminId ? adminId : "";
+
+    // Sem .limit(1): antes pegávamos o primeiro registro que voltasse, então um
+    // telefone cadastrado em duas lojas caía numa delas por sorte de ordenação.
+    // Buscamos todos os cadastros e decidimos explicitamente.
+    let query = getSupabaseAdmin()
         .from("clients")
         .select("id, name, phone, admin_id")
-        .eq("phone", cleanPhone)
-        .limit(1);
-    if (typeof adminId === "string" && adminId) query = query.eq("admin_id", adminId);
+        .eq("phone", cleanPhone);
+    if (wantedAdminId) query = query.eq("admin_id", wantedAdminId);
 
     const { data: clients } = await query;
 
     if (!clients?.length) return err("Cliente não encontrado.", 404);
+
+    const byTenant = new Map<string, (typeof clients)[number]>();
+    for (const c of clients) {
+        if (c.admin_id && !byTenant.has(c.admin_id)) byTenant.set(c.admin_id, c);
+    }
+
+    // Mesmo telefone em mais de uma loja: quem escolhe é o cliente, não a
+    // ordenação do banco. Devolvemos as lojas para a tela montar a escolha.
+    if (byTenant.size > 1) {
+        const { data: stores } = await getSupabaseAdmin()
+            .from("store_settings")
+            .select("admin_id, store_name")
+            .in("admin_id", [...byTenant.keys()]);
+
+        const nameOf = new Map((stores ?? []).map((s) => [s.admin_id, s.store_name]));
+        return NextResponse.json(
+            {
+                needsStoreChoice: true,
+                stores: [...byTenant.keys()].map((id) => ({
+                    adminId: id,
+                    storeName: nameOf.get(id) || "Loja",
+                })),
+            },
+            { status: 409 }
+        );
+    }
 
     const c = clients[0];
     const payload: ClientSessionPayload = {
@@ -159,7 +192,7 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
         : null;
 
     // Idempotency: if phone already registered for this admin, return existing session
-    const { data: existing } = await supabaseServer
+    const { data: existing } = await getSupabaseAdmin()
         .from("clients")
         .select("id, name, phone, admin_id")
         .eq("phone", cleanPhone)
@@ -180,14 +213,14 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
         .map((b) => b.toString(16).padStart(2, "0").toUpperCase())
         .join("");
 
-    const { error: insertError } = await supabaseServer
+    const { error: insertError } = await getSupabaseAdmin()
         .from("clients")
         .insert({ id: clientId, name: cleanName, phone: cleanPhone, address: cleanAddress, admin_id: resolvedAdminId });
 
     if (insertError) {
         // Duplicate key race — retry read
         if (insertError.code === "23505") {
-            const { data: retry } = await supabaseServer
+            const { data: retry } = await getSupabaseAdmin()
                 .from("clients").select("id, name, phone, admin_id")
                 .eq("phone", cleanPhone).eq("admin_id", resolvedAdminId).limit(1);
             if (retry?.length) {
