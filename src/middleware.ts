@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, verifySession } from "@/lib/session-cookie";
+import { canUsePanel } from "@/lib/tenant-status";
 
-/**
- * Paths that do NOT require an admin session.
- * - /login       — client login
- * - /acesso      — admin login
- * - /cliente/    — all client-facing pages
- * - /api/auth/   — auth endpoints (login, session management)
- * - /register    — legacy redirect page
- * - /loginadmin  — legacy redirect page
- */
 /**
  * Caminhos que NÃO exigem sessão de administrador.
  *
@@ -40,7 +32,23 @@ const PUBLIC_PREFIXES = [
     "/loginadmin",
 ];
 
+/**
+ * Público por caminho EXATO, não por prefixo.
+ *
+ * "/contratar" é a página de cadastro e não pode exigir sessão — quem a abre
+ * ainda não tem conta. Mas "/contratar/status" é a tela de acompanhamento e
+ * exige login. Se "/contratar" entrasse na lista de prefixos, a tela de
+ * acompanhamento viraria pública junto. Mesma coisa entre POST
+ * /api/contratar (cadastro, público) e GET /api/contratar/status (do dono do
+ * próprio pedido).
+ */
+const PUBLIC_EXACT = new Set(["/contratar", "/api/contratar"]);
+
+/** Única página alcançável por uma tenant que não está ativa. */
+const STATUS_PAGE = "/contratar/status";
+
 function isPublicPath(pathname: string): boolean {
+    if (PUBLIC_EXACT.has(pathname)) return true;
     return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
@@ -68,9 +76,42 @@ export async function middleware(request: NextRequest) {
     const cookieValue = request.cookies.get(SESSION_COOKIE)?.value;
     if (!cookieValue) return deny(false);
 
-    // Verify HMAC signature — rejects any tampered or forged cookie
+    // Verify HMAC signature — rejects any tampered or forged cookie.
+    // Também rejeita cookie emitido antes da migration 026, que não carrega
+    // role/status: sem eles não há portão de ciclo de vida.
     const session = await verifySession(cookieValue);
     if (!session) return deny(true);
+
+    // ── Portão de ciclo de vida ──────────────────────────────────────────
+    // Barato: lê o status de dentro do cookie assinado, sem tocar no banco
+    // (isto roda no Edge). A palavra final é do requireAdmin(), que consulta
+    // o banco em toda chamada de API — um cookie vale 24h e uma suspensão
+    // não pode esperar por isso.
+    if (!canUsePanel(session.status)) {
+        if (pathname === STATUS_PAGE || pathname === "/api/contratar/status") {
+            return NextResponse.next();
+        }
+        if (isApi) {
+            return NextResponse.json(
+                { error: "Sua loja ainda não está liberada.", code: "TENANT_INATIVA" },
+                { status: 403 }
+            );
+        }
+        return NextResponse.redirect(new URL(STATUS_PAGE, request.url));
+    }
+
+    // Tenant ativa não fica presa na tela de acompanhamento.
+    if (pathname === STATUS_PAGE) {
+        return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // ── Portão de papel ──────────────────────────────────────────────────
+    // Gate barato pelo cookie; requireOwner() confere o papel no banco.
+    if (pathname.startsWith("/pedido-ai-admin") && session.role !== "owner") {
+        return isApi
+            ? NextResponse.json({ error: "Acesso restrito." }, { status: 403 })
+            : NextResponse.redirect(new URL("/", request.url));
+    }
 
     return NextResponse.next();
 }
