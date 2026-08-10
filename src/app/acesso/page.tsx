@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
     Mail, Lock, AlertCircle, Loader2, ShieldCheck,
@@ -12,7 +13,7 @@ import { validateEmail, validatePassword } from "@/lib/validators";
 import { logEvent, logError } from "@/lib/logger";
 import { useAuth } from "@/lib/auth-context";
 
-type Mode = "signin" | "signup" | "forgot_email" | "forgot_code" | "forgot_newpass";
+type Mode = "signin" | "forgot_email" | "forgot_code" | "forgot_newpass";
 
 const inputClass =
     "w-full h-11 pl-10 pr-3.5 rounded-xl border border-stone-200 bg-white text-[14.5px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50";
@@ -44,7 +45,6 @@ export default function AcessoPage() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [confirm, setConfirm] = useState("");
     const [showPwd, setShowPwd] = useState(false);
 
     const [resetEmail, setResetEmail] = useState("");
@@ -85,41 +85,6 @@ export default function AcessoPage() {
             }
 
             logEvent({ event_type: "admin_login_success", actor_type: "admin", actor_id: data.adminId });
-            saveSession(data.adminId, data.email);
-            router.push("/");
-        } catch {
-            setError("Erro de conexão. Tente novamente.");
-            setLoading(false);
-        }
-    }
-
-    async function handleSignUp(e: React.FormEvent) {
-        e.preventDefault();
-        setError("");
-
-        if (password !== confirm) { setError("As senhas não coincidem."); return; }
-        const pwdVal = validatePassword(password);
-        if (!pwdVal.ok) { setError(pwdVal.error); return; }
-
-        setLoading(true);
-
-        try {
-            const res = await fetch("/api/auth/admin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "signup", email, password }),
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                if (res.status === 403) logEvent({ event_type: "admin_unauthorized_signup", actor_type: "admin" });
-                else logError("admin_signup", data.error);
-                setError(data.error ?? "Erro ao criar conta.");
-                setLoading(false);
-                return;
-            }
-
-            logEvent({ event_type: "admin_signup_completed", actor_type: "admin", actor_id: data.adminId });
             saveSession(data.adminId, data.email);
             router.push("/");
         } catch {
@@ -230,8 +195,6 @@ export default function AcessoPage() {
         else switchMode("signin");
     }
 
-    const isForgot = mode.startsWith("forgot");
-
     const meta = (() => {
         switch (mode) {
             case "signin":
@@ -239,12 +202,6 @@ export default function AcessoPage() {
                     eyebrow: "Acesso restrito",
                     title: <>Bem-vindo de <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>volta.</em></>,
                     sub: "Entre na sua conta administrativa.",
-                };
-            case "signup":
-                return {
-                    eyebrow: "Primeiro acesso",
-                    title: <>Criar <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>conta admin.</em></>,
-                    sub: "Defina a senha para um email pré-autorizado.",
                 };
             case "forgot_email":
                 return {
@@ -294,28 +251,6 @@ export default function AcessoPage() {
             <main className="relative z-10 flex items-center justify-center px-6 py-10 sm:py-16">
                 <div className="w-full max-w-[440px]">
 
-                    {/* Tab selector — only on signin/signup */}
-                    {!isForgot && (
-                        <div className="flex justify-center mb-8">
-                            <div className="inline-flex p-1 rounded-full bg-stone-200/60 border border-stone-300/40">
-                                {(["signin", "signup"] as const).map((m) => (
-                                    <button
-                                        key={m}
-                                        onClick={() => switchMode(m)}
-                                        className={cn(
-                                            "px-4 py-1.5 rounded-full text-[12px] font-semibold tracking-wide transition-all",
-                                            mode === m
-                                                ? "bg-stone-900 text-white shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
-                                                : "text-stone-600 hover:text-stone-900"
-                                        )}
-                                    >
-                                        {m === "signin" ? "Entrar" : "Criar conta"}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     {/* Heading */}
                     <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                         <div className="text-center mb-8">
@@ -333,56 +268,37 @@ export default function AcessoPage() {
 
                         {/* SIGN IN */}
                         {mode === "signin" && (
-                            <form onSubmit={handleSignIn} className="space-y-4">
-                                <FieldEmail value={email} onChange={setEmail} disabled={loading} />
-                                <FieldPassword
-                                    value={password} onChange={setPassword}
-                                    show={showPwd} toggleShow={() => setShowPwd((v) => !v)}
-                                    placeholder="••••••••" autoComplete="current-password"
-                                    disabled={loading}
-                                />
-                                {error && <ErrorMsg text={error} />}
-                                {info && <InfoMsg text={info} />}
-                                <PrimaryButton
-                                    loading={loading}
-                                    disabled={!email.trim() || !password.trim()}
-                                    label="Entrar"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => { setResetEmail(""); switchMode("forgot_email"); }}
-                                    className="w-full text-center text-[12.5px] text-stone-500 hover:text-stone-900 transition-colors pt-1"
-                                >
-                                    Esqueci minha senha
-                                </button>
-                            </form>
-                        )}
-
-                        {/* SIGN UP */}
-                        {mode === "signup" && (
-                            <form onSubmit={handleSignUp} className="space-y-4">
-                                <FieldEmail value={email} onChange={setEmail} disabled={loading} />
-                                <FieldPassword
-                                    value={password} onChange={setPassword}
-                                    show={showPwd} toggleShow={() => setShowPwd((v) => !v)}
-                                    placeholder="Mínimo 6 caracteres" autoComplete="new-password"
-                                    disabled={loading}
-                                />
-                                <Field icon={Lock} label="Confirmar senha">
-                                    <input
-                                        type="password" placeholder="Repita a senha"
-                                        value={confirm} onChange={(e) => setConfirm(e.target.value)}
-                                        className={inputClass}
-                                        autoComplete="new-password" disabled={loading}
+                            <>
+                                <form onSubmit={handleSignIn} className="space-y-4">
+                                    <FieldEmail value={email} onChange={setEmail} disabled={loading} />
+                                    <FieldPassword
+                                        value={password} onChange={setPassword}
+                                        show={showPwd} toggleShow={() => setShowPwd((v) => !v)}
+                                        placeholder="••••••••" autoComplete="current-password"
+                                        disabled={loading}
                                     />
-                                </Field>
-                                {error && <ErrorMsg text={error} />}
-                                <PrimaryButton
-                                    loading={loading}
-                                    disabled={!email.trim() || !password.trim() || !confirm.trim()}
-                                    label="Criar conta"
-                                />
-                            </form>
+                                    {error && <ErrorMsg text={error} />}
+                                    {info && <InfoMsg text={info} />}
+                                    <PrimaryButton
+                                        loading={loading}
+                                        disabled={!email.trim() || !password.trim()}
+                                        label="Entrar"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => { setResetEmail(""); switchMode("forgot_email"); }}
+                                        className="w-full text-center text-[12.5px] text-stone-500 hover:text-stone-900 transition-colors pt-1"
+                                    >
+                                        Esqueci minha senha
+                                    </button>
+                                </form>
+                                <p className="text-center text-[12px] text-stone-500 mt-6">
+                                    Ainda não tem loja no PedidoAI?{" "}
+                                    <Link href="/contratar" className="text-stone-900 underline underline-offset-2">
+                                        Contratar
+                                    </Link>
+                                </p>
+                            </>
                         )}
 
                         {/* FORGOT — email */}

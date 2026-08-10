@@ -72,8 +72,6 @@ export function getClientIP(request: Request): string {
 export const LIMITS = {
     /** Sign-in: 8 attempts per 15 min per IP */
     signin:         { max: 8,  windowMs: 15 * 60 * 1000 },
-    /** Sign-up: 5 attempts per hour per IP */
-    signup:         { max: 5,  windowMs: 60 * 60 * 1000 },
     /** Contratação: 5 cadastros por hora por IP */
     contratar:      { max: 5,  windowMs: 60 * 60 * 1000 },
     /** Forgot request: 5 per hour per IP (already returns 200 always) */

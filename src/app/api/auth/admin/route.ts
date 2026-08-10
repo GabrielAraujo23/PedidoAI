@@ -66,9 +66,13 @@ export async function POST(request: NextRequest) {
 
         const ip = getClientIP(request);
 
+        // Não existe "signup" aqui. Criar conta é contratar o serviço, e isso
+        // acontece em POST /api/contratar — que coleta dados da loja, endereço
+        // público e aceite de contrato, e deixa a conta pendente de aprovação.
+        // O antigo signup apenas definia a senha de uma linha inserida à mão no
+        // Supabase, e respondia 403 para todo mundo que não estivesse lá.
         switch (action) {
             case "signin":         return await handleSignIn(body as Record<string, unknown>, ip);
-            case "signup":         return await handleSignUp(body as Record<string, unknown>, ip);
             case "forgot_request": return await handleForgotRequest(body as Record<string, unknown>, ip);
             case "forgot_verify":  return await handleForgotVerify(body as Record<string, unknown>, ip);
             case "forgot_reset":   return await handleForgotReset(body as Record<string, unknown>, ip);
@@ -114,45 +118,6 @@ async function handleSignIn({ email, password }: Record<string, unknown>, ip: st
     // ver a tela de acompanhamento. Quem barra e o portao seguinte.
     return okWithSession({
         adminId: admin.id, email: admin.email, role: admin.role, status: admin.status,
-    });
-}
-
-// ── Sign up ───────────────────────────────────────────────────────────────────
-
-async function handleSignUp({ email, password }: Record<string, unknown>, ip: string) {
-    const rl = rateLimit(`signup:${ip}`, LIMITS.signup.max, LIMITS.signup.windowMs);
-    if (!rl.allowed) return tooMany(rl.resetAt);
-
-    if (!isValidEmail(email) || !isValidPassword(password)) {
-        return err("Dados inválidos.", 400);
-    }
-
-    const { data: existing } = await getSupabaseAdmin()
-        .from("admins")
-        .select("id, email, password_hash")
-        .eq("email", email.trim().toLowerCase())
-        .single();
-
-    if (!existing) {
-        return err("Email não autorizado. Contate o administrador do sistema.", 403);
-    }
-    if (existing.password_hash) {
-        return err("Este email já possui uma senha cadastrada. Use a opção de login.", 409);
-    }
-
-    const password_hash = await hashPasswordServer(password);
-
-    const { error: updateError } = await getSupabaseAdmin()
-        .from("admins")
-        .update({ password_hash })
-        .eq("id", existing.id);
-
-    if (updateError) {
-        return err("Erro ao definir senha. Tente novamente.", 500);
-    }
-
-    return okWithSession({
-        adminId: existing.id, email: existing.email, role: "lojista", status: "ativa",
     });
 }
 
