@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Upload, Check, X, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { parseNfeXml, matchProductByName } from "@/lib/nfe-xml-parser";
@@ -57,11 +56,10 @@ export default function ReceberPage() {
 
     useEffect(() => {
         if (!adminSession) return;
-        supabase
-            .from("products")
-            .select("id, name, barcode, stock_quantity, category, unit, price, active, admin_id, created_at, description, subcategory")
-            .eq("admin_id", adminSession.adminId)
-            .then(({ data }) => setProducts((data ?? []) as Product[]));
+        fetch("/api/estoque?view=todos-produtos")
+            .then((r) => r.json())
+            .then((j) => setProducts((j.products ?? []) as Product[]))
+            .catch((e) => console.error("[receber] load products:", e));
     }, [adminSession]);
 
     function handleXmlUpload(e: React.ChangeEvent<HTMLInputElement>) {

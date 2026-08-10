@@ -9,7 +9,6 @@ import {
     ChevronLeft, ChevronRight, PackagePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { StockBadge } from "@/components/stock-badge";
 import type { Product, StockMovement } from "@/lib/types";
@@ -46,26 +45,28 @@ export default function EstoquePage() {
 
     async function loadProducts() {
         setLoading(true);
-        const { data } = await supabase
-            .from("products")
-            .select("*")
-            .eq("admin_id", adminSession!.adminId)
-            .eq("active", true)
-            .order("name");
-        setProducts((data ?? []) as Product[]);
-        setLoading(false);
+        try {
+            const res = await fetch("/api/estoque?view=produtos");
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao carregar");
+            setProducts((json.products ?? []) as Product[]);
+        } catch (e) {
+            console.error("[estoque] loadProducts:", e);
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function loadMovements() {
-        const from = movPage * PAGE_SIZE;
-        const { data, count } = await supabase
-            .from("stock_movements")
-            .select("*", { count: "exact" })
-            .eq("admin_id", adminSession!.adminId)
-            .order("created_at", { ascending: false })
-            .range(from, from + PAGE_SIZE - 1);
-        setMovements((data ?? []) as StockMovement[]);
-        setMovTotal(count ?? 0);
+        try {
+            const res = await fetch(`/api/estoque?view=movimentacoes&page=${movPage}`);
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error ?? "Erro ao carregar");
+            setMovements((json.movements ?? []) as StockMovement[]);
+            setMovTotal(json.total ?? 0);
+        } catch (e) {
+            console.error("[estoque] loadMovements:", e);
+        }
     }
 
     async function handleAdjust(productId: string) {
