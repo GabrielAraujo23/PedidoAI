@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
     CLIENT_SESSION_COOKIE, clientSessionCookieOptions,
     signClientSession, verifyClientSession, ClientSessionPayload,
+    TENANT_COOKIE, verifyTenant,
 } from "@/lib/session-cookie";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { validatePhone, validateName, truncate, LIMITS } from "@/lib/validators";
@@ -60,14 +61,74 @@ export async function POST(request: NextRequest) {
         if (typeof body !== "object" || body === null) return err("Invalid request", 400);
         const { action } = body as Record<string, unknown>;
 
-        if (action === "lookup")   return await handleLookup(body as Record<string, unknown>);
-        if (action === "login")    return await handleLogin(body as Record<string, unknown>);
-        if (action === "register") return await handleRegister(body as Record<string, unknown>, ip);
+        if (action === "lookup")   return await handleLookup(request, body as Record<string, unknown>);
+        if (action === "login")    return await handleLogin(request, body as Record<string, unknown>);
+        if (action === "register") return await handleRegister(request, body as Record<string, unknown>, ip);
 
         return err("Unknown action", 400);
     } catch (e) {
         return handleRouteError(e, "POST /api/auth/client");
     }
+}
+
+// ── Resolução do tenant ───────────────────────────────────────────────────────
+
+type TenantResult =
+    | { ok: true; adminId: string }
+    | { ok: false; response: NextResponse };
+
+/**
+ * Descobre em qual loja esta requisição acontece.
+ *
+ * Ordem, da pista mais explícita para a menos:
+ *   1. `adminId` no corpo — só existe porque links `/login?admin=<uuid>` antigos
+ *      continuam circulando. É o único lugar do sistema onde aceitamos tenant
+ *      vindo do cliente, e ele não dá acesso a nada: apenas escolhe em qual
+ *      loja o visitante vai se cadastrar ou procurar o próprio telefone, que é
+ *      informação que ele já teria pelo link.
+ *   2. cookie de tenant assinado, gravado por /loja/<slug>. Assinado com HMAC,
+ *      então não dá para forjar uma loja.
+ *   3. instalação com uma loja só — não há o que ambiguar.
+ *   4. várias lojas e nenhuma pista → 409. Antes daqui saía a loja mais antiga,
+ *      e o cliente era cadastrado na loja errada em silêncio.
+ */
+async function resolveTenant(request: NextRequest, bodyAdminId: unknown): Promise<TenantResult> {
+    if (typeof bodyAdminId === "string" && bodyAdminId.trim()) {
+        return { ok: true, adminId: bodyAdminId.trim() };
+    }
+
+    const cookie = request.cookies.get(TENANT_COOKIE)?.value;
+    if (cookie) {
+        const tenant = await verifyTenant(cookie);
+        if (tenant?.adminId) return { ok: true, adminId: tenant.adminId };
+    }
+
+    // Pedimos 2 linhas de propósito: precisamos saber se existe uma segunda
+    // loja, não apenas qual é a primeira.
+    const { data: stores, error } = await getSupabaseAdmin()
+        .from("store_settings")
+        .select("admin_id")
+        .not("admin_id", "is", null)
+        .order("created_at", { ascending: true })
+        .limit(2);
+
+    if (error) console.error("[resolveTenant] store_settings query error:", error.message);
+
+    if (stores?.length === 1 && stores[0].admin_id) {
+        return { ok: true, adminId: stores[0].admin_id };
+    }
+
+    if (!stores?.length) {
+        return { ok: false, response: err("Nenhuma loja disponível para cadastro.", 503) };
+    }
+
+    return {
+        ok: false,
+        response: NextResponse.json(
+            { needsStore: true, error: "Use o link da loja para entrar." },
+            { status: 409 }
+        ),
+    };
 }
 
 // ── Lookup ────────────────────────────────────────────────────────────────────
@@ -80,17 +141,19 @@ export async function POST(request: NextRequest) {
  * login é só por telefone, alguém poderia varrer números e coletar dados.
  * Aqui devolvemos o mínimo, e o rate limit de client_auth já se aplica.
  */
-async function handleLookup({ phone, adminId }: Record<string, unknown>) {
+async function handleLookup(request: NextRequest, { phone, adminId }: Record<string, unknown>) {
     const phoneVal = validatePhone(typeof phone === "string" ? phone : "", true);
     if (!phoneVal.ok) return err(phoneVal.error, 400);
 
-    let query = getSupabaseAdmin()
+    const tenant = await resolveTenant(request, adminId);
+    if (!tenant.ok) return tenant.response;
+
+    const { data } = await getSupabaseAdmin()
         .from("clients")
         .select("name, admin_id")
-        .eq("phone", (phone as string).trim());
-    if (typeof adminId === "string" && adminId) query = query.eq("admin_id", adminId);
-
-    const { data } = await query.limit(1);
+        .eq("phone", (phone as string).trim())
+        .eq("admin_id", tenant.adminId)
+        .limit(1);
 
     if (!data?.length) return ok({ exists: false });
     return ok({ exists: true, name: data[0].name, adminId: data[0].admin_id });
@@ -98,81 +161,26 @@ async function handleLookup({ phone, adminId }: Record<string, unknown>) {
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
-/**
- * Loja padrão para cadastros que chegam sem `?admin=` na URL.
- *
- * LIMITAÇÃO CONHECIDA (multi-tenant): isto devolve o admin mais antigo. Com
- * uma loja só está correto; com várias, um cliente novo que abra a URL sem o
- * parâmetro é cadastrado na loja errada em silêncio. A correção de verdade é
- * dar a cada tenant um slug/subdomínio próprio (loja.pedidoai.com) para que
- * nunca exista pedido sem loja definida — está previsto para a Fase 1.
- */
-async function getDefaultAdminId(): Promise<string | null> {
-    const { data: admins, error: adminsErr } = await getSupabaseAdmin()
-        .from("admins")
-        .select("id")
-        .order("created_at", { ascending: true })
-        .limit(1);
-    if (adminsErr) console.error("[getDefaultAdminId] admins query error:", adminsErr.message);
-    if (admins?.[0]?.id) return admins[0].id;
-
-    // Fallback: derive admin from store_settings (covers cases where admins
-    // table is locked by RLS or empty but a store is configured)
-    const { data: stores, error: storesErr } = await getSupabaseAdmin()
-        .from("store_settings")
-        .select("admin_id")
-        .not("admin_id", "is", null)
-        .order("created_at", { ascending: true })
-        .limit(1);
-    if (storesErr) console.error("[getDefaultAdminId] store_settings query error:", storesErr.message);
-    return stores?.[0]?.admin_id ?? null;
-}
-
-async function handleLogin({ phone, adminId }: Record<string, unknown>) {
+async function handleLogin(request: NextRequest, { phone, adminId }: Record<string, unknown>) {
     const phoneVal = validatePhone(typeof phone === "string" ? phone : "", true);
     if (!phoneVal.ok) return err(phoneVal.error, 400);
 
     const cleanPhone = (phone as string).trim();
-    const wantedAdminId = typeof adminId === "string" && adminId ? adminId : "";
 
-    // Sem .limit(1): antes pegávamos o primeiro registro que voltasse, então um
-    // telefone cadastrado em duas lojas caía numa delas por sorte de ordenação.
-    // Buscamos todos os cadastros e decidimos explicitamente.
-    let query = getSupabaseAdmin()
+    const tenant = await resolveTenant(request, adminId);
+    if (!tenant.ok) return tenant.response;
+
+    // A consulta é sempre escopada pela loja resolvida. Antes ela podia rodar
+    // sem filtro, e um telefone cadastrado em duas lojas entrava numa delas por
+    // sorte de ordenação — agora a loja é decidida antes de olhar o cliente.
+    const { data: clients } = await getSupabaseAdmin()
         .from("clients")
         .select("id, name, phone, admin_id")
-        .eq("phone", cleanPhone);
-    if (wantedAdminId) query = query.eq("admin_id", wantedAdminId);
-
-    const { data: clients } = await query;
+        .eq("phone", cleanPhone)
+        .eq("admin_id", tenant.adminId)
+        .limit(1);
 
     if (!clients?.length) return err("Cliente não encontrado.", 404);
-
-    const byTenant = new Map<string, (typeof clients)[number]>();
-    for (const c of clients) {
-        if (c.admin_id && !byTenant.has(c.admin_id)) byTenant.set(c.admin_id, c);
-    }
-
-    // Mesmo telefone em mais de uma loja: quem escolhe é o cliente, não a
-    // ordenação do banco. Devolvemos as lojas para a tela montar a escolha.
-    if (byTenant.size > 1) {
-        const { data: stores } = await getSupabaseAdmin()
-            .from("store_settings")
-            .select("admin_id, store_name")
-            .in("admin_id", [...byTenant.keys()]);
-
-        const nameOf = new Map((stores ?? []).map((s) => [s.admin_id, s.store_name]));
-        return NextResponse.json(
-            {
-                needsStoreChoice: true,
-                stores: [...byTenant.keys()].map((id) => ({
-                    adminId: id,
-                    storeName: nameOf.get(id) || "Loja",
-                })),
-            },
-            { status: 409 }
-        );
-    }
 
     const c = clients[0];
     const payload: ClientSessionPayload = {
@@ -187,7 +195,11 @@ async function handleLogin({ phone, adminId }: Record<string, unknown>) {
 
 // ── Register ──────────────────────────────────────────────────────────────────
 
-async function handleRegister({ phone, name, adminId, address }: Record<string, unknown>, ip: string) {
+async function handleRegister(
+    request: NextRequest,
+    { phone, name, adminId, address }: Record<string, unknown>,
+    ip: string
+) {
     // Stricter per-IP limit for registration (prevents spam account creation)
     const rl = rateLimit(`client_register:${ip}`, 3, 60 * 60 * 1000);
     if (!rl.allowed) return tooMany();
@@ -198,12 +210,9 @@ async function handleRegister({ phone, name, adminId, address }: Record<string, 
     const nameVal = validateName(typeof name === "string" ? name : "");
     if (!nameVal.ok) return err(nameVal.error, 400);
 
-    let resolvedAdminId = typeof adminId === "string" && adminId ? adminId : "";
-    if (!resolvedAdminId) {
-        const fallback = await getDefaultAdminId();
-        if (!fallback) return err("Nenhuma loja disponível para cadastro.", 503);
-        resolvedAdminId = fallback;
-    }
+    const tenant = await resolveTenant(request, adminId);
+    if (!tenant.ok) return tenant.response;
+    const resolvedAdminId = tenant.adminId;
 
     const cleanPhone   = truncate((phone as string).trim(), LIMITS.phone);
     const cleanName    = truncate((name as string).trim(), LIMITS.name);

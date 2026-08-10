@@ -19,6 +19,21 @@ function getAdminIdFromUrl(): string {
     return new URLSearchParams(window.location.search).get("admin") ?? "";
 }
 
+/** Pedido para o cliente buscar o link certo quando a loja não foi definida. */
+const NEEDS_STORE_MESSAGE =
+    "Não sabemos de qual loja você veio. Abra o link que a loja te enviou para continuar.";
+
+/** Dados públicos da loja: nome para exibir e coordenadas para estimar frete. */
+interface PublicStore {
+    admin_id: string | null;
+    store_name: string | null;
+    slug: string | null;
+    latitude: string | number | null;
+    longitude: string | number | null;
+    delivery_radius_km: string | number | null;
+    delivery_rate_per_km: string | number | null;
+}
+
 interface AddrFields {
     street: string;
     neighborhood: string;
@@ -86,9 +101,16 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const router = useRouter();
 
+    // `?admin=` só existe nos links antigos. Nos novos a loja vem do cookie de
+    // tenant, gravado por /loja/<slug> — e o cookie é httpOnly, então quem
+    // resolve é o servidor: pedimos a loja sem parâmetro e ele lê o cookie.
     const [adminId, setAdminId] = useState("");
-    useEffect(() => { setAdminId(getAdminIdFromUrl()); }, []);
+    const [urlChecked, setUrlChecked] = useState(false);
+    useEffect(() => { setAdminId(getAdminIdFromUrl()); setUrlChecked(true); }, []);
     const foundAdminIdRef = useRef("");
+
+    const [storeName, setStoreName] = useState("");
+    const [needsStore, setNeedsStore] = useState(false);
 
     const [cep, setCep] = useState("");
     const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -102,21 +124,33 @@ export default function LoginPage() {
     const [deliveryInfo, setDeliveryInfo] = useState<{ distanceKm: number; fee: number } | null>(null);
 
     useEffect(() => {
-        if (!adminId) return;
-        fetch(`/api/loja/publica?admin=${encodeURIComponent(adminId)}`)
+        if (!urlChecked) return;
+        // Sem `?admin=` a chamada vai sem parâmetro nenhum: o servidor resolve
+        // pelo cookie de tenant assinado, ou responde needsStore quando há mais
+        // de uma loja e nenhuma pista de qual é.
+        const url = adminId
+            ? `/api/loja/publica?admin=${encodeURIComponent(adminId)}`
+            : "/api/loja/publica";
+        fetch(url)
             .then((r) => r.json())
-            .then(({ store: data }) => {
-                const lat = data?.latitude ? parseFloat(data.latitude) : 0;
-                const lng = data?.longitude ? parseFloat(data.longitude) : 0;
+            .then((payload: { store: PublicStore | null; needsStore?: boolean }) => {
+                const data = payload.store;
+                setNeedsStore(!data && payload.needsStore === true);
+                if (!data) return;
+
+                setStoreName(data.store_name ?? "");
+                const lat = data.latitude ? parseFloat(String(data.latitude)) : 0;
+                const lng = data.longitude ? parseFloat(String(data.longitude)) : 0;
                 if (lat && lng) {
                     setStoreCoords({
                         lat, lng,
-                        radius: parseFloat(data?.delivery_radius_km ?? "20") || 20,
-                        rate: parseFloat(data?.delivery_rate_per_km ?? "3") || 3,
+                        radius: parseFloat(String(data.delivery_radius_km ?? "20")) || 20,
+                        rate: parseFloat(String(data.delivery_rate_per_km ?? "3")) || 3,
                     });
                 }
-            });
-    }, [adminId]);
+            })
+            .catch(() => { /* a tela funciona sem os dados de frete */ });
+    }, [adminId, urlChecked]);
 
     useEffect(() => {
         if (!customerCoords || !storeCoords) return;
@@ -222,6 +256,14 @@ export default function LoginPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "lookup", phone: phone.trim(), adminId }),
             });
+            // 409: o servidor não conseguiu determinar a loja. Não adianta
+            // seguir para o cadastro — ele cairia no mesmo erro.
+            if (res.status === 409) {
+                setNeedsStore(true);
+                setError(NEEDS_STORE_MESSAGE);
+                setLoading(false);
+                return;
+            }
             if (res.ok) found = await res.json();
         } catch (e) {
             console.error("[login] lookup:", e);
@@ -249,6 +291,12 @@ export default function LoginPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "login", phone: client.phone, adminId: effectiveAdminId }),
             });
+            if (res.status === 409) {
+                setNeedsStore(true);
+                setError(NEEDS_STORE_MESSAGE);
+                setLoading(false);
+                return;
+            }
             if (!res.ok) throw new Error("auth failed");
             router.push("/cliente/catalogo");
         } catch {
@@ -282,8 +330,13 @@ export default function LoginPage() {
                 }),
             });
             if (!res.ok) {
-                const data = await res.json().catch(() => ({})) as { error?: string };
-                setError(data.error || "Erro ao cadastrar. Tente novamente.");
+                const data = await res.json().catch(() => ({})) as { error?: string; needsStore?: boolean };
+                if (res.status === 409 && data.needsStore) {
+                    setNeedsStore(true);
+                    setError(NEEDS_STORE_MESSAGE);
+                } else {
+                    setError(data.error || "Erro ao cadastrar. Tente novamente.");
+                }
                 setLoading(false);
                 return;
             }
@@ -327,14 +380,28 @@ export default function LoginPage() {
                 <div className="flex items-center">
                     <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[280px] h-auto object-contain" />
                 </div>
-                <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500 hidden sm:block">
-                    Loja Aberta
+                {/* Nome da loja resolvida — é o retorno visível de ter entrado
+                    por /loja/<slug>: o cliente confere que é a loja certa. */}
+                <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500 hidden sm:block text-right max-w-[220px] truncate">
+                    {storeName || "Loja Aberta"}
                 </span>
             </header>
 
             {/* Main */}
             <main className="relative z-10 flex items-center justify-center px-6 py-10 sm:py-16">
                 <div className="w-full max-w-[440px]">
+
+                    {/* Sem loja definida não dá para continuar: o cadastro iria
+                        parar numa loja escolhida no chute, que é o que esta
+                        tela deixou de fazer. */}
+                    {needsStore && (
+                        <div className="mb-6 flex items-start gap-2.5 px-4 py-3 rounded-xl border border-amber-200/70 bg-amber-50/80">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                            <p className="text-[13px] leading-relaxed text-amber-900">
+                                {NEEDS_STORE_MESSAGE}
+                            </p>
+                        </div>
+                    )}
 
                     {/* Step indicator dots */}
                     <div className="flex items-center justify-center gap-1.5 mb-8">
@@ -392,7 +459,7 @@ export default function LoginPage() {
 
                                 <button
                                     type="submit"
-                                    disabled={loading || !phone.trim()}
+                                    disabled={loading || !phone.trim() || needsStore}
                                     className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
                                     {loading ? (
@@ -582,7 +649,7 @@ export default function LoginPage() {
                                 <div className="space-y-3 pt-2">
                                     <button
                                         type="submit"
-                                        disabled={loading || !name.trim()}
+                                        disabled={loading || !name.trim() || needsStore}
                                         className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                     >
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
