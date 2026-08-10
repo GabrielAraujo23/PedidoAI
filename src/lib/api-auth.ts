@@ -21,6 +21,34 @@ export function jsonError(message: string, status: number) {
     return NextResponse.json({ error: message }, { status });
 }
 
+/**
+ * Converte um erro capturado em resposta, destacando falhas de configuração.
+ *
+ * Erro de variável de ambiente e erro de runtime têm causas e soluções
+ * completamente diferentes, mas ambos caíam no mesmo "Erro interno. Tente
+ * novamente." — que manda o usuário repetir uma ação que nunca vai funcionar.
+ * Estes casos são de configuração e precisam dizer o que configurar.
+ */
+export function handleRouteError(e: unknown, context: string): NextResponse {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[${context}] uncaught:`, msg);
+
+    if (msg.includes("SUPABASE_SERVICE_ROLE_KEY")) {
+        return jsonError(
+            "Servidor mal configurado: defina SUPABASE_SERVICE_ROLE_KEY nas variáveis de " +
+            "ambiente. Na Vercel, marque também o ambiente Preview, não apenas Production.",
+            500
+        );
+    }
+    if (msg.includes("SESSION_SECRET")) {
+        return jsonError(
+            "Servidor mal configurado: defina SESSION_SECRET nas variáveis de ambiente.",
+            500
+        );
+    }
+    return jsonError("Erro interno. Tente novamente.", 500);
+}
+
 type Guard<T> =
     | { ok: true; session: T }
     | { ok: false; response: NextResponse };

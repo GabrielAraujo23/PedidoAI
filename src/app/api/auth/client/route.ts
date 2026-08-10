@@ -7,6 +7,7 @@ import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { validatePhone, validateName, truncate, LIMITS } from "@/lib/validators";
 import { checkOrigin } from "@/lib/csrf";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { handleRouteError } from "@/lib/api-auth";
 
 function ok(data: object)               { return NextResponse.json(data); }
 function err(msg: string, status = 400) { return NextResponse.json({ error: msg }, { status }); }
@@ -32,9 +33,7 @@ export async function GET(request: NextRequest) {
         }
         return NextResponse.json(session);
     } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error("[GET /api/auth/client] uncaught:", msg);
-        return NextResponse.json({ error: "Erro interno." }, { status: 500 });
+        return handleRouteError(e, "GET /api/auth/client");
     }
 }
 
@@ -66,13 +65,7 @@ export async function POST(request: NextRequest) {
 
         return err("Unknown action", 400);
     } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error("[/api/auth/client] uncaught:", msg);
-        // Surface the SESSION_SECRET misconfig clearly so it's not just a blind 500
-        if (msg.includes("SESSION_SECRET")) {
-            return err("Servidor mal configurado: defina a variável SESSION_SECRET no Vercel.", 500);
-        }
-        return err("Erro interno. Tente novamente.", 500);
+        return handleRouteError(e, "POST /api/auth/client");
     }
 }
 

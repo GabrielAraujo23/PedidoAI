@@ -4,14 +4,16 @@ import { signSession, sessionCookieOptions, SESSION_COOKIE } from "@/lib/session
 import { rateLimit, getClientIP, LIMITS } from "@/lib/rate-limit";
 import { checkOrigin } from "@/lib/csrf";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { handleRouteError } from "@/lib/api-auth";
 
 /**
  * Server-side admin authentication.
  * Password hash NEVER leaves the server — the client only receives { adminId, email }.
  * On success, sets an httpOnly signed session cookie.
  *
- * Uses SUPABASE_SERVICE_ROLE_KEY when available (bypasses RLS safely on the server).
- * Falls back to anon key only if the service role key is not configured.
+ * Exige SUPABASE_SERVICE_ROLE_KEY: a tabela admins é inacessível para anon
+ * desde a migration 022. Não há fallback para a anon key — sem a chave, a
+ * rota falha com uma mensagem que diz exatamente o que configurar.
  */
 
 function ok(data: object)               { return NextResponse.json(data); }
@@ -69,12 +71,7 @@ export async function POST(request: NextRequest) {
             default:               return err("Unknown action", 400);
         }
     } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.error("[POST /api/auth/admin] uncaught:", msg);
-        if (msg.includes("SESSION_SECRET")) {
-            return err("Servidor mal configurado: defina SESSION_SECRET no Vercel.", 500);
-        }
-        return err("Erro interno. Tente novamente.", 500);
+        return handleRouteError(e, "POST /api/auth/admin");
     }
 }
 
