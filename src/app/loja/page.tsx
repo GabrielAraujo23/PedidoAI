@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
     Store, MapPin, Phone, FileText, Truck, Clock,
-    Save, Upload, Package, Plus, X, Loader2, Check, AlertCircle, Link2, Copy,
+    Save, Package, Plus, X, Loader2, Check, AlertCircle, Link2, Copy, Palette,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import {
     validateStoreName, validatePhone, validateDeliveryRate, validateDeliveryRadius,
@@ -101,7 +101,6 @@ interface FormState {
     categories: string[];
     taxRegime: string;
     stateRegistration: string;
-    logoUrl: string;
 }
 
 const EMPTY: FormState = {
@@ -110,7 +109,7 @@ const EMPTY: FormState = {
     neighborhood: "", city: "", state: "",
     phone: "", businessHours: "", deliveryRate: "", deliveryRadius: "",
     latitude: "", longitude: "", categories: [],
-    taxRegime: "", stateRegistration: "", logoUrl: "",
+    taxRegime: "", stateRegistration: "",
 };
 
 type ToastState = { type: "success" | "error"; message: string } | null;
@@ -171,7 +170,6 @@ export default function LojaPage() {
     const { adminSession } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [settingId, setSettingId] = useState<string | null>(null);
     const [form, setForm] = useState<FormState>(EMPTY);
@@ -179,7 +177,6 @@ export default function LojaPage() {
     const [toast, setToast] = useState<ToastState>(null);
     const [newCategory, setNewCategory] = useState("");
     const [addingCategory, setAddingCategory] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // CEP state
     const [cepStatus, setCepStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -233,7 +230,6 @@ export default function LojaPage() {
                         categories: data.product_categories ?? [],
                         taxRegime: data.tax_regime ?? "",
                         stateRegistration: data.state_registration ?? "",
-                        logoUrl: data.logo_url ?? "",
                     });
                     // If CEP already saved, show it as validated
                     if (data.cep && data.street) {
@@ -399,30 +395,6 @@ export default function LojaPage() {
         }
     }
 
-    // ── Logo upload ───────────────────────────────────────────────────────
-
-    async function handleLogoUpload(file: File) {
-        if (file.size > 2 * 1024 * 1024) {
-            setToast({ type: "error", message: "Arquivo muito grande. Máximo: 2MB." });
-            return;
-        }
-        setUploading(true);
-        const path = `${adminId.current}/logo`;
-        const { error } = await supabase.storage
-            .from("store-logos")
-            .upload(path, file, { upsert: true, contentType: file.type });
-
-        if (error) {
-            setToast({ type: "error", message: "Erro ao fazer upload da logo. Verifique o bucket 'store-logos'." });
-        } else {
-            const { data: urlData } = supabase.storage.from("store-logos").getPublicUrl(path);
-            const url = `${urlData.publicUrl}?t=${Date.now()}`;
-            setField("logoUrl", url);
-            setToast({ type: "success", message: "Logo atualizada com sucesso!" });
-        }
-        setUploading(false);
-    }
-
     // ── Save ──────────────────────────────────────────────────────────────
 
     async function handleSave() {
@@ -472,7 +444,6 @@ export default function LojaPage() {
             tax_regime:           form.taxRegime     || null,
             state_registration:   form.stateRegistration || null,
             product_categories:   form.categories.map((c) => truncate(c, LIMITS.category)),
-            logo_url:             form.logoUrl       || null,
             updated_at: new Date().toISOString(),
         };
 
@@ -903,55 +874,25 @@ export default function LojaPage() {
                     </CardContent>
                 </Card>
 
-                {/* ── Logo ──────────────────────────────────────────── */}
+                {/* A identidade visual mudou de lugar. Este ponteiro fica aqui
+                    porque quem já usava o sistema vai procurar a logo onde ela
+                    sempre esteve — e não achar, sem explicação, é pior que uma
+                    linha a mais nesta tela. */}
                 <Card className="glass border-none">
                     <CardHeader>
-                        <CardTitle className="text-lg">Logo da Loja</CardTitle>
+                        <CardTitle className="text-lg">Identidade visual</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/png,image/svg+xml,image/jpeg"
-                            className="hidden"
-                            onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) handleLogoUpload(f);
-                                e.target.value = "";
-                            }}
-                        />
-                        <div
-                            className="w-32 h-32 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-muted-foreground hover:bg-slate-50 transition-colors cursor-pointer group overflow-hidden relative"
-                            onClick={() => !uploading && fileInputRef.current?.click()}
+                    <CardContent>
+                        <p className="text-sm text-stone-600 mb-4">
+                            A logo da loja agora fica em <strong>Personalizar</strong>, junto do resto da
+                            aparência.
+                        </p>
+                        <Link
+                            href="/personalizar"
+                            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold hover:border-stone-400"
                         >
-                            {uploading ? (
-                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                            ) : form.logoUrl ? (
-                                <>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={form.logoUrl} alt="Logo da loja" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Upload className="w-6 h-6 text-white" />
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <Upload className="w-8 h-8 group-hover:text-primary transition-colors" />
-                                    <span className="text-xs mt-2">Fazer Upload</span>
-                                </>
-                            )}
-                        </div>
-                        <p className="text-xs text-center text-muted-foreground">Recomendado: 512x512px (PNG ou SVG)</p>
-                        {form.logoUrl && !uploading && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs text-muted-foreground hover:text-red-500 h-7"
-                                onClick={() => setField("logoUrl", "")}
-                            >
-                                Remover logo
-                            </Button>
-                        )}
+                            <Palette className="w-3.5 h-3.5" /> Ir para Personalizar
+                        </Link>
                     </CardContent>
                 </Card>
 
