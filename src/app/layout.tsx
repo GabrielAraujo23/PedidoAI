@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth-provider";
+import { BrandProvider } from "@/components/brand-provider";
 import { CartProvider } from "@/context/CartContext";
 
 const geistSans = Geist({
@@ -50,9 +51,11 @@ export default function RootLayout({
       >
         <TooltipProvider>
           <CartProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <BrandProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </BrandProvider>
           </CartProvider>
         </TooltipProvider>
       </body>
