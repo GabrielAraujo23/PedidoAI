@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2, Upload, Trash2, AlertCircle, Check, ArrowLeft } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -20,76 +19,68 @@ import { BrandMark } from "@/components/brand-mark";
  */
 export default function PersonalizarPage() {
     const [logoUrl, setLogoUrl]   = useState("");
-    const [adminId, setAdminId]   = useState("");
     const [carregando, setCarregando] = useState(true);
-    const [enviando, setEnviando] = useState(false);
-    const [salvando, setSalvando] = useState(false);
+    const [ocupado, setOcupado]   = useState(false);
     const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         fetch("/api/loja")
             .then((r) => (r.ok ? r.json() : null))
-            .then((d: { settings?: { logo_url?: string | null; admin_id?: string | null } | null } | null) => {
+            .then((d: { settings?: { logo_url?: string | null } | null } | null) => {
                 setLogoUrl(d?.settings?.logo_url ?? "");
-                setAdminId(d?.settings?.admin_id ?? "");
             })
             .catch(() => setAviso({ tipo: "erro", texto: "Não foi possível carregar suas configurações." }))
             .finally(() => setCarregando(false));
     }, []);
 
-    /** Grava só o campo da logo. O upsert não toca nas demais colunas. */
-    async function gravar(url: string | null) {
-        setSalvando(true);
+    /**
+     * O arquivo vai para /api/loja/logo, não direto para o Storage.
+     *
+     * O caminho antigo enviava do navegador com a anon key, que está no bundle
+     * público — e exigia um bucket que aceitasse escrita anônima, ou seja,
+     * qualquer visitante despejando arquivo no storage. No servidor, a service
+     * role escreve e o tenant sai da sessão assinada.
+     */
+    async function enviarLogo(file: File) {
+        setOcupado(true);
         setAviso(null);
         try {
-            const res = await fetch("/api/loja", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ logo_url: url }),
-            });
+            const corpo = new FormData();
+            corpo.append("file", file);
+            const res = await fetch("/api/loja/logo", { method: "POST", body: corpo });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setAviso({ tipo: "erro", texto: d.error ?? "Erro ao enviar a logo." });
+                return;
+            }
+            setLogoUrl(d.logoUrl ?? "");
+            setAviso({ tipo: "ok", texto: "Logo atualizada." });
+        } catch {
+            setAviso({ tipo: "erro", texto: "Erro ao enviar a logo. Tente novamente." });
+        } finally {
+            setOcupado(false);
+        }
+    }
+
+    async function removerLogo() {
+        setOcupado(true);
+        setAviso(null);
+        try {
+            const res = await fetch("/api/loja/logo", { method: "DELETE" });
             if (!res.ok) {
                 const d = await res.json().catch(() => ({}));
-                setAviso({ tipo: "erro", texto: d.error ?? "Erro ao salvar." });
-                return false;
+                setAviso({ tipo: "erro", texto: d.error ?? "Erro ao remover a logo." });
+                return;
             }
-            setLogoUrl(url ?? "");
-            setAviso({ tipo: "ok", texto: url ? "Logo atualizada." : "Logo removida." });
-            return true;
+            setLogoUrl("");
+            setAviso({ tipo: "ok", texto: "Logo removida." });
         } catch {
-            setAviso({ tipo: "erro", texto: "Erro ao salvar. Tente novamente." });
-            return false;
+            setAviso({ tipo: "erro", texto: "Erro ao remover a logo. Tente novamente." });
         } finally {
-            setSalvando(false);
+            setOcupado(false);
         }
     }
-
-    async function enviarLogo(file: File) {
-        if (!adminId) { setAviso({ tipo: "erro", texto: "Configurações ainda carregando." }); return; }
-        setEnviando(true);
-        setAviso(null);
-
-        // Mesmo caminho de antes: uma logo por loja, sobrescrita a cada envio.
-        const path = `${adminId}/logo`;
-        const { error } = await supabase.storage
-            .from("store-logos")
-            .upload(path, file, { upsert: true });
-
-        if (error) {
-            setEnviando(false);
-            setAviso({ tipo: "erro", texto: "Erro ao enviar a logo. Verifique o bucket 'store-logos'." });
-            return;
-        }
-
-        const { data } = supabase.storage.from("store-logos").getPublicUrl(path);
-        // Sobrescrever no mesmo caminho mantém a URL: sem o parâmetro de
-        // versão, o navegador continuaria mostrando a imagem antiga do cache.
-        const url = `${data.publicUrl}?v=${Date.now()}`;
-        setEnviando(false);
-        await gravar(url);
-    }
-
-    const ocupado = enviando || salvando;
 
     return (
         <div className="p-6 sm:p-10 max-w-[900px] mx-auto" style={{ fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}>
@@ -130,7 +121,7 @@ export default function PersonalizarPage() {
                             <p className="text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-2">Arquivo</p>
 
                             <div className="h-28 rounded-xl border border-dashed border-stone-300 bg-stone-50 flex items-center justify-center overflow-hidden mb-3">
-                                {enviando ? (
+                                {ocupado ? (
                                     <Loader2 className="w-5 h-5 animate-spin text-stone-400" />
                                 ) : logoUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element -- logo vem do Supabase Storage, domínio não declarado em next.config
@@ -162,7 +153,7 @@ export default function PersonalizarPage() {
                                 </button>
                                 {logoUrl && (
                                     <button
-                                        onClick={() => gravar(null)}
+                                        onClick={removerLogo}
                                         disabled={ocupado}
                                         className="h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-stone-400 disabled:opacity-40"
                                     >
