@@ -101,9 +101,8 @@ export async function PATCH(request: NextRequest) {
         const reason  = typeof parsed.body.reason === "string" ? parsed.body.reason.trim() : "";
 
         if (!adminId) return jsonError("Contratação não informada.", 400);
-        if (!isTenantStatus(destino)) return jsonError("Status inválido.", 400);
         if (adminId === auth.session.adminId) {
-            return jsonError("Você não pode mudar o status da própria conta.", 400);
+            return jsonError("Você não pode alterar a própria conta.", 400);
         }
 
         const db = getSupabaseAdmin();
@@ -112,6 +111,12 @@ export async function PATCH(request: NextRequest) {
         // conta. Mora nesta rota porque é a mesma autorização — requireOwner,
         // alvo validado, conta própria protegida — e sai cedo, sem passar pela
         // máquina de estados, que não tem nada a ver com marca.
+        //
+        // ATENÇÃO À ORDEM: este bloco precisa vir ANTES da validação de
+        // `status`. Uma chamada de white-label não manda `status` nenhum, e a
+        // validação abaixo rejeitaria com "Status inválido" antes de chegar
+        // aqui — foi exatamente esse o bug que deixou o botão da fila sem
+        // funcionar desde que nasceu.
         if (typeof parsed.body.whiteLabel === "boolean") {
             const { data: atualizado, error: wlErr } = await db
                 .from("store_settings")
@@ -134,6 +139,9 @@ export async function PATCH(request: NextRequest) {
 
             return NextResponse.json({ adminId, whiteLabel: atualizado.white_label });
         }
+
+        // Daqui para baixo é mudança de status, e só ela.
+        if (!isTenantStatus(destino)) return jsonError("Status inválido.", 400);
 
         const { data: alvo, error: readErr } = await db
             .from("admins").select("id, status, role").eq("id", adminId).maybeSingle();
