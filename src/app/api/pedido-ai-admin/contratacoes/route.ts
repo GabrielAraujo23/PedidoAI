@@ -5,7 +5,7 @@ import {
     canTransition, requiresReason, isTenantStatus, type TenantStatus,
 } from "@/lib/tenant-status";
 
-interface LojaEmbed { store_name: string | null; slug: string | null; cnpj: string | null; phone: string | null; address: string | null }
+interface LojaEmbed { store_name: string | null; slug: string | null; cnpj: string | null; phone: string | null; address: string | null; white_label: boolean | null }
 interface LinhaFila {
     id: string; email: string; status: string; status_reason: string | null;
     status_changed_at: string | null; created_at: string | null;
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
             .select(
                 "id, email, status, status_reason, status_changed_at, created_at, " +
                 "terms_accepted_at, terms_version, terms_ip, " +
-                "store_settings(store_name, slug, cnpj, phone, address)"
+                "store_settings(store_name, slug, cnpj, phone, address, white_label)"
             )
             .neq("role", "owner")
             .order("created_at", { ascending: false })
@@ -62,11 +62,12 @@ export async function GET(request: NextRequest) {
                 createdAt: row.created_at,
                 terms:     { acceptedAt: row.terms_accepted_at, version: row.terms_version, ip: row.terms_ip },
                 loja: {
-                    storeName: loja?.store_name ?? null,
-                    slug:      loja?.slug ?? null,
-                    cnpj:      loja?.cnpj ?? null,
-                    phone:     loja?.phone ?? null,
-                    address:   loja?.address ?? null,
+                    storeName:  loja?.store_name ?? null,
+                    slug:       loja?.slug ?? null,
+                    cnpj:       loja?.cnpj ?? null,
+                    phone:      loja?.phone ?? null,
+                    address:    loja?.address ?? null,
+                    whiteLabel: loja?.white_label === true,
                 },
             };
         });
@@ -106,6 +107,33 @@ export async function PATCH(request: NextRequest) {
         }
 
         const db = getSupabaseAdmin();
+
+        // Alternar white-label é a outra decisão que o dono toma sobre uma
+        // conta. Mora nesta rota porque é a mesma autorização — requireOwner,
+        // alvo validado, conta própria protegida — e sai cedo, sem passar pela
+        // máquina de estados, que não tem nada a ver com marca.
+        if (typeof parsed.body.whiteLabel === "boolean") {
+            const { data: atualizado, error: wlErr } = await db
+                .from("store_settings")
+                .update({ white_label: parsed.body.whiteLabel })
+                .eq("admin_id", adminId)
+                .select("admin_id, white_label")
+                .maybeSingle();
+
+            if (wlErr) {
+                console.error("[PATCH contratacoes] white_label", wlErr.message);
+                // 42703 = coluna inexistente: a migration 028 não rodou aqui.
+                return jsonError(
+                    wlErr.code === "42703"
+                        ? "Coluna 'white_label' não encontrada. Execute a migration 028 no Supabase."
+                        : "Erro ao atualizar o white-label.",
+                    500
+                );
+            }
+            if (!atualizado) return jsonError("Loja não encontrada para esta conta.", 404);
+
+            return NextResponse.json({ adminId, whiteLabel: atualizado.white_label });
+        }
 
         const { data: alvo, error: readErr } = await db
             .from("admins").select("id, status, role").eq("id", adminId).maybeSingle();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Check, X, PauseCircle, PlayCircle, RefreshCw } from "lucide-react";
+import { Loader2, Check, X, PauseCircle, PlayCircle, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TenantStatus } from "@/lib/tenant-status";
 
@@ -12,7 +12,7 @@ interface Contratacao {
     reason: string | null;
     createdAt: string | null;
     terms: { acceptedAt: string | null; version: string | null; ip: string | null };
-    loja: { storeName: string | null; slug: string | null; cnpj: string | null; phone: string | null; address: string | null };
+    loja: { storeName: string | null; slug: string | null; cnpj: string | null; phone: string | null; address: string | null; whiteLabel: boolean };
 }
 
 const FILTROS: { valor: TenantStatus | "todos"; label: string }[] = [
@@ -74,6 +74,19 @@ export default function ContratacoesPage() {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ adminId, status, reason }),
+        });
+        setAgindo("");
+        if (!res.ok) { setErro(res.data.error ?? "Erro ao atualizar."); return; }
+        await carregar();
+    }
+
+    async function alternarWhiteLabel(adminId: string, atual: boolean) {
+        setAgindo(adminId);
+        setErro("");
+        const res = await res_json("/api/pedido-ai-admin/contratacoes", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ adminId, whiteLabel: !atual }),
         });
         setAgindo("");
         if (!res.ok) { setErro(res.data.error ?? "Erro ao atualizar."); return; }
@@ -160,6 +173,15 @@ export default function ContratacoesPage() {
                                         <PlayCircle className="w-3.5 h-3.5" /> Reativar
                                     </button>
                                 )}
+                                <button
+                                    onClick={() => alternarWhiteLabel(c.adminId, c.loja.whiteLabel)}
+                                    disabled={agindo === c.adminId}
+                                    title="Esconde ou mostra o crédito 'desenvolvido por PedidoAI' nas telas desta loja"
+                                    className="h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-stone-400 disabled:opacity-40"
+                                >
+                                    {c.loja.whiteLabel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                    {c.loja.whiteLabel ? "Marca oculta" : "Marca visível"}
+                                </button>
                             </div>
                         </article>
                     ))}
