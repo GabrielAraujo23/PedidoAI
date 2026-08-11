@@ -47,12 +47,18 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     const doCliente = CLIENTE_PREFIXES.some((p) => pathname.startsWith(p));
 
     useEffect(() => {
-        if (semMarca) { setBrand(null); setLoading(false); return; }
+        // Telas sem tenant não buscam nada — o estado inicial já as descreve.
+        if (semMarca) return;
 
         const url = doCliente ? "/api/loja/publica" : "/api/loja";
         let cancelado = false;
 
-        setLoading(true);
+        // Nada de setLoading(true) aqui. Ele seria uma escrita de estado
+        // síncrona dentro do efeito — o que a regra react-hooks/set-state-in-effect
+        // proíbe — e só serve para o caso de trocar do lado admin para o do
+        // cliente sem recarregar a página, que não acontece: são dois públicos
+        // e dois apps. Enquanto a nova marca não chega, a anterior continua na
+        // tela, que é melhor do que piscar vazio.
         fetch(url)
             .then((r) => (r.ok ? r.json() : null))
             .then((data: RespostaLoja | null) => {
@@ -72,8 +78,12 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
         // `doCliente`/`semMarca` derivam de `pathname`: recalcula ao trocar de lado.
     }, [doCliente, semMarca]);
 
+    // `semMarca` é resolvido aqui, e não por estado: é função pura do caminho,
+    // e guardá-lo em estado só criaria um instante em que os dois discordam.
+    const value = semMarca ? { brand: null, loading: false } : { brand, loading };
+
     return (
-        <BrandContext.Provider value={{ brand, loading }}>
+        <BrandContext.Provider value={value}>
             {children}
         </BrandContext.Provider>
     );
