@@ -6,7 +6,8 @@ import { slugify } from "@/lib/slug";
 import { isTenantActive, listActiveAdminIds } from "@/lib/tenant";
 
 const PUBLIC_FIELDS =
-    "admin_id, store_name, slug, latitude, longitude, delivery_radius_km, delivery_rate_per_km";
+    "admin_id, store_name, slug, latitude, longitude, delivery_radius_km, delivery_rate_per_km, " +
+    "logo_url, white_label";
 
 /**
  * GET /api/loja/publica?slug=<slug> | ?admin=<uuid> — dados da loja sem sessão.

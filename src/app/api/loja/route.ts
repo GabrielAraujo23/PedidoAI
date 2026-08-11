@@ -43,8 +43,11 @@ export async function PUT(request: NextRequest) {
         if (!parsed.ok) return parsed.response;
 
         // admin_id, id e created_at nunca vêm do corpo.
-        const { admin_id: _a, id: _i, created_at: _c, ...fields } = parsed.body;
-        void _a; void _i; void _c;
+        // white_label também não: quem concede white-label é o dono, pela fila
+        // de contratações. Aceitá-lo aqui deixaria o lojista remover o crédito
+        // sozinho, e o "plano superior" não significaria nada.
+        const { admin_id: _a, id: _i, created_at: _c, white_label: _w, ...fields } = parsed.body;
+        void _a; void _i; void _c; void _w;
 
         const db = getSupabaseAdmin();
 
