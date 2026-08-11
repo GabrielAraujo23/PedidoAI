@@ -15,6 +15,7 @@ import {
     X,
     PhoneCall,
     ClipboardCheck,
+    Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -29,6 +30,7 @@ const menuItems = [
     { icon: Warehouse,        label: "Estoque",          href: "/estoque" },
     { icon: PhoneCall,        label: "Atendimento",      href: "/atendimento" },
     { icon: Store,            label: "Loja",             href: "/loja" },
+    { icon: Palette,          label: "Personalizar",     href: "/personalizar" },
 ];
 
 /**
