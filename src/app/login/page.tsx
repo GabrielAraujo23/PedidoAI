@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Phone, User, MapPin, Loader2, ArrowLeft, AlertCircle, Check, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,6 +10,8 @@ import {
     validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, LIMITS,
 } from "@/lib/validators";
 import { logEvent } from "@/lib/logger";
+import { BrandMark } from "@/components/brand-mark";
+import { PoweredBy } from "@/components/powered-by";
 
 type Step = "phone" | "returning" | "new_client";
 
@@ -379,7 +380,7 @@ export default function LoginPage() {
             <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
                 <div className="flex items-center shrink-0">
                     {/* Logo menor no celular para abrir espaço ao nome da loja */}
-                    <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[170px] sm:w-[280px] h-auto object-contain" />
+                    <BrandMark className="w-[170px] sm:w-[240px] max-h-[56px]" textClassName="text-[24px] sm:text-[30px]" />
                 </div>
                 {/* Nome da loja resolvida — é o retorno visível de ter entrado
                     por /loja/<slug>: o cliente confere que é a loja certa antes
@@ -677,9 +678,7 @@ export default function LoginPage() {
 
             {/* Footer credit */}
             <footer className="relative z-10 px-6 pb-6 text-center">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
-                    PedidoAI · feito com ♡ no Brasil
-                </p>
+                <PoweredBy className="justify-center mb-2" />
             </footer>
         </div>
     );

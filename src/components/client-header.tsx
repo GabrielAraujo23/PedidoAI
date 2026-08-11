@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Search, X, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
+import { BrandMark } from "@/components/brand-mark";
 
 const NAV = [
     { label: "Catálogo", href: "/cliente/catalogo" },
@@ -49,14 +49,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
 
                 {/* Logo */}
                 <Link href="/cliente/catalogo" className="flex items-center shrink-0 group py-1">
-                    <Image
-                        src="/Logo_PedidoAi.png"
-                        alt="PedidoAI"
-                        width={220}
-                        height={120}
-                        className="h-14 w-auto object-contain transition-transform group-hover:scale-105"
-                        priority
-                    />
+                    <BrandMark className="h-8 max-w-[160px]" textClassName="text-[17px]" />
                 </Link>
 
                 {/* Desktop nav */}

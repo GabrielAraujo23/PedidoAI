@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
@@ -19,6 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { BrandMark } from "@/components/brand-mark";
+import { PoweredBy } from "@/components/powered-by";
 
 const menuItems = [
     { icon: LayoutDashboard,  label: "Dashboard",        href: "/" },
@@ -93,7 +94,7 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
 
             {/* Brand */}
             <Link href="/" onClick={onClose} className="mb-10 flex items-center group">
-                <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={220} height={120} className="w-[220px] h-auto object-contain transition-transform group-hover:scale-105" />
+                <BrandMark className="w-[220px] max-h-[60px] transition-transform group-hover:scale-105" textClassName="text-[22px]" />
             </Link>
 
             {/* Section label */}
@@ -188,6 +189,8 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
                     <LogOut className="w-4 h-4 shrink-0" />
                     <span className="font-medium">Sair</span>
                 </button>
+
+                <PoweredBy className="justify-center pt-1" />
             </div>
         </aside>
     );

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Loader2, Menu } from "lucide-react";
 import { NavSidebar } from "@/components/nav-sidebar";
 import { AuthContext, AdminSession } from "@/lib/auth-context";
+import { BrandMark } from "@/components/brand-mark";
 
 // Public paths: no admin session required
 // "/contratar" cobre a página de cadastro E a tela de acompanhamento. Aqui
@@ -109,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             <Menu className="w-5 h-5" />
                         </button>
                         <Link href="/" className="flex-1">
-                            <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={140} height={76} className="h-7 w-auto object-contain" />
+                            <BrandMark className="h-7 max-w-[140px]" textClassName="text-[15px]" />
                         </Link>
                     </div>
 
