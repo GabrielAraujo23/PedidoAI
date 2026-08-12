@@ -67,11 +67,11 @@ function maskPhone(v: string): string {
 }
 
 const STATUS_CONFIG: Record<Status, { label: string; tone: string; Icon: typeof Clock }> = {
-    novo:       { label: "Pendente",   tone: "bg-amber-50 text-amber-700 border-amber-200/60",     Icon: Clock },
-    confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60",  Icon: CheckCircle },
-    rota:       { label: "Em rota",    tone: "bg-violet-50 text-violet-700 border-violet-200/60", Icon: Truck },
-    entregue:   { label: "Entregue",   tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60", Icon: Star },
-    cancelado:  { label: "Cancelado",  tone: "bg-red-50 text-red-700 border-red-200/60",             Icon: X },
+    novo:       { label: "Pendente",   tone: "bg-chart-2/10 text-chart-2 border-chart-2/20",     Icon: Clock },
+    confirmado: { label: "Confirmado", tone: "bg-chart-4/10 text-chart-4 border-chart-4/20",  Icon: CheckCircle },
+    rota:       { label: "Em rota",    tone: "bg-chart-5/10 text-chart-5 border-chart-5/20", Icon: Truck },
+    entregue:   { label: "Entregue",   tone: "bg-success-surface text-success border-success/30", Icon: Star },
+    cancelado:  { label: "Cancelado",  tone: "bg-destructive-surface text-destructive border-destructive/30",             Icon: X },
 };
 
 type NavItem = "perfil" | "pedidos" | "enderecos" | "configuracoes";
@@ -83,7 +83,7 @@ const NAV_ITEMS: { id: NavItem; label: string; Icon: typeof User }[] = [
     { id: "configuracoes", label: "Preferências",   Icon: Settings },
 ];
 
-const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
+const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
 const sectionTitleStyle = { fontFamily: "var(--font-display)", fontWeight: 400 };
 
 export default function ProfilePage() {
@@ -285,15 +285,15 @@ export default function ProfilePage() {
                 <header className="mb-10 max-w-[820px]">
                     <p className={cn(eyebrowClass, "mb-3")}>Sua conta</p>
                     <h1
-                        className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-stone-900"
+                        className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-foreground"
                         style={sectionTitleStyle}
                     >
                         Olá,{" "}
-                        <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                        <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>
                             {session.name.split(" ")[0]}
                         </em>
                     </h1>
-                    <p className="text-[14px] text-stone-600 mt-3 leading-relaxed">
+                    <p className="text-[14px] text-muted-foreground mt-3 leading-relaxed">
                         Acompanhe seus pedidos, gerencie endereços e ajuste suas preferências.
                     </p>
                 </header>
@@ -304,34 +304,34 @@ export default function ProfilePage() {
                     <aside className="lg:sticky lg:top-24 lg:self-start space-y-5">
 
                         {/* Profile card */}
-                        <div className="bg-white rounded-2xl border border-stone-200/70 p-5">
+                        <div className="bg-card rounded-2xl border border-border/70 p-5">
                             <div className="flex items-center gap-3.5">
-                                <div className="w-12 h-12 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
+                                <div className="w-12 h-12 rounded-full bg-foreground flex items-center justify-center shrink-0">
                                     <span
-                                        className="text-white text-[15px] font-medium"
+                                        className="text-background text-[15px] font-medium"
                                         style={{ fontFamily: "var(--font-display)" }}
                                     >
                                         {initials}
                                     </span>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-[14px] font-semibold text-stone-900 truncate">{session.name}</p>
-                                    <p className="text-[11.5px] text-stone-500 truncate">{client?.phone ?? "—"}</p>
+                                    <p className="text-[14px] font-semibold text-foreground truncate">{session.name}</p>
+                                    <p className="text-[11.5px] text-muted-foreground truncate">{client?.phone ?? "—"}</p>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 mt-5 pt-5 border-t border-stone-100">
+                            <div className="grid grid-cols-2 gap-2 mt-5 pt-5 border-t border-border">
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Pedidos</p>
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Pedidos</p>
                                     <p
-                                        className="text-stone-900 tabular-nums leading-none mt-1"
+                                        className="text-foreground tabular-nums leading-none mt-1"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "20px" }}
                                     >
                                         {orders.length}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Membro</p>
-                                    <p className="text-[12px] text-stone-700 leading-none mt-1.5">
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Membro</p>
+                                    <p className="text-[12px] text-foreground leading-none mt-1.5">
                                         {client?.created_at
                                             ? new Date(client.created_at).getFullYear()
                                             : "—"}
@@ -351,23 +351,23 @@ export default function ProfilePage() {
                                         className={cn(
                                             "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] transition-all duration-200 text-left group",
                                             isActive
-                                                ? "bg-stone-900 text-white shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
-                                                : "text-stone-600 hover:bg-white/70 hover:text-stone-900"
+                                                ? "bg-foreground text-background shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
+                                                : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
                                         )}
                                     >
                                         <Icon className={cn(
                                             "w-4 h-4 shrink-0 transition-colors",
-                                            isActive ? "text-orange-400" : "text-stone-400 group-hover:text-stone-700"
+                                            isActive ? "text-background/80" : "text-muted-foreground/70 group-hover:text-foreground"
                                         )} />
                                         <span className="font-medium flex-1">{label}</span>
-                                        {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/60" />}
+                                        {isActive && <ChevronRight className="w-3.5 h-3.5 text-background/60" />}
                                     </button>
                                 );
                             })}
 
                             <button
                                 onClick={handleLogout}
-                                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] text-stone-500 hover:text-red-700 hover:bg-red-50/60 transition-colors text-left mt-3"
+                                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] text-muted-foreground hover:text-destructive hover:bg-destructive-surface/60 transition-colors text-left mt-3"
                             >
                                 <LogOut className="w-4 h-4 shrink-0" />
                                 <span className="font-medium">Sair da conta</span>
@@ -382,21 +382,21 @@ export default function ProfilePage() {
                         {activeNav === "perfil" && (
                             <>
                                 {/* Hero card */}
-                                <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
+                                <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-start justify-between gap-4 mb-7">
                                         <div className="min-w-0">
                                             <p className={eyebrowClass}>Identidade</p>
                                             <h2
-                                                className="text-[26px] tracking-tight text-stone-900 mt-1"
+                                                className="text-[26px] tracking-tight text-foreground mt-1"
                                                 style={sectionTitleStyle}
                                             >
                                                 {session.name}
                                             </h2>
-                                            <p className="text-[12.5px] text-stone-500 mt-1.5">Membro desde {memberSince}</p>
+                                            <p className="text-[12.5px] text-muted-foreground mt-1.5">Membro desde {memberSince}</p>
                                         </div>
                                         <button
                                             onClick={() => setActiveNav("configuracoes")}
-                                            className="text-[12px] uppercase tracking-[0.18em] font-semibold text-stone-700 hover:text-stone-900 inline-flex items-center gap-1 shrink-0"
+                                            className="text-[12px] uppercase tracking-[0.18em] font-semibold text-foreground/70 hover:text-foreground inline-flex items-center gap-1 shrink-0"
                                         >
                                             Editar
                                             <ChevronRight className="w-3 h-3" />
@@ -406,18 +406,18 @@ export default function ProfilePage() {
                                     <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
                                         <div>
                                             <dt className={eyebrowClass}>Telefone</dt>
-                                            <dd className="text-[14px] text-stone-900 mt-1">{client?.phone ?? "—"}</dd>
+                                            <dd className="text-[14px] text-foreground mt-1">{client?.phone ?? "—"}</dd>
                                         </div>
                                         <div>
                                             <dt className={eyebrowClass}>Endereço</dt>
-                                            <dd className="text-[14px] text-stone-900 mt-1 truncate" title={client?.address ?? undefined}>
-                                                {client?.address ?? <span className="italic text-stone-500" style={{ fontFamily: "var(--font-display)" }}>Não informado</span>}
+                                            <dd className="text-[14px] text-foreground mt-1 truncate" title={client?.address ?? undefined}>
+                                                {client?.address ?? <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>Não informado</span>}
                                             </dd>
                                         </div>
                                         <div>
                                             <dt className={eyebrowClass}>Total de pedidos</dt>
                                             <dd
-                                                className="text-stone-900 tabular-nums mt-1 leading-none"
+                                                className="text-foreground tabular-nums mt-1 leading-none"
                                                 style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "22px" }}
                                             >
                                                 {orders.length}
@@ -425,18 +425,18 @@ export default function ProfilePage() {
                                         </div>
                                         <div>
                                             <dt className={eyebrowClass}>Membro desde</dt>
-                                            <dd className="text-[14px] text-stone-900 mt-1">{memberSince}</dd>
+                                            <dd className="text-[14px] text-foreground mt-1">{memberSince}</dd>
                                         </div>
                                     </dl>
                                 </section>
 
                                 {/* Recent orders */}
-                                <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
+                                <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-center justify-between mb-6">
                                         <div>
                                             <p className={eyebrowClass}>Histórico</p>
                                             <h2
-                                                className="text-[22px] tracking-tight text-stone-900 mt-0.5"
+                                                className="text-[22px] tracking-tight text-foreground mt-0.5"
                                                 style={sectionTitleStyle}
                                             >
                                                 Seus pedidos recentes
@@ -444,7 +444,7 @@ export default function ProfilePage() {
                                         </div>
                                         <button
                                             onClick={() => setActiveNav("pedidos")}
-                                            className="text-[12px] uppercase tracking-[0.18em] font-semibold text-stone-600 hover:text-stone-900 inline-flex items-center gap-1"
+                                            className="text-[12px] uppercase tracking-[0.18em] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                                         >
                                             Ver todos
                                             <ChevronRight className="w-3 h-3" />
@@ -473,17 +473,17 @@ export default function ProfilePage() {
                                                     <Link
                                                         key={order.id}
                                                         href={`/cliente/pedido/${order.id}`}
-                                                        className="group rounded-xl border border-stone-200/70 p-4 hover:border-stone-400 hover:bg-stone-50/40 transition-all"
+                                                        className="group rounded-xl border border-border/70 p-4 hover:border-muted-foreground hover:bg-muted/40 transition-all"
                                                     >
                                                         <div className="flex items-center justify-between mb-2">
-                                                            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">
+                                                            <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">
                                                                 #ORD-{order.id.padStart(4, "0")}
                                                             </p>
-                                                            <ArrowUpRight className="w-3.5 h-3.5 text-stone-400 transition-all duration-200 group-hover:text-stone-900 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                                                            <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/70 transition-all duration-200 group-hover:text-foreground group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                                                         </div>
-                                                        <p className="text-[12.5px] text-stone-700 mb-3 line-clamp-2 leading-relaxed">{order.products}</p>
+                                                        <p className="text-[12.5px] text-foreground mb-3 line-clamp-2 leading-relaxed">{order.products}</p>
                                                         <div className="flex items-center justify-between">
-                                                            <p className="text-[11px] text-stone-500">{formatShortDate(order.created_at)}</p>
+                                                            <p className="text-[11px] text-muted-foreground">{formatShortDate(order.created_at)}</p>
                                                             <span className={cn("inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border", cfg.tone)}>
                                                                 <Icon className="w-2.5 h-2.5" />
                                                                 {cfg.label}
@@ -500,11 +500,11 @@ export default function ProfilePage() {
 
                         {/* ── Meus Pedidos ── */}
                         {activeNav === "pedidos" && (
-                            <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
+                            <section className="bg-card rounded-2xl border border-border/70 p-7">
                                 <div className="mb-6">
                                     <p className={eyebrowClass}>Histórico</p>
                                     <h2
-                                        className="text-[26px] tracking-tight text-stone-900 mt-0.5"
+                                        className="text-[26px] tracking-tight text-foreground mt-0.5"
                                         style={sectionTitleStyle}
                                     >
                                         Meus pedidos
@@ -525,7 +525,7 @@ export default function ProfilePage() {
                                         ctaLabel="Fazer primeiro pedido"
                                     />
                                 ) : (
-                                    <ul className="divide-y divide-stone-100">
+                                    <ul className="divide-y divide-border">
                                         {orders.map((order) => {
                                             const cfg = STATUS_CONFIG[order.status];
                                             const Icon = cfg.Icon;
@@ -535,12 +535,12 @@ export default function ProfilePage() {
                                                         href={`/cliente/pedido/${order.id}`}
                                                         className="flex items-center gap-4 pt-4 pb-2 group"
                                                     >
-                                                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
-                                                            <Package className="w-4 h-4 text-stone-600" />
+                                                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                                            <Package className="w-4 h-4 text-muted-foreground" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-0.5">
-                                                                <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">
+                                                                <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">
                                                                     #ORD-{order.id.padStart(4, "0")}
                                                                 </p>
                                                                 <span className={cn("inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border", cfg.tone)}>
@@ -548,17 +548,17 @@ export default function ProfilePage() {
                                                                     {cfg.label}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-[13.5px] text-stone-700 truncate">{order.products}</p>
+                                                            <p className="text-[13.5px] text-foreground truncate">{order.products}</p>
                                                         </div>
                                                         <div className="text-right shrink-0">
-                                                            <p className="text-[11px] text-stone-500">{formatShortDate(order.created_at)}</p>
-                                                            <ArrowUpRight className="w-3.5 h-3.5 text-stone-400 transition-all duration-200 group-hover:text-stone-900 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ml-auto mt-1" />
+                                                            <p className="text-[11px] text-muted-foreground">{formatShortDate(order.created_at)}</p>
+                                                            <ArrowUpRight className="w-3.5 h-3.5 text-muted-foreground/70 transition-all duration-200 group-hover:text-foreground group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ml-auto mt-1" />
                                                         </div>
                                                     </Link>
 
                                                     <div className="pb-3 pl-14 flex flex-col gap-1" aria-live="polite">
                                                         {repeating === order.id ? (
-                                                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-400">
+                                                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground/70">
                                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                                                 Repetindo...
                                                             </span>
@@ -567,7 +567,7 @@ export default function ProfilePage() {
                                                                 aria-label={`Repetir pedido #ORD-${order.id.padStart(4, "0")}`}
                                                                 onClick={() => handleRepeat(order.id)}
                                                                 disabled={repeating !== null}
-                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                                                 type="button"
                                                             >
                                                                 <RotateCcw className="w-3.5 h-3.5" />
@@ -575,13 +575,13 @@ export default function ProfilePage() {
                                                             </button>
                                                         )}
                                                         {repeatWarning?.orderId === order.id && (
-                                                            <p className="text-xs text-amber-600 flex items-center gap-1">
+                                                            <p className="text-xs text-warning flex items-center gap-1">
                                                                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                                                 {repeatWarning.skipped.length} produto(s) indisponível(is) ignorado(s). Redirecionando...
                                                             </p>
                                                         )}
                                                         {repeatError?.orderId === order.id && (
-                                                            <p className="text-xs text-red-600 flex items-center gap-1">
+                                                            <p className="text-xs text-destructive flex items-center gap-1">
                                                                 <XCircle className="w-3.5 h-3.5 shrink-0" />
                                                                 {repeatError.message}
                                                             </p>
@@ -597,11 +597,11 @@ export default function ProfilePage() {
 
                         {/* ── Endereços ── */}
                         {activeNav === "enderecos" && (
-                            <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
+                            <section className="bg-card rounded-2xl border border-border/70 p-7">
                                 <div className="mb-6">
                                     <p className={eyebrowClass}>Locais salvos</p>
                                     <h2
-                                        className="text-[26px] tracking-tight text-stone-900 mt-0.5"
+                                        className="text-[26px] tracking-tight text-foreground mt-0.5"
                                         style={sectionTitleStyle}
                                     >
                                         Endereços
@@ -616,28 +616,28 @@ export default function ProfilePage() {
                                 ) : (
                                     <div className="space-y-3">
                                         {savedAddresses.map(({ label, icon: Icon, address }) => (
-                                            <div key={label} className="flex items-center gap-4 p-4 border border-stone-200/70 rounded-xl">
-                                                <div className="w-10 h-10 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
-                                                    <Icon className="w-4 h-4 text-orange-400" />
+                                            <div key={label} className="flex items-center gap-4 p-4 border border-border/70 rounded-xl">
+                                                <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center shrink-0">
+                                                    <Icon className="w-4 h-4 text-background/80" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <p className="text-[14px] font-semibold text-stone-900">{label}</p>
-                                                        <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                                                        <p className="text-[14px] font-semibold text-foreground">{label}</p>
+                                                        <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-success bg-success-surface border border-success/30 px-2 py-0.5 rounded-full">
                                                             Principal
                                                         </span>
                                                     </div>
-                                                    <p className="text-[12px] text-stone-500 mt-0.5 truncate">{address}</p>
+                                                    <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{address}</p>
                                                 </div>
                                             </div>
                                         ))}
 
-                                        <div className="flex items-center gap-4 p-4 border border-dashed border-stone-300 rounded-xl text-stone-400">
-                                            <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
+                                        <div className="flex items-center gap-4 p-4 border border-dashed border-border rounded-xl text-muted-foreground/70">
+                                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
                                                 <Briefcase className="w-4 h-4" />
                                             </div>
                                             <div>
-                                                <p className="text-[13.5px] font-medium text-stone-500">Trabalho</p>
+                                                <p className="text-[13.5px] font-medium text-muted-foreground">Trabalho</p>
                                                 <p className="text-[11.5px]">Adicionar endereço de trabalho</p>
                                             </div>
                                         </div>
@@ -649,38 +649,38 @@ export default function ProfilePage() {
                         {/* ── Configurações ── */}
                         {activeNav === "configuracoes" && (
                             <div className="space-y-5">
-                                <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
+                                <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="mb-5">
                                         <p className={eyebrowClass}>Preferências</p>
                                         <h2
-                                            className="text-[22px] tracking-tight text-stone-900 mt-0.5"
+                                            className="text-[22px] tracking-tight text-foreground mt-0.5"
                                             style={sectionTitleStyle}
                                         >
                                             Ajustes rápidos
                                         </h2>
                                     </div>
 
-                                    <ul className="divide-y divide-stone-100">
+                                    <ul className="divide-y divide-border">
                                         <li className="flex items-center justify-between py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center">
-                                                    <Bell className="w-4 h-4 text-stone-700" />
+                                                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                                                    <Bell className="w-4 h-4 text-foreground" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[14px] font-semibold text-stone-900">Notificações</p>
-                                                    <p className="text-[12px] text-stone-500">Receber atualizações de pedido</p>
+                                                    <p className="text-[14px] font-semibold text-foreground">Notificações</p>
+                                                    <p className="text-[12px] text-muted-foreground">Receber atualizações de pedido</p>
                                                 </div>
                                             </div>
                                             <Toggle on={notifications} onChange={() => setNotifications(!notifications)} />
                                         </li>
                                         <li className="flex items-center justify-between py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center">
-                                                    <Moon className="w-4 h-4 text-stone-700" />
+                                                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                                                    <Moon className="w-4 h-4 text-foreground" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[14px] font-semibold text-stone-900">Modo escuro</p>
-                                                    <p className="text-[12px] text-stone-500 italic" style={{ fontFamily: "var(--font-display)" }}>
+                                                    <p className="text-[14px] font-semibold text-foreground">Modo escuro</p>
+                                                    <p className="text-[12px] text-muted-foreground italic" style={{ fontFamily: "var(--font-display)" }}>
                                                         em breve
                                                     </p>
                                                 </div>
@@ -690,12 +690,12 @@ export default function ProfilePage() {
                                     </ul>
                                 </section>
 
-                                <section className="bg-white rounded-2xl border border-stone-200/70 p-7">
+                                <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-start justify-between gap-4 mb-5">
                                         <div>
                                             <p className={eyebrowClass}>Conta</p>
                                             <h2
-                                                className="text-[22px] tracking-tight text-stone-900 mt-0.5"
+                                                className="text-[22px] tracking-tight text-foreground mt-0.5"
                                                 style={sectionTitleStyle}
                                             >
                                                 Informações pessoais
@@ -704,7 +704,7 @@ export default function ProfilePage() {
                                         {!editing && (
                                             <button
                                                 onClick={startEdit}
-                                                className="text-[12px] uppercase tracking-[0.18em] font-semibold text-stone-600 hover:text-stone-900 inline-flex items-center gap-1 shrink-0 transition-colors"
+                                                className="text-[12px] uppercase tracking-[0.18em] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1 shrink-0 transition-colors"
                                             >
                                                 Editar
                                                 <ChevronRight className="w-3 h-3" />
@@ -717,17 +717,17 @@ export default function ProfilePage() {
                                             <dl className="space-y-4">
                                                 <div>
                                                     <dt className={eyebrowClass}>Nome completo</dt>
-                                                    <dd className="text-[14px] text-stone-900 mt-1">{session.name}</dd>
+                                                    <dd className="text-[14px] text-foreground mt-1">{session.name}</dd>
                                                 </div>
                                                 <div>
                                                     <dt className={eyebrowClass}>Telefone</dt>
-                                                    <dd className="text-[14px] text-stone-900 mt-1">{client?.phone ?? "—"}</dd>
+                                                    <dd className="text-[14px] text-foreground mt-1">{client?.phone ?? "—"}</dd>
                                                 </div>
                                                 <div>
                                                     <dt className={eyebrowClass}>Endereço principal</dt>
-                                                    <dd className="text-[14px] text-stone-900 mt-1">
+                                                    <dd className="text-[14px] text-foreground mt-1">
                                                         {client?.address ?? (
-                                                            <span className="italic text-stone-500" style={{ fontFamily: "var(--font-display)" }}>
+                                                            <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
                                                                 Não informado
                                                             </span>
                                                         )}
@@ -735,8 +735,8 @@ export default function ProfilePage() {
                                                 </div>
                                             </dl>
                                             {saveSuccess && (
-                                                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-[13px] font-medium animate-in fade-in duration-300">
-                                                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                                                <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success-surface border border-success/30 text-success text-[13px] font-medium animate-in fade-in duration-300">
+                                                    <Check className="w-4 h-4 text-success shrink-0" />
                                                     Dados atualizados com sucesso.
                                                 </div>
                                             )}
@@ -744,7 +744,7 @@ export default function ProfilePage() {
                                     ) : (
                                         <div className="space-y-4">
                                             <div>
-                                                <label htmlFor="edit-name" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                <label htmlFor="edit-name" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5">
                                                     Nome completo *
                                                 </label>
                                                 <input
@@ -753,12 +753,12 @@ export default function ProfilePage() {
                                                     onChange={(e) => setEditName(e.target.value)}
                                                     maxLength={LIMITS.name}
                                                     placeholder="João Silva"
-                                                    className="w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                    className="w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-ring focus:ring-4 focus:ring-ring/20"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label htmlFor="edit-phone" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                <label htmlFor="edit-phone" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5">
                                                     Telefone *
                                                 </label>
                                                 <input
@@ -768,16 +768,16 @@ export default function ProfilePage() {
                                                     inputMode="tel"
                                                     maxLength={15}
                                                     placeholder="(11) 99999-0001"
-                                                    className="w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                    className="w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-ring focus:ring-4 focus:ring-ring/20"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label htmlFor="edit-cep" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5">
+                                                <label htmlFor="edit-cep" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5">
                                                     <span className="flex items-center gap-1">
                                                         <MapPin className="w-3 h-3" />
                                                         Novo CEP{" "}
-                                                        <span className="normal-case tracking-normal font-normal text-stone-400">
+                                                        <span className="normal-case tracking-normal font-normal text-muted-foreground/70">
                                                             (opcional — deixe em branco para manter o endereço atual)
                                                         </span>
                                                     </span>
@@ -792,40 +792,40 @@ export default function ProfilePage() {
                                                         value={cep}
                                                         onChange={(e) => handleCepChange(e.target.value)}
                                                         className={cn(
-                                                            "w-full h-11 px-3.5 pr-10 rounded-xl border bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all",
+                                                            "w-full h-11 px-3.5 pr-10 rounded-xl border bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all",
                                                             cepStatus === "error"
-                                                                ? "border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/10"
+                                                                ? "border-destructive/40 focus:border-destructive/60 focus:ring-4 focus:ring-destructive/10"
                                                                 : cepStatus === "ok"
-                                                                ? "border-emerald-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                                                                : "border-stone-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                                ? "border-success/60 focus:border-success focus:ring-4 focus:ring-success/10"
+                                                                : "border-input focus:border-ring focus:ring-4 focus:ring-ring/20"
                                                         )}
                                                     />
                                                     {cepStatus === "loading" && (
-                                                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                                                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 animate-spin" />
                                                     )}
                                                     {cepStatus === "ok" && (
-                                                        <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
+                                                        <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-success" strokeWidth={3} />
                                                     )}
                                                 </div>
                                                 {cepStatus === "error" && (
-                                                    <p className="text-[12px] text-red-600 mt-1">{cepError}</p>
+                                                    <p className="text-[12px] text-destructive mt-1">{cepError}</p>
                                                 )}
                                             </div>
 
                                             {cepStatus === "ok" && addrFields.street && (
-                                                <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-stone-50/80 rounded-xl p-4 border border-stone-100">
+                                                <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-muted/80 rounded-xl p-4 border border-border">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 mb-0.5">Endereço</p>
-                                                        <p className="text-[13px] text-stone-800 leading-snug">
+                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">Endereço</p>
+                                                        <p className="text-[13px] text-foreground leading-snug">
                                                             {addrFields.street}
                                                             {addrFields.neighborhood && (
-                                                                <span className="text-stone-500">, {addrFields.neighborhood}</span>
+                                                                <span className="text-muted-foreground">, {addrFields.neighborhood}</span>
                                                             )}
                                                         </p>
-                                                        <p className="text-[12px] text-stone-500">{addrFields.city}/{addrFields.state}</p>
+                                                        <p className="text-[12px] text-muted-foreground">{addrFields.city}/{addrFields.state}</p>
                                                     </div>
                                                     <div>
-                                                        <label htmlFor="edit-number" className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 block mb-1">
+                                                        <label htmlFor="edit-number" className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 block mb-1">
                                                             Número
                                                         </label>
                                                         <input
@@ -835,28 +835,28 @@ export default function ProfilePage() {
                                                             value={numberField}
                                                             onChange={(e) => setNumberField(e.target.value)}
                                                             maxLength={LIMITS.address_number}
-                                                            className="h-10 px-3.5 max-w-[160px] rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5"
+                                                            className="h-10 px-3.5 max-w-[160px] rounded-xl border border-input bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-ring focus:ring-4 focus:ring-ring/20"
                                                         />
                                                     </div>
                                                 </div>
                                             )}
 
                                             {saveError && (
-                                                <p className="text-[12px] text-red-600">{saveError}</p>
+                                                <p className="text-[12px] text-destructive">{saveError}</p>
                                             )}
 
                                             <div className="flex items-center justify-end gap-3 pt-1">
                                                 <button
                                                     onClick={cancelEdit}
                                                     disabled={saving}
-                                                    className="h-10 px-4 text-[13px] font-semibold text-stone-500 hover:text-stone-900 transition-colors disabled:opacity-50"
+                                                    className="h-10 px-4 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                                                 >
                                                     Cancelar
                                                 </button>
                                                 <button
                                                     onClick={saveProfile}
                                                     disabled={saving || cepStatus === "loading"}
-                                                    className="h-10 px-6 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
+                                                    className="h-10 px-6 bg-foreground text-background rounded-xl text-[13px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
                                                 >
                                                     {saving ? (
                                                         <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
@@ -871,7 +871,7 @@ export default function ProfilePage() {
 
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full flex items-center justify-center gap-2 h-12 border border-red-200 text-red-700 rounded-xl text-[13px] font-semibold uppercase tracking-wider hover:bg-red-50 transition-colors"
+                                    className="w-full flex items-center justify-center gap-2 h-12 border border-destructive/30 text-destructive rounded-xl text-[13px] font-semibold uppercase tracking-wider hover:bg-destructive-surface transition-colors"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     Sair da conta
@@ -894,12 +894,12 @@ function Toggle({ on, disabled, onChange }: { on: boolean; disabled?: boolean; o
             disabled={disabled}
             className={cn(
                 "w-11 h-6 rounded-full transition-colors relative shrink-0",
-                on ? "bg-stone-900" : "bg-stone-300",
+                on ? "bg-foreground" : "bg-muted",
                 disabled && "opacity-40 cursor-not-allowed"
             )}
         >
             <span className={cn(
-                "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all",
+                "absolute top-0.5 w-5 h-5 rounded-full bg-card shadow transition-all",
                 on ? "left-[22px]" : "left-0.5"
             )} />
         </button>
@@ -919,20 +919,20 @@ function EmptyState({
 }) {
     return (
         <div className="text-center py-12">
-            <div className="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-4">
-                <Package className="w-5 h-5 text-stone-400" />
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <Package className="w-5 h-5 text-muted-foreground/70" />
             </div>
             <p
-                className="text-[20px] tracking-tight text-stone-900"
+                className="text-[20px] tracking-tight text-foreground"
                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
             >
                 {label}
             </p>
-            <p className="text-[13px] text-stone-500 mt-2 max-w-sm mx-auto leading-relaxed">{help}</p>
+            <p className="text-[13px] text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">{help}</p>
             {ctaHref && ctaLabel && (
                 <Link
                     href={ctaHref}
-                    className="inline-flex items-center gap-1.5 mt-5 text-[12px] uppercase tracking-[0.2em] font-semibold text-orange-700 hover:text-orange-900 transition-colors"
+                    className="inline-flex items-center gap-1.5 mt-5 text-[12px] uppercase tracking-[0.2em] font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
                     {ctaLabel}
                     <ArrowUpRight className="w-3.5 h-3.5" />

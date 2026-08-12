@@ -196,7 +196,7 @@ export default function CatalogPage() {
                         exit={{ opacity: 0, y: -16, x: "-50%" }}
                         className={cn(
                             "fixed top-20 left-1/2 z-[60] flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-xl text-[13px] font-semibold",
-                            toast.type === "success" ? "bg-emerald-700 text-white" : "bg-red-700 text-white"
+                            toast.type === "success" ? "bg-success text-white" : "bg-destructive text-white"
                         )}
                     >
                         {toast.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
@@ -212,21 +212,21 @@ export default function CatalogPage() {
                 herói fica enxuto para o primeiro produto aparecer sem rolagem.
                 No desktop sobra altura, então ele respira. */}
             <section className="relative z-10 max-w-[1320px] mx-auto px-5 sm:px-8 pt-5 sm:pt-14 pb-4 sm:pb-6">
-                <p className="text-[10px] sm:text-[10.5px] uppercase tracking-[0.28em] text-stone-500 mb-2 sm:mb-3 font-semibold">
+                <p className="text-[10px] sm:text-[10.5px] uppercase tracking-[0.28em] text-muted-foreground mb-2 sm:mb-3 font-semibold">
                     Olá, {session.name.split(" ")[0]} · {products.length} {products.length === 1 ? "item" : "itens"}
                 </p>
                 <h1
-                    className="text-[27px] sm:text-[58px] leading-[1.02] sm:leading-[0.98] tracking-tight text-stone-900"
+                    className="text-[27px] sm:text-[58px] leading-[1.02] sm:leading-[0.98] tracking-tight text-foreground"
                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                 >
                     O que vamos{" "}
-                    <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                    <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>
                         construir
                     </em>{" "}
                     hoje?
                 </h1>
                 {/* Texto de boas-vindas só onde há altura sobrando */}
-                <p className="hidden sm:block text-[15px] text-stone-600 mt-4 leading-relaxed max-w-[460px]">
+                <p className="hidden sm:block text-[15px] text-muted-foreground mt-4 leading-relaxed max-w-[460px]">
                     Escolha os materiais, defina as quantidades e a gente entrega na sua obra.
                 </p>
             </section>
@@ -237,8 +237,8 @@ export default function CatalogPage() {
                 className="sticky z-30"
                 style={{
                     top: HEADER_H,
-                    background: "rgba(247, 242, 234, 0.96)",
-                    borderBottom: "1px solid rgba(120, 113, 108, 0.14)",
+                    background: "var(--background)",
+                    borderBottom: "1px solid var(--border)",
                     backdropFilter: "blur(8px)",
                     WebkitBackdropFilter: "blur(8px)",
                 }}
@@ -265,15 +265,15 @@ export default function CatalogPage() {
                                     className={cn(
                                         "group inline-flex items-center gap-2 px-3.5 h-9 rounded-full text-[12.5px] whitespace-nowrap shrink-0 border cursor-pointer",
                                         "transition-colors duration-200",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F7F2EA]",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                                         isActive
-                                            ? "bg-stone-900 text-white border-stone-900 shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
-                                            : "bg-transparent text-stone-600 border-stone-300/70 hover:border-stone-500 hover:text-stone-900"
+                                            ? "bg-foreground text-background border-foreground shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
+                                            : "bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground"
                                     )}
                                 >
-                                    <Icon className={cn("w-3 h-3", isActive ? "text-orange-400" : "text-stone-400 group-hover:text-stone-700")} />
+                                    <Icon className={cn("w-3 h-3", isActive ? "text-background/80" : "text-muted-foreground/70 group-hover:text-foreground")} />
                                     <span className="font-medium">{cat}</span>
-                                    <span className={cn("tabular-nums text-[10.5px] tracking-wider", isActive ? "text-white/45" : "text-stone-400")}>
+                                    <span className={cn("tabular-nums text-[10.5px] tracking-wider", isActive ? "text-background/45" : "text-muted-foreground/70")}>
                                         {count}
                                     </span>
                                 </button>
@@ -283,8 +283,8 @@ export default function CatalogPage() {
 
                     {/* Ordenação + atalho para o carrinho */}
                     <div className="flex items-center gap-2 pb-2.5 overflow-x-auto scrollbar-hide">
-                        <SlidersHorizontal className="w-3 h-3 text-stone-400 shrink-0" aria-hidden />
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 font-semibold shrink-0 mr-0.5">
+                        <SlidersHorizontal className="w-3 h-3 text-muted-foreground/70 shrink-0" aria-hidden />
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70 font-semibold shrink-0 mr-0.5">
                             Ordenar
                         </span>
                         {SORTS.map(({ key, label, icon: Icon }) => {
@@ -297,10 +297,10 @@ export default function CatalogPage() {
                                     className={cn(
                                         "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11.5px] font-medium whitespace-nowrap shrink-0 cursor-pointer",
                                         "transition-colors duration-200",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                                         isActive
-                                            ? "bg-stone-200/80 text-stone-900"
-                                            : "text-stone-500 hover:text-stone-900 hover:bg-stone-200/50"
+                                            ? "bg-muted/80 text-foreground"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                     )}
                                 >
                                     <Icon className="w-3 h-3" />
@@ -311,17 +311,17 @@ export default function CatalogPage() {
 
                         {items.length > 0 && (
                             <>
-                                <span className="w-px h-4 bg-stone-300/70 shrink-0 mx-1" aria-hidden />
+                                <span className="w-px h-4 bg-border/70 shrink-0 mx-1" aria-hidden />
                                 <button
                                     onClick={() => setOnlyInCart((v) => !v)}
                                     aria-pressed={onlyInCart}
                                     className={cn(
                                         "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11.5px] font-medium whitespace-nowrap shrink-0 cursor-pointer",
                                         "transition-colors duration-200",
-                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                                         onlyInCart
-                                            ? "bg-orange-700 text-white"
-                                            : "text-orange-800 bg-orange-100/70 hover:bg-orange-200/70"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-primary bg-primary/10 hover:bg-primary/15"
                                     )}
                                 >
                                     <ShoppingCart className="w-3 h-3" />
@@ -338,17 +338,17 @@ export default function CatalogPage() {
             <main className="relative z-10 max-w-[1320px] mx-auto px-5 sm:px-8 py-4 sm:py-8 pb-44">
 
                 {/* Título da seção — uma linha só no celular, para não empurrar a lista */}
-                <div className="flex items-baseline justify-between gap-4 mb-4 sm:mb-6 pb-2.5 sm:pb-3.5 border-b border-stone-300/50">
+                <div className="flex items-baseline justify-between gap-4 mb-4 sm:mb-6 pb-2.5 sm:pb-3.5 border-b border-border/50">
                     <div className="min-w-0 flex items-baseline gap-2.5 sm:block">
                         <h2
-                            className="text-[17px] sm:text-[28px] tracking-tight text-stone-900 truncate shrink-0"
+                            className="text-[17px] sm:text-[28px] tracking-tight text-foreground truncate shrink-0"
                             style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                         >
                             {onlyInCart
                                 ? "Seu carrinho"
                                 : selectedCategory === "Todos" ? "Catálogo completo" : selectedCategory}
                         </h2>
-                        <p className="text-[10.5px] sm:text-[11.5px] text-stone-500 sm:mt-1 uppercase tracking-[0.18em] font-medium truncate">
+                        <p className="text-[10.5px] sm:text-[11.5px] text-muted-foreground sm:mt-1 uppercase tracking-[0.18em] font-medium truncate">
                             {filtered.length} {filtered.length === 1 ? "resultado" : "resultados"}
                             {search && <span className="normal-case tracking-normal"> · &ldquo;{search}&rdquo;</span>}
                         </p>
@@ -357,7 +357,7 @@ export default function CatalogPage() {
                     {(selectedCategory !== "Todos" || onlyInCart) && (
                         <button
                             onClick={() => { setSelectedCategory("Todos"); setOnlyInCart(false); }}
-                            className="text-[10.5px] sm:text-[11.5px] uppercase tracking-[0.18em] font-semibold text-stone-500 hover:text-stone-900 transition-colors shrink-0 cursor-pointer"
+                            className="text-[10.5px] sm:text-[11.5px] uppercase tracking-[0.18em] font-semibold text-muted-foreground hover:text-foreground transition-colors shrink-0 cursor-pointer"
                         >
                             Ver todos →
                         </button>
@@ -368,35 +368,35 @@ export default function CatalogPage() {
                 {loadingProducts ? (
                     <div className={GRID}>
                         {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="rounded-2xl overflow-hidden bg-white/50 ring-1 ring-stone-200/60">
-                                <div className="aspect-[5/4] bg-stone-200/50 animate-pulse" />
+                            <div key={i} className="rounded-2xl overflow-hidden bg-card/50 ring-1 ring-border/60">
+                                <div className="aspect-[5/4] bg-muted/50 animate-pulse" />
                                 <div className="p-4 space-y-2.5">
-                                    <div className="h-3.5 bg-stone-200/70 rounded w-4/5 animate-pulse" />
-                                    <div className="h-2.5 bg-stone-200/60 rounded w-2/5 animate-pulse" />
-                                    <div className="h-5 bg-stone-200/60 rounded w-1/2 animate-pulse mt-3" />
-                                    <div className="h-11 bg-stone-200/50 rounded-xl animate-pulse" />
+                                    <div className="h-3.5 bg-muted/70 rounded w-4/5 animate-pulse" />
+                                    <div className="h-2.5 bg-muted/60 rounded w-2/5 animate-pulse" />
+                                    <div className="h-5 bg-muted/60 rounded w-1/2 animate-pulse mt-3" />
+                                    <div className="h-11 bg-muted/50 rounded-xl animate-pulse" />
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-28 text-center">
-                        <div className="w-16 h-16 rounded-full bg-stone-200/60 flex items-center justify-center mb-5">
-                            <Package className="w-7 h-7 text-stone-400" />
+                        <div className="w-16 h-16 rounded-full bg-muted/60 flex items-center justify-center mb-5">
+                            <Package className="w-7 h-7 text-muted-foreground/70" />
                         </div>
                         <p
-                            className="text-[22px] tracking-tight text-stone-800"
+                            className="text-[22px] tracking-tight text-foreground"
                             style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                         >
                             Nada por aqui ainda.
                         </p>
-                        <p className="text-[13px] text-stone-500 mt-2 max-w-xs leading-relaxed">
+                        <p className="text-[13px] text-muted-foreground mt-2 max-w-xs leading-relaxed">
                             Tente ajustar sua busca ou selecione outra categoria do catálogo.
                         </p>
                         {search && (
                             <button
                                 onClick={() => setSearch("")}
-                                className="mt-5 text-[12px] uppercase tracking-[0.2em] font-semibold text-orange-700 hover:text-orange-900 transition-colors cursor-pointer"
+                                className="mt-5 text-[12px] uppercase tracking-[0.2em] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer"
                             >
                                 Limpar busca
                             </button>
@@ -413,15 +413,15 @@ export default function CatalogPage() {
                                         className="flex items-baseline gap-3 mb-3 sticky z-20 py-2"
                                         style={{ top: HEADER_H + railH, background: WARM }}
                                     >
-                                        <CatIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" aria-hidden />
+                                        <CatIcon className="w-3.5 h-3.5 text-muted-foreground/70 shrink-0" aria-hidden />
                                         <p
                                             id={`cat-${category}`}
-                                            className="text-[10.5px] uppercase tracking-[0.25em] font-semibold text-stone-500"
+                                            className="text-[10.5px] uppercase tracking-[0.25em] font-semibold text-muted-foreground"
                                         >
                                             {category}
                                         </p>
-                                        <div className="flex-1 h-px bg-stone-300/40" />
-                                        <p className="text-[10.5px] tabular-nums text-stone-400">{prods.length}</p>
+                                        <div className="flex-1 h-px bg-border/40" />
+                                        <p className="text-[10.5px] tabular-nums text-muted-foreground/70">{prods.length}</p>
                                     </div>
                                     <div className={GRID}>
                                         {prods.map(renderCard)}
@@ -451,7 +451,7 @@ export default function CatalogPage() {
                         <div
                             className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 rounded-2xl"
                             style={{
-                                background: "#1C1917",
+                                background: "var(--foreground)",
                                 boxShadow: "0 20px 50px -12px rgba(28, 25, 23, 0.4), 0 0 0 1px rgba(255,255,255,0.05) inset",
                             }}
                         >
@@ -460,7 +460,7 @@ export default function CatalogPage() {
                                     <div
                                         key={item.product_id}
                                         style={{ zIndex: 3 - i }}
-                                        className="w-8 h-8 rounded-full border-2 border-stone-900 flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                                        className="w-8 h-8 rounded-full border-2 border-background flex items-center justify-center text-background text-[10px] font-bold shrink-0"
                                     >
                                         <div
                                             className="w-full h-full rounded-full flex items-center justify-center"
@@ -471,18 +471,18 @@ export default function CatalogPage() {
                                     </div>
                                 ))}
                                 {items.length > 3 && (
-                                    <div className="w-8 h-8 rounded-full bg-stone-700 border-2 border-stone-900 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-background border-2 border-background flex items-center justify-center text-foreground text-[10px] font-bold shrink-0">
                                         +{items.length - 3}
                                     </div>
                                 )}
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <p className="text-[10px] text-stone-400 uppercase tracking-[0.22em] leading-none font-semibold">
+                                <p className="text-[10px] text-background/60 uppercase tracking-[0.22em] leading-none font-semibold">
                                     {totalItems} {totalItems === 1 ? "item" : "itens"}
                                 </p>
                                 <p
-                                    className="text-white tabular-nums leading-tight mt-0.5"
+                                    className="text-background tabular-nums leading-tight mt-0.5"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "18px" }}
                                 >
                                     {formatCurrency(totalPrice)}
@@ -491,7 +491,7 @@ export default function CatalogPage() {
 
                             <button
                                 onClick={() => router.push("/cliente/checkout")}
-                                className="group inline-flex items-center gap-1.5 bg-white text-stone-900 px-4 sm:px-5 h-10 rounded-xl text-[13px] font-semibold tracking-wide hover:bg-stone-100 transition-colors duration-200 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
+                                className="group inline-flex items-center gap-1.5 bg-background text-foreground px-4 sm:px-5 h-10 rounded-xl text-[13px] font-semibold tracking-wide hover:bg-muted transition-colors duration-200 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-foreground"
                             >
                                 <span className="hidden sm:inline">Finalizar</span>
                                 <ShoppingCart className="w-4 h-4 sm:hidden" />

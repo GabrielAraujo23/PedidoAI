@@ -57,10 +57,10 @@ function maskCep(v: string): string {
 }
 
 const inputClass =
-    "w-full h-10 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50";
+    "w-full h-10 px-3.5 rounded-xl border border-input bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20 disabled:bg-muted";
 
 const eyebrowClass =
-    "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
+    "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
 
 export default function CheckoutPage() {
     const { session, loading: sessionLoading } = useClientSession();
@@ -332,7 +332,7 @@ export default function CheckoutPage() {
     if (!mounted || sessionLoading || !session || addrLoadState === "loading") {
         return (
             <div className="min-h-screen flex items-center justify-center bg-warm">
-                <Loader2 className="w-7 h-7 animate-spin text-stone-700" />
+                <Loader2 className="w-7 h-7 animate-spin text-foreground" />
             </div>
         );
     }
@@ -347,8 +347,8 @@ export default function CheckoutPage() {
                 <div className={cn(
                     "fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-xl text-[13px] font-semibold",
                     toast.type === "success"
-                        ? "bg-emerald-700 text-white"
-                        : "bg-red-700 text-white"
+                        ? "bg-success text-white"
+                        : "bg-destructive text-white"
                 )}>
                     {toast.type === "success" ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                     {toast.message}
@@ -361,22 +361,22 @@ export default function CheckoutPage() {
 
                 {/* Breadcrumb */}
                 <nav className="flex items-center gap-1.5 text-[12px] mb-8" aria-label="breadcrumb">
-                    <Link href="/cliente/catalogo" className="text-stone-500 hover:text-stone-900 transition-colors">
+                    <Link href="/cliente/catalogo" className="text-muted-foreground hover:text-foreground transition-colors">
                         Catálogo
                     </Link>
-                    <ChevronRight className="w-3 h-3 text-stone-400" />
-                    <span className="text-stone-900 font-semibold">Checkout</span>
+                    <ChevronRight className="w-3 h-3 text-muted-foreground/70" />
+                    <span className="text-foreground font-semibold">Checkout</span>
                 </nav>
 
                 {/* Page heading */}
                 <header className="mb-10 max-w-[820px]">
                     <p className={cn(eyebrowClass, "mb-3")}>Última etapa</p>
                     <h1
-                        className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-stone-900"
+                        className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-foreground"
                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                     >
                         Confirme e{" "}
-                        <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                        <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>
                             finalize
                         </em>{" "}
                         seu pedido.
@@ -389,31 +389,31 @@ export default function CheckoutPage() {
                     <div className="space-y-6">
 
                         {/* Cart items */}
-                        <section className="bg-white rounded-2xl border border-stone-200/70 overflow-hidden">
-                            <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-stone-100">
+                        <section className="bg-card rounded-2xl border border-border/70 overflow-hidden">
+                            <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-border">
                                 <div>
                                     <p className={eyebrowClass}>Carrinho</p>
                                     <h2
-                                        className="text-[20px] tracking-tight text-stone-900 mt-0.5"
+                                        className="text-[20px] tracking-tight text-foreground mt-0.5"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                     >
                                         {totalItems} {totalItems === 1 ? "item" : "itens"}
                                     </h2>
                                 </div>
-                                <span className="text-[12px] text-stone-500 tabular-nums">
+                                <span className="text-[12px] text-muted-foreground tabular-nums">
                                     {formatCurrency(totalPrice)}
                                 </span>
                             </header>
 
                             {items.length === 0 ? (
-                                <p className="text-[13px] text-stone-500 text-center py-10">Carrinho vazio.</p>
+                                <p className="text-[13px] text-muted-foreground text-center py-10">Carrinho vazio.</p>
                             ) : (
-                                <ul className="divide-y divide-stone-100">
+                                <ul className="divide-y divide-border">
                                     {items.map((item) => (
-                                        <li key={item.product_id} className="flex items-center gap-4 px-6 py-4 hover:bg-stone-50/50 transition-colors">
+                                        <li key={item.product_id} className="flex items-center gap-4 px-6 py-4 hover:bg-muted/50 transition-colors">
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[14px] font-semibold text-stone-900 truncate">{item.name}</p>
-                                                <p className="text-[11px] text-stone-500 mt-0.5 uppercase tracking-wider">
+                                                <p className="text-[14px] font-semibold text-foreground truncate">{item.name}</p>
+                                                <p className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">
                                                     {item.unit} · {formatCurrency(item.price)}/un
                                                 </p>
                                             </div>
@@ -426,7 +426,7 @@ export default function CheckoutPage() {
                                             />
 
                                             <p
-                                                className="text-stone-900 tabular-nums w-24 text-right shrink-0 leading-none"
+                                                className="text-foreground tabular-nums w-24 text-right shrink-0 leading-none"
                                                 style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "16px" }}
                                             >
                                                 {formatCurrency(item.quantity * item.price)}
@@ -434,7 +434,7 @@ export default function CheckoutPage() {
 
                                             <button
                                                 onClick={() => removeItem(item.product_id)}
-                                                className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                                className="p-1.5 text-muted-foreground/70 hover:text-destructive hover:bg-destructive-surface rounded-lg transition-colors shrink-0"
                                                 title="Remover"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -446,38 +446,38 @@ export default function CheckoutPage() {
                         </section>
 
                         {/* Delivery address */}
-                        <section className="bg-white rounded-2xl border border-stone-200/70 p-6">
+                        <section className="bg-card rounded-2xl border border-border/70 p-6">
                             <div className="flex items-center justify-between mb-5">
                                 <div>
                                     <p className={eyebrowClass}>Entrega</p>
                                     <h2
-                                        className="text-[20px] tracking-tight text-stone-900 mt-0.5"
+                                        className="text-[20px] tracking-tight text-foreground mt-0.5"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                     >
                                         Endereço de entrega
                                     </h2>
                                 </div>
-                                <MapPin className="w-5 h-5 text-stone-400" />
+                                <MapPin className="w-5 h-5 text-muted-foreground/70" />
                             </div>
 
                             {/* Saved address */}
                             {showSavedCard && (
                                 <div className="space-y-4">
-                                    <div className="flex items-start justify-between gap-3 p-4 bg-stone-50/80 border border-stone-200/60 rounded-xl">
+                                    <div className="flex items-start justify-between gap-3 p-4 bg-muted/80 border border-border/60 rounded-xl">
                                         <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                                            <p className="text-[13px] text-stone-700 leading-relaxed">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-success mt-2 shrink-0" />
+                                            <p className="text-[13px] text-foreground leading-relaxed">
                                                 {addrForm.street}{addrForm.number ? `, ${addrForm.number}` : ""}
                                                 {addrForm.complement ? ` · ${addrForm.complement}` : ""}
                                                 <br />
-                                                <span className="text-stone-500">
+                                                <span className="text-muted-foreground">
                                                     {addrForm.neighborhood} · {addrForm.city}/{addrForm.state} · {addrForm.cep}
                                                 </span>
                                             </p>
                                         </div>
                                         <button
                                             onClick={handleEditAddress}
-                                            className="flex items-center gap-1 text-[11px] text-stone-700 hover:text-stone-900 font-semibold uppercase tracking-wider shrink-0"
+                                            className="flex items-center gap-1 text-[11px] text-foreground/70 hover:text-foreground font-semibold uppercase tracking-wider shrink-0"
                                         >
                                             <Pencil className="w-3 h-3" />
                                             Alterar
@@ -487,7 +487,7 @@ export default function CheckoutPage() {
                                     {!addrForm.number.trim() && (
                                         <div className="space-y-1.5">
                                             <label className={eyebrowClass}>
-                                                Número <span className="text-red-500 normal-case tracking-normal">*</span>
+                                                Número <span className="text-destructive normal-case tracking-normal">*</span>
                                             </label>
                                             <input
                                                 type="text"
@@ -501,15 +501,15 @@ export default function CheckoutPage() {
                                     )}
 
                                     {deliveryStatus === "ok" && distanceKm !== null && (
-                                        <div className="flex items-center gap-2 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3.5 py-2.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                        <div className="flex items-center gap-2 text-[12px] text-success bg-success-surface/80 border border-success/30 rounded-xl px-3.5 py-2.5">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                                             <span>
                                                 <span className="font-semibold">Entrega disponível</span> · {distanceKm.toFixed(1)} km da loja
                                             </span>
                                         </div>
                                     )}
                                     {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
-                                        <div className="flex items-center gap-2 text-[12px] text-red-700 bg-red-50/80 border border-red-200/60 rounded-xl px-3.5 py-2.5">
+                                        <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive-surface/80 border border-destructive/30 rounded-xl px-3.5 py-2.5">
                                             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                             <span>
                                                 <span className="font-semibold">Fora da área.</span> Cobrimos até {storeCoords.radius} km.
@@ -535,19 +535,19 @@ export default function CheckoutPage() {
                                                 onBlur={handleCepBlur}
                                                 className={cn(
                                                     inputClass, "pr-9",
-                                                    cepStatus === "error" && "border-red-300 focus:border-red-500 focus:ring-red-500/10",
-                                                    cepStatus === "ok"    && "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10",
+                                                    cepStatus === "error" && "border-destructive/40 focus:border-destructive/60 focus:ring-destructive/10",
+                                                    cepStatus === "ok"    && "border-success/60 focus:border-success focus:ring-success/10",
                                                 )}
                                             />
                                             {cepStatus === "loading" && (
-                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 animate-spin" />
                                             )}
                                             {cepStatus === "ok" && (
-                                                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
+                                                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-success" strokeWidth={3} />
                                             )}
                                         </div>
                                         {cepError && (
-                                            <p className="flex items-center gap-1 text-[12px] text-red-600 pt-0.5">
+                                            <p className="flex items-center gap-1 text-[12px] text-destructive pt-0.5">
                                                 <AlertCircle className="w-3 h-3" />
                                                 {cepError}
                                             </p>
@@ -556,20 +556,20 @@ export default function CheckoutPage() {
 
                                     {cepStatus === "ok" && (
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <div className="grid grid-cols-3 gap-3 p-3.5 bg-stone-50/60 border border-stone-200/50 rounded-xl">
+                                            <div className="grid grid-cols-3 gap-3 p-3.5 bg-muted/60 border border-border/50 rounded-xl">
                                                 <div className="col-span-3">
-                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Endereço</p>
-                                                    <p className="text-[13px] text-stone-700 leading-snug mt-0.5">
-                                                        {addrForm.street}, <span className="text-stone-500">{addrForm.neighborhood}</span>
+                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Endereço</p>
+                                                    <p className="text-[13px] text-foreground leading-snug mt-0.5">
+                                                        {addrForm.street}, <span className="text-muted-foreground">{addrForm.neighborhood}</span>
                                                     </p>
-                                                    <p className="text-[12px] text-stone-500">{addrForm.city}/{addrForm.state}</p>
+                                                    <p className="text-[12px] text-muted-foreground">{addrForm.city}/{addrForm.state}</p>
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
                                                     <label className={cn(eyebrowClass)}>
-                                                        Número <span className="text-red-500 normal-case tracking-normal">*</span>
+                                                        Número <span className="text-destructive normal-case tracking-normal">*</span>
                                                     </label>
                                                     <input
                                                         type="text"
@@ -582,7 +582,7 @@ export default function CheckoutPage() {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className={eyebrowClass}>
-                                                        Complemento <span className="text-stone-400 normal-case tracking-normal">(opcional)</span>
+                                                        Complemento <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
                                                     </label>
                                                     <input
                                                         type="text"
@@ -596,15 +596,15 @@ export default function CheckoutPage() {
                                             </div>
 
                                             {deliveryStatus === "ok" && distanceKm !== null && (
-                                                <div className="flex items-center gap-2 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded-xl px-3.5 py-2.5">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                <div className="flex items-center gap-2 text-[12px] text-success bg-success-surface/80 border border-success/30 rounded-xl px-3.5 py-2.5">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-success" />
                                                     <span>
                                                         <span className="font-semibold">Entrega disponível</span> · {distanceKm.toFixed(1)} km da loja
                                                     </span>
                                                 </div>
                                             )}
                                             {deliveryStatus === "too_far" && distanceKm !== null && storeCoords && (
-                                                <div className="flex items-center gap-2 text-[12px] text-red-700 bg-red-50/80 border border-red-200/60 rounded-xl px-3.5 py-2.5">
+                                                <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive-surface/80 border border-destructive/30 rounded-xl px-3.5 py-2.5">
                                                     <AlertCircle className="w-3.5 h-3.5" />
                                                     <span>
                                                         <span className="font-semibold">Fora da área.</span> Cobrimos até {storeCoords.radius} km.
@@ -618,11 +618,11 @@ export default function CheckoutPage() {
                         </section>
 
                         {/* Payment method */}
-                        <section className="bg-white rounded-2xl border border-stone-200/70 p-6">
+                        <section className="bg-card rounded-2xl border border-border/70 p-6">
                             <div className="mb-5">
                                 <p className={eyebrowClass}>Pagamento</p>
                                 <h2
-                                    className="text-[20px] tracking-tight text-stone-900 mt-0.5"
+                                    className="text-[20px] tracking-tight text-foreground mt-0.5"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                 >
                                     Como prefere pagar?
@@ -637,22 +637,22 @@ export default function CheckoutPage() {
                                         className={cn(
                                             "flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200 text-[12.5px] font-semibold",
                                             payment === id
-                                                ? "border-stone-900 bg-stone-50 text-stone-900"
-                                                : "border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-800"
+                                                ? "border-foreground bg-muted text-foreground"
+                                                : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
                                         )}
                                     >
-                                        <Icon className={cn("w-5 h-5", payment === id ? "text-orange-700" : "text-stone-500")} />
+                                        <Icon className={cn("w-5 h-5", payment === id ? "text-primary" : "text-muted-foreground")} />
                                         {label}
                                     </button>
                                 ))}
                             </div>
 
                             {payment === "pix" && (
-                                <div className="mt-4 border border-dashed border-stone-300 rounded-xl p-4 flex items-center gap-4 bg-stone-50/40">
-                                    <div className="w-14 h-14 bg-white border border-stone-200 rounded-lg flex items-center justify-center shrink-0">
-                                        <QrCode className="w-7 h-7 text-stone-400" />
+                                <div className="mt-4 border border-dashed border-border rounded-xl p-4 flex items-center gap-4 bg-muted/40">
+                                    <div className="w-14 h-14 bg-card border border-border rounded-lg flex items-center justify-center shrink-0">
+                                        <QrCode className="w-7 h-7 text-muted-foreground/70" />
                                     </div>
-                                    <p className="text-[12px] text-stone-600 leading-relaxed">
+                                    <p className="text-[12px] text-muted-foreground leading-relaxed">
                                         O QR Code do PIX será gerado quando você finalizar o pedido.
                                     </p>
                                 </div>
@@ -663,10 +663,10 @@ export default function CheckoutPage() {
                     {/* ── Right column — Order summary ─────────────────────── */}
                     <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
 
-                        <div className="bg-white rounded-2xl border border-stone-200/70 p-6">
+                        <div className="bg-card rounded-2xl border border-border/70 p-6">
                             <p className={eyebrowClass}>Resumo</p>
                             <h2
-                                className="text-[22px] tracking-tight text-stone-900 mt-0.5 mb-5"
+                                className="text-[22px] tracking-tight text-foreground mt-0.5 mb-5"
                                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                             >
                                 Seu pedido
@@ -674,33 +674,33 @@ export default function CheckoutPage() {
 
                             <dl className="space-y-2.5 text-[13px] mb-5">
                                 <div className="flex justify-between">
-                                    <dt className="text-stone-500">Subtotal</dt>
-                                    <dd className="text-stone-900 tabular-nums">{formatCurrency(totalPrice)}</dd>
+                                    <dt className="text-muted-foreground">Subtotal</dt>
+                                    <dd className="text-foreground tabular-nums">{formatCurrency(totalPrice)}</dd>
                                 </div>
                                 <div className="flex justify-between items-baseline">
-                                    <dt className="text-stone-500">Entrega</dt>
+                                    <dt className="text-muted-foreground">Entrega</dt>
                                     <dd className="text-right">
                                         {deliveryStatus === "ok" ? (
-                                            <span className="text-stone-900 tabular-nums">
+                                            <span className="text-foreground tabular-nums">
                                                 {formatCurrency(deliveryFee)}
                                                 {distanceKm !== null && (
-                                                    <span className="block text-[10px] text-stone-400 uppercase tracking-wider mt-0.5">
+                                                    <span className="block text-[10px] text-muted-foreground/70 uppercase tracking-wider mt-0.5">
                                                         ~{distanceKm.toFixed(1)} km
                                                     </span>
                                                 )}
                                             </span>
                                         ) : deliveryStatus === "too_far" ? (
-                                            <span className="text-red-600 text-[12px] font-medium">Fora da área</span>
+                                            <span className="text-destructive text-[12px] font-medium">Fora da área</span>
                                         ) : (
-                                            <span className="text-stone-400 text-[12px] italic">A calcular</span>
+                                            <span className="text-muted-foreground/70 text-[12px] italic">A calcular</span>
                                         )}
                                     </dd>
                                 </div>
 
-                                <div className="border-t border-stone-200 pt-3 mt-3 flex justify-between items-baseline">
+                                <div className="border-t border-border pt-3 mt-3 flex justify-between items-baseline">
                                     <dt className={eyebrowClass}>Total</dt>
                                     <dd
-                                        className="text-stone-900 tabular-nums leading-none"
+                                        className="text-foreground tabular-nums leading-none"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "28px" }}
                                     >
                                         {formatCurrency(orderTotal)}
@@ -711,7 +711,7 @@ export default function CheckoutPage() {
                             <button
                                 onClick={handlePlaceOrder}
                                 disabled={placing || !canPlaceOrder}
-                                className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                                className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                             >
                                 {placing ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -724,7 +724,7 @@ export default function CheckoutPage() {
                             </button>
 
                             {!canPlaceOrder && !placing && (
-                                <p className="text-[11px] text-stone-500 text-center mt-3 leading-relaxed">
+                                <p className="text-[11px] text-muted-foreground text-center mt-3 leading-relaxed">
                                     {cepStatus !== "ok"
                                         ? "Preencha o CEP para continuar."
                                         : addrForm.number.trim() === ""
@@ -735,22 +735,22 @@ export default function CheckoutPage() {
                                 </p>
                             )}
 
-                            <p className="text-[10px] text-stone-400 text-center mt-3 leading-relaxed">
+                            <p className="text-[10px] text-muted-foreground/70 text-center mt-3 leading-relaxed">
                                 Ao finalizar, você concorda com os{" "}
-                                <span className="text-stone-700 cursor-pointer hover:underline">Termos de Serviço</span>.
+                                <span className="text-foreground cursor-pointer hover:underline">Termos de Serviço</span>.
                             </p>
                         </div>
 
                         {/* Coupon — minimal */}
-                        <div className="bg-stone-900 rounded-2xl p-5 relative overflow-hidden">
-                            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-orange-700/20 blur-2xl pointer-events-none" />
+                        <div className="bg-foreground rounded-2xl p-5 relative overflow-hidden">
+                            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-primary/20 blur-2xl pointer-events-none" />
                             <div className="relative">
-                                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400 mb-1 font-semibold">Cupom</p>
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-background/60 mb-1 font-semibold">Cupom</p>
                                 <p
-                                    className="text-white text-[18px] mb-3"
+                                    className="text-background text-[18px] mb-3"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 500 }}
                                 >
-                                    Tem um <em style={{ fontStyle: "italic" }} className="text-orange-300">desconto?</em>
+                                    Tem um <em style={{ fontStyle: "italic" }} className="text-background">desconto?</em>
                                 </p>
                                 <div className="flex gap-2">
                                     <input
@@ -760,7 +760,7 @@ export default function CheckoutPage() {
                                         placeholder="CÓDIGO"
                                         className="flex-1 h-9 px-3 rounded-lg bg-white/10 text-white placeholder:text-white/30 text-[12px] font-semibold outline-none focus:bg-white/15 focus:ring-2 focus:ring-white/20 transition-all"
                                     />
-                                    <button className="bg-white text-stone-900 px-3.5 h-9 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-stone-100 transition-colors">
+                                    <button className="bg-background text-foreground px-3.5 h-9 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-muted transition-colors">
                                         Aplicar
                                     </button>
                                 </div>

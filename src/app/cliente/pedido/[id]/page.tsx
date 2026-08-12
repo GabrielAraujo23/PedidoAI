@@ -143,7 +143,7 @@ export default function OrderTrackingPage() {
                     </div>
                 ) : !order ? (
                     <div className="text-center py-24">
-                        <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <Package className="w-12 h-12 text-muted-foreground/70 mx-auto mb-3" />
                         <p className="font-bold text-[#111827]">Pedido não encontrado</p>
                         <Link href="/cliente/catalogo" className="text-sm text-[#F97316] hover:underline mt-2 inline-block">
                             Voltar ao cardápio
@@ -157,8 +157,8 @@ export default function OrderTrackingPage() {
 
                             {order.status === "cancelado" ? (
                                 <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm text-center">
-                                    <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <XCircle className="w-8 h-8 text-red-500" />
+                                    <div className="w-14 h-14 bg-destructive-surface rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <XCircle className="w-8 h-8 text-destructive" />
                                     </div>
                                     <h1 className="text-2xl font-bold text-[#111827] mb-2">Pedido #{order.id} cancelado</h1>
                                     <p className="text-sm text-[#6B7280] mb-5">Este pedido foi cancelado.</p>
@@ -205,8 +205,8 @@ export default function OrderTrackingPage() {
 
                             {order.status === "cancelado" ? (
                                 <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                                        <XCircle className="w-5 h-5 text-red-500" />
+                                    <div className="w-10 h-10 rounded-full bg-destructive-surface flex items-center justify-center shrink-0">
+                                        <XCircle className="w-5 h-5 text-destructive" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-[#111827]">Pedido cancelado</p>
@@ -328,27 +328,27 @@ export default function OrderTrackingPage() {
                                             <button
                                                 onClick={() => setConfirmCancel(true)}
                                                 disabled={cancelling}
-                                                className="w-full h-10 border border-red-300 text-red-600 rounded-full text-sm font-bold hover:bg-red-50 transition-colors disabled:opacity-50"
+                                                className="w-full h-10 border border-destructive/40 text-destructive rounded-full text-sm font-bold hover:bg-destructive-surface transition-colors disabled:opacity-50"
                                             >
                                                 Cancelar pedido
                                             </button>
                                         ) : (
-                                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
-                                                <p className="text-sm font-semibold text-red-800">Tem certeza?</p>
-                                                <p className="text-xs text-red-600">Esta ação não pode ser desfeita.</p>
-                                                {cancelError && <p className="text-xs text-red-700">{cancelError}</p>}
+                                            <div className="bg-destructive-surface border border-destructive/30 rounded-xl p-4 space-y-3">
+                                                <p className="text-sm font-semibold text-destructive">Tem certeza?</p>
+                                                <p className="text-xs text-destructive">Esta ação não pode ser desfeita.</p>
+                                                {cancelError && <p className="text-xs text-destructive">{cancelError}</p>}
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => { setConfirmCancel(false); setCancelError(null); }}
                                                         disabled={cancelling}
-                                                        className="flex-1 h-9 border border-red-300 text-red-600 rounded-full text-xs font-bold hover:bg-white transition-colors disabled:opacity-50"
+                                                        className="flex-1 h-9 border border-destructive/40 text-destructive rounded-full text-xs font-bold hover:bg-card transition-colors disabled:opacity-50"
                                                     >
                                                         Manter
                                                     </button>
                                                     <button
                                                         onClick={handleCancel}
                                                         disabled={cancelling}
-                                                        className="flex-1 h-9 bg-red-600 text-white rounded-full text-xs font-bold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                                                        className="flex-1 h-9 bg-destructive text-white rounded-full text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
                                                     >
                                                         {cancelling && <Loader2 className="w-3 h-3 animate-spin" />}
                                                         Sim, cancelar

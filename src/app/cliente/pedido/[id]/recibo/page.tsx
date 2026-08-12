@@ -42,11 +42,11 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 const STATUS_BADGE: Record<Status, string> = {
-    novo:       "bg-amber-50 text-amber-700 border-amber-200",
-    confirmado: "bg-orange-50 text-orange-700 border-orange-200",
-    rota:       "bg-violet-50 text-violet-700 border-violet-200",
-    entregue:   "bg-emerald-50 text-emerald-700 border-emerald-200",
-    cancelado:  "bg-red-50 text-red-700 border-red-200",
+    novo:       "bg-chart-2/10 text-chart-2 border-chart-2/20",
+    confirmado: "bg-chart-4/10 text-chart-4 border-chart-4/20",
+    rota:       "bg-chart-5/10 text-chart-5 border-chart-5/20",
+    entregue:   "bg-success-surface text-success border-success/30",
+    cancelado:  "bg-destructive-surface text-destructive border-destructive/30",
 };
 
 function formatCurrency(v: number) {
@@ -138,7 +138,7 @@ export default function ReciboPedidoPage() {
                         </div>
                     ) : !order ? (
                         <div className="text-center py-24">
-                            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <Package className="w-12 h-12 text-muted-foreground/70 mx-auto mb-3" />
                             <p className="font-bold text-[#111827]">Pedido não encontrado</p>
                             <Link
                                 href="/cliente/catalogo"
