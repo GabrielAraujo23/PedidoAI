@@ -111,7 +111,12 @@ export default function ReciboPedidoPage() {
                 }
             `}</style>
 
-            <div className="min-h-screen bg-[#F9FAFB] print:bg-white">
+            {/* `tema-claro` trava os tokens nos valores claros mesmo com o tema
+                escuro ligado. O recibo é documento: impresso, salvo e
+                reencaminhado no WhatsApp, e precisa ser o mesmo em qualquer
+                aparelho. Sem isto, o badge de status (que usa tokens) sairia em
+                verde vibrante sobre fundo escuro dentro deste cartão branco. */}
+            <div className="tema-claro min-h-screen bg-[#F9FAFB] print:bg-white">
                 {/* Barra de ações — oculta ao imprimir */}
                 <div className="no-print sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-4 py-3 flex items-center justify-between">
                     <Link

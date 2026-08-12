@@ -151,6 +151,47 @@
   }
 }
 
+/* Escopo sempre claro, mesmo com o tema escuro ligado.
+ *
+ * Existe para o recibo do pedido: ele é impresso, salvo e reencaminhado no
+ * WhatsApp, e precisa ser o mesmo documento em qualquer aparelho. Sem isto, o
+ * badge de status seguiria o tema global e apareceria em verde vibrante sobre
+ * fundo escuro dentro de um cartão branco — remendo visível.
+ *
+ * Os valores repetem os de `:root` de propósito: CSS não tem herança de bloco.
+ * Ao mudar um token claro lá em cima, mude aqui também. */
+.tema-claro,
+.dark .tema-claro {
+  --background: #F7F2EA;
+  --foreground: #1C1917;
+  --card: #FFFFFF;
+  --card-foreground: #1C1917;
+  --popover: #FFFFFF;
+  --popover-foreground: #1C1917;
+  --primary: #C2410C;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EFE9E1;
+  --secondary-foreground: #1C1917;
+  --muted: #EFE9E1;
+  --muted-foreground: #78716C;
+  --accent: #EFE9E1;
+  --accent-foreground: #1C1917;
+  --destructive: #DC2626;
+  --destructive-surface: #FEF2F2;
+  --success: #059669;
+  --success-surface: #ECFDF5;
+  --warning: #D97706;
+  --warning-surface: #FFFBEB;
+  --border: #E7E5E4;
+  --input: #E7E5E4;
+  --ring: #1C1917;
+  --chart-1: #C2410C;
+  --chart-2: #156A8A;
+  --chart-3: #059669;
+  --chart-4: #D97706;
+  --chart-5: #6366F1;
+}
+
 @layer utilities {
   .glass {
     @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
