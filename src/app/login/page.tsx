@@ -74,14 +74,14 @@ interface FieldProps {
 function Field({ icon: Icon, label, optional, error, children }: FieldProps) {
     return (
         <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500">
+            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground">
                 {Icon && <Icon className="w-3 h-3" />}
                 {label}
-                {optional && <span className="text-stone-400 text-[10px] normal-case tracking-normal font-normal">(opcional)</span>}
+                {optional && <span className="text-muted-foreground/70 text-[10px] normal-case tracking-normal font-normal">(opcional)</span>}
             </label>
             {children}
             {error && (
-                <p className="flex items-start gap-1 text-xs text-red-600 pt-0.5">
+                <p className="flex items-start gap-1 text-xs text-destructive pt-0.5">
                     <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
                     <span>{error}</span>
                 </p>
@@ -91,7 +91,7 @@ function Field({ icon: Icon, label, optional, error, children }: FieldProps) {
 }
 
 const inputClass =
-    "w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[15px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50 disabled:text-stone-500";
+    "w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20 disabled:bg-muted disabled:text-muted-foreground";
 
 export default function LoginPage() {
     const [step, setStep] = useState<Step>("phone");
@@ -388,7 +388,7 @@ export default function LoginPage() {
                     chega por WhatsApp, então é ali que quase todo cliente entra
                     — esconder a confirmação justamente no celular anularia o
                     motivo de existir o slug. */}
-                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-stone-500 text-right max-w-[150px] sm:max-w-[220px] truncate">
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-muted-foreground text-right max-w-[150px] sm:max-w-[220px] truncate">
                     {storeName || "Loja Aberta"}
                 </span>
             </header>
@@ -401,9 +401,9 @@ export default function LoginPage() {
                         parar numa loja escolhida no chute, que é o que esta
                         tela deixou de fazer. */}
                     {needsStore && (
-                        <div className="mb-6 flex items-start gap-2.5 px-4 py-3 rounded-xl border border-amber-200/70 bg-amber-50/80">
-                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
-                            <p className="text-[13px] leading-relaxed text-amber-900">
+                        <div className="mb-6 flex items-start gap-2.5 px-4 py-3 rounded-xl border border-warning/30 bg-warning-surface/80">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-warning" />
+                            <p className="text-[13px] leading-relaxed text-warning">
                                 {NEEDS_STORE_MESSAGE}
                             </p>
                         </div>
@@ -417,9 +417,9 @@ export default function LoginPage() {
                                 className={cn(
                                     "h-1 rounded-full transition-all duration-500",
                                     step === s || (i === 0)
-                                        ? "w-6 bg-stone-900"
-                                        : "w-1.5 bg-stone-300",
-                                    i === 0 && step !== "phone" && "bg-stone-400 w-3",
+                                        ? "w-6 bg-foreground"
+                                        : "w-1.5 bg-muted-foreground/30",
+                                    i === 0 && step !== "phone" && "bg-muted-foreground/60 w-3",
                                 )}
                             />
                         ))}
@@ -429,14 +429,14 @@ export default function LoginPage() {
                     {step === "phone" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Bem-vindo</p>
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Bem-vindo</p>
                                 <h1
-                                    className="text-[44px] sm:text-[52px] leading-[0.95] tracking-tight text-stone-900"
+                                    className="text-[44px] sm:text-[52px] leading-[0.95] tracking-tight text-foreground"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                 >
-                                    Faça seu pedido <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>agora.</em>
+                                    Faça seu pedido <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>agora.</em>
                                 </h1>
-                                <p className="text-[14px] text-stone-600 mt-4 max-w-[320px] mx-auto leading-relaxed">
+                                <p className="text-[14px] text-muted-foreground mt-4 max-w-[320px] mx-auto leading-relaxed">
                                     Digite seu telefone para começar. Tudo rapidinho, sem cadastro chato.
                                 </p>
                             </div>
@@ -457,7 +457,7 @@ export default function LoginPage() {
                                 </Field>
 
                                 {error && (
-                                    <p className="flex items-start gap-1.5 text-xs text-red-600">
+                                    <p className="flex items-start gap-1.5 text-xs text-destructive">
                                         <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                                         <span>{error}</span>
                                     </p>
@@ -466,7 +466,7 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={loading || !phone.trim() || needsStore}
-                                    className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                                    className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
                                     {loading ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -479,7 +479,7 @@ export default function LoginPage() {
                                 </button>
                             </form>
 
-                            <p className="text-center text-[11px] text-stone-500 mt-8 leading-relaxed">
+                            <p className="text-center text-[11px] text-muted-foreground mt-8 leading-relaxed">
                                 Ao continuar, você concorda com receber pedidos via WhatsApp.
                             </p>
                         </section>
@@ -488,20 +488,20 @@ export default function LoginPage() {
                     {/* ── STEP: returning ── */}
                     {step === "returning" && foundClient && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500 text-center">
-                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 ring-8 ring-emerald-50 mb-6">
-                                <Check className="w-7 h-7 text-emerald-700" strokeWidth={2.5} />
+                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-success-surface ring-8 ring-success-surface/60 mb-6">
+                                <Check className="w-7 h-7 text-success" strokeWidth={2.5} />
                             </div>
-                            <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Que bom te ver</p>
+                            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Que bom te ver</p>
                             <h1
-                                className="text-[40px] sm:text-[48px] leading-[1.0] tracking-tight text-stone-900"
+                                className="text-[40px] sm:text-[48px] leading-[1.0] tracking-tight text-foreground"
                                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                             >
                                 Olá,{" "}
-                                <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                                <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>
                                     {foundClient.name.split(" ")[0]}
                                 </em>
                             </h1>
-                            <p className="text-[14px] text-stone-600 mt-4 max-w-[320px] mx-auto leading-relaxed">
+                            <p className="text-[14px] text-muted-foreground mt-4 max-w-[320px] mx-auto leading-relaxed">
                                 Pronto pra montar mais um pedido?
                             </p>
 
@@ -509,7 +509,7 @@ export default function LoginPage() {
                                 <button
                                     onClick={() => saveSessionAndRedirect(foundClient)}
                                     disabled={loading}
-                                    className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                                    className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
                                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                                         <>Entrar e pedir <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
@@ -517,7 +517,7 @@ export default function LoginPage() {
                                 </button>
                                 <button
                                     onClick={() => { setStep("phone"); setFoundClient(null); setPhone(""); }}
-                                    className="w-full h-10 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center justify-center gap-1.5 transition-colors"
+                                    className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
                                 >
                                     <ArrowLeft className="w-3.5 h-3.5" /> Não sou eu
                                 </button>
@@ -529,14 +529,14 @@ export default function LoginPage() {
                     {step === "new_client" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Primeiro acesso</p>
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Primeiro acesso</p>
                                 <h1
-                                    className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-stone-900"
+                                    className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-foreground"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                 >
-                                    Vamos te <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>conhecer</em>.
+                                    Vamos te <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>conhecer</em>.
                                 </h1>
-                                <p className="text-[14px] text-stone-600 mt-4 max-w-[340px] mx-auto leading-relaxed">
+                                <p className="text-[14px] text-muted-foreground mt-4 max-w-[340px] mx-auto leading-relaxed">
                                     Só uns dados rápidos para conseguirmos entregar direitinho na sua casa.
                                 </p>
                             </div>
@@ -547,7 +547,7 @@ export default function LoginPage() {
                                         value={phone}
                                         disabled
                                         readOnly
-                                        className={cn(inputClass, "bg-stone-50 text-stone-500 font-medium")}
+                                        className={cn(inputClass, "bg-muted text-muted-foreground font-medium")}
                                     />
                                 </Field>
 
@@ -578,15 +578,15 @@ export default function LoginPage() {
                                             disabled={loading}
                                             className={cn(
                                                 inputClass, "pr-9",
-                                                cepStatus === "error" && "border-red-300 focus:border-red-500 focus:ring-red-500/10",
-                                                cepStatus === "ok"    && "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10",
+                                                cepStatus === "error" && "border-destructive/40 focus:border-destructive/60 focus:ring-destructive/10",
+                                                cepStatus === "ok"    && "border-success/60 focus:border-success focus:ring-success/10",
                                             )}
                                         />
                                         {cepStatus === "loading" && (
-                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 animate-spin" />
                                         )}
                                         {cepStatus === "ok" && (
-                                            <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
+                                            <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-success" strokeWidth={3} />
                                         )}
                                     </div>
                                 </Field>
@@ -596,14 +596,14 @@ export default function LoginPage() {
                                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 pt-1">
                                         <div className="grid grid-cols-3 gap-3">
                                             <div className="col-span-3">
-                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Endereço</label>
-                                                <p className="text-[14px] text-stone-700 leading-snug mt-0.5">
-                                                    {addrFields.street}, <span className="text-stone-500">{addrFields.neighborhood}</span>
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Endereço</label>
+                                                <p className="text-[14px] text-foreground leading-snug mt-0.5">
+                                                    {addrFields.street}, <span className="text-muted-foreground">{addrFields.neighborhood}</span>
                                                 </p>
-                                                <p className="text-[12px] text-stone-500">{addrFields.city}/{addrFields.state}</p>
+                                                <p className="text-[12px] text-muted-foreground">{addrFields.city}/{addrFields.state}</p>
                                             </div>
                                             <div className="col-span-3">
-                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400">Número</label>
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Número</label>
                                                 <input
                                                     type="text"
                                                     placeholder="123"
@@ -620,23 +620,23 @@ export default function LoginPage() {
                                             <div className={cn(
                                                 "flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl border",
                                                 deliveryInfo.fee === 0
-                                                    ? "bg-emerald-50/80 border-emerald-200/60"
-                                                    : "bg-amber-50/80 border-amber-200/60"
+                                                    ? "bg-success-surface/80 border-success/30"
+                                                    : "bg-warning-surface/80 border-warning/30"
                                             )}>
                                                 <div className={cn(
                                                     "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
-                                                    deliveryInfo.fee === 0 ? "bg-emerald-500" : "bg-amber-500"
+                                                    deliveryInfo.fee === 0 ? "bg-success" : "bg-warning"
                                                 )} />
                                                 <div className="text-[12px] leading-relaxed">
                                                     {deliveryInfo.fee === 0 ? (
                                                         <>
-                                                            <span className="font-semibold text-emerald-800">Entrega grátis</span>
-                                                            <span className="text-emerald-700"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
+                                                            <span className="font-semibold text-success">Entrega grátis</span>
+                                                            <span className="text-success"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <span className="font-semibold text-amber-800">Frete: {formatCurrency(deliveryInfo.fee)}</span>
-                                                            <span className="text-amber-700"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
+                                                            <span className="font-semibold text-warning">Frete: {formatCurrency(deliveryInfo.fee)}</span>
+                                                            <span className="text-warning"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
                                                         </>
                                                     )}
                                                 </div>
@@ -646,7 +646,7 @@ export default function LoginPage() {
                                 )}
 
                                 {error && (
-                                    <p className="flex items-start gap-1.5 text-xs text-red-600">
+                                    <p className="flex items-start gap-1.5 text-xs text-destructive">
                                         <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                                         <span>{error}</span>
                                     </p>
@@ -656,7 +656,7 @@ export default function LoginPage() {
                                     <button
                                         type="submit"
                                         disabled={loading || !name.trim() || needsStore}
-                                        className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                                        className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                     >
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                                             <>Cadastrar e entrar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
@@ -665,7 +665,7 @@ export default function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={resetNewClientStep}
-                                        className="w-full h-10 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center justify-center gap-1.5 transition-colors"
+                                        className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
                                     >
                                         <ArrowLeft className="w-3.5 h-3.5" /> Voltar
                                     </button>

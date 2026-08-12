@@ -17,14 +17,14 @@ import { isAdminRole } from "@/lib/tenant-status";
 type Mode = "signin" | "forgot_email" | "forgot_code" | "forgot_newpass";
 
 const inputClass =
-    "w-full h-11 pl-10 pr-3.5 rounded-xl border border-stone-200 bg-white text-[14.5px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50";
+    "w-full h-11 pl-10 pr-3.5 rounded-xl border border-input bg-background text-[14.5px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20 disabled:bg-muted";
 
 const eyebrowClass =
-    "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
+    "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
 
 function ErrorMsg({ text }: { text: string }) {
     return (
-        <div className="flex items-start gap-2 text-[12.5px] text-red-700 bg-red-50/80 border border-red-200/60 px-3.5 py-2.5 rounded-xl">
+        <div className="flex items-start gap-2 text-[12.5px] text-destructive bg-destructive-surface/80 border border-destructive/30 px-3.5 py-2.5 rounded-xl">
             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>{text}</span>
         </div>
@@ -33,8 +33,8 @@ function ErrorMsg({ text }: { text: string }) {
 
 function InfoMsg({ text }: { text: string }) {
     return (
-        <div className="flex items-start gap-2 text-[12.5px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-3.5 py-2.5 rounded-xl">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+        <div className="flex items-start gap-2 text-[12.5px] text-success bg-success-surface/80 border border-success/30 px-3.5 py-2.5 rounded-xl">
+            <div className="w-1.5 h-1.5 rounded-full bg-success mt-1.5 shrink-0" />
             <span>{text}</span>
         </div>
     );
@@ -203,25 +203,25 @@ export default function AcessoPage() {
             case "signin":
                 return {
                     eyebrow: "Acesso restrito",
-                    title: <>Bem-vindo de <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>volta.</em></>,
+                    title: <>Bem-vindo de <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>volta.</em></>,
                     sub: "Entre na sua conta administrativa.",
                 };
             case "forgot_email":
                 return {
                     eyebrow: "Recuperação",
-                    title: <>Esqueceu a <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>senha?</em></>,
+                    title: <>Esqueceu a <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>senha?</em></>,
                     sub: "Vamos gerar um código de recuperação.",
                 };
             case "forgot_code":
                 return {
                     eyebrow: "Verificação",
-                    title: <>Insira o <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>código.</em></>,
+                    title: <>Insira o <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>código.</em></>,
                     sub: "Cheque seu email pelo código enviado.",
                 };
             case "forgot_newpass":
                 return {
                     eyebrow: "Última etapa",
-                    title: <>Defina sua <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>nova senha.</em></>,
+                    title: <>Defina sua <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>nova senha.</em></>,
                     sub: "Escolha uma combinação forte e única.",
                 };
         }
@@ -245,8 +245,8 @@ export default function AcessoPage() {
                 <div className="flex items-center">
                     <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[280px] h-auto object-contain" />
                 </div>
-                <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-stone-500 font-semibold">
-                    <ShieldCheck className="w-3 h-3 text-orange-700" />
+                <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-semibold">
+                    <ShieldCheck className="w-3 h-3 text-primary" />
                     Acesso Restrito
                 </span>
             </header>
@@ -259,12 +259,12 @@ export default function AcessoPage() {
                         <div className="text-center mb-8">
                             <p className={cn(eyebrowClass, "mb-3")}>{meta.eyebrow}</p>
                             <h1
-                                className="text-[40px] sm:text-[48px] leading-[0.96] tracking-tight text-stone-900"
+                                className="text-[40px] sm:text-[48px] leading-[0.96] tracking-tight text-foreground"
                                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                             >
                                 {meta.title}
                             </h1>
-                            <p className="text-[14px] text-stone-600 mt-4 max-w-[340px] mx-auto leading-relaxed">
+                            <p className="text-[14px] text-muted-foreground mt-4 max-w-[340px] mx-auto leading-relaxed">
                                 {meta.sub}
                             </p>
                         </div>
@@ -290,14 +290,14 @@ export default function AcessoPage() {
                                     <button
                                         type="button"
                                         onClick={() => { setResetEmail(""); switchMode("forgot_email"); }}
-                                        className="w-full text-center text-[12.5px] text-stone-500 hover:text-stone-900 transition-colors pt-1"
+                                        className="w-full text-center text-[12.5px] text-muted-foreground hover:text-foreground transition-colors pt-1"
                                     >
                                         Esqueci minha senha
                                     </button>
                                 </form>
-                                <p className="text-center text-[12px] text-stone-500 mt-6">
+                                <p className="text-center text-[12px] text-muted-foreground mt-6">
                                     Ainda não tem loja no PedidoAI?{" "}
-                                    <Link href="/contratar" className="text-stone-900 underline underline-offset-2">
+                                    <Link href="/contratar" className="text-foreground underline underline-offset-2">
                                         Contratar
                                     </Link>
                                 </p>
@@ -321,11 +321,11 @@ export default function AcessoPage() {
                         {/* FORGOT — code */}
                         {mode === "forgot_code" && (
                             <form onSubmit={handleVerifyCode} className="space-y-4">
-                                <div className="bg-stone-50/80 border border-stone-200/60 rounded-xl px-4 py-3">
-                                    <p className="text-[12.5px] text-stone-700 leading-relaxed">
+                                <div className="bg-muted/80 border border-border/60 rounded-xl px-4 py-3">
+                                    <p className="text-[12.5px] text-foreground/80 leading-relaxed">
                                         Se o email estiver cadastrado, você receberá um código.
                                     </p>
-                                    <p className="text-[11.5px] text-stone-500 mt-1">
+                                    <p className="text-[11.5px] text-muted-foreground mt-1">
                                         Verifique caixa de entrada e spam.
                                     </p>
                                 </div>
@@ -379,7 +379,7 @@ export default function AcessoPage() {
             </main>
 
             <footer className="relative z-10 pb-6 text-center">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">
                     URL não divulgada · acesso interno
                 </p>
             </footer>
@@ -398,7 +398,7 @@ function Field({
 }) {
     return (
         <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500">
+            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground">
                 <Icon className="w-3 h-3" />
                 {label}
             </label>
@@ -418,7 +418,7 @@ function FieldEmail({
     return (
         <Field icon={Mail} label="Email">
             <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
                 <input
                     type="email" placeholder="admin@loja.com"
                     value={value} onChange={(e) => onChange(e.target.value)}
@@ -447,7 +447,7 @@ function FieldPassword({
     return (
         <Field icon={Lock} label={label}>
             <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
                 <input
                     type={show ? "text" : "password"}
                     placeholder={placeholder}
@@ -457,7 +457,7 @@ function FieldPassword({
                 />
                 <button
                     type="button" onClick={toggleShow}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors"
                 >
                     {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -477,7 +477,7 @@ function PrimaryButton({
         <button
             type="submit"
             disabled={loading || disabled}
-            className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+            className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
         >
             {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -496,7 +496,7 @@ function BackButton({ onClick, label }: { onClick: () => void; label: string }) 
         <button
             type="button"
             onClick={onClick}
-            className="w-full h-10 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
         >
             <ArrowLeft className="w-3.5 h-3.5" />
             {label}

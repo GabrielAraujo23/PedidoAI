@@ -20,17 +20,17 @@ const COPY: Record<Exclude<TenantStatus, "ativa">, {
     pendente: {
         icon: Clock, kicker: "Em análise", titulo: "Recebemos sua contratação.",
         corpo: "Estamos conferindo os dados da sua loja. Assim que for liberada, é só entrar por aqui — sua loja já estará no ar.",
-        tom: "text-amber-700 bg-amber-50 ring-amber-100",
+        tom: "text-warning bg-warning-surface ring-warning/10",
     },
     recusada: {
         icon: XCircle, kicker: "Não aprovada", titulo: "Não pudemos liberar sua loja.",
         corpo: "A contratação não foi aprovada. Se quiser tentar de novo, será preciso fazer uma nova contratação.",
-        tom: "text-red-700 bg-red-50 ring-red-100",
+        tom: "text-destructive bg-destructive-surface ring-destructive/10",
     },
     suspensa: {
         icon: PauseCircle, kicker: "Suspensa", titulo: "Sua loja está suspensa.",
         corpo: "O acesso ao painel e o endereço público estão fora do ar. Seus dados estão preservados.",
-        tom: "text-stone-700 bg-stone-100 ring-stone-200",
+        tom: "text-foreground bg-muted ring-border",
     },
 };
 
@@ -79,44 +79,44 @@ export default function ContratarStatusPage() {
             <main className="relative z-10 flex items-center justify-center px-6 py-12">
                 <div className="w-full max-w-[480px] text-center">
                     {loading ? (
-                        <Loader2 className="w-6 h-6 animate-spin text-stone-400 mx-auto" />
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground/70 mx-auto" />
                     ) : (
                         <>
                             <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full ring-8 mb-6 ${copy.tom}`}>
                                 <Icon className="w-7 h-7" />
                             </div>
-                            <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">{copy.kicker}</p>
-                            <h1 className="text-[36px] sm:text-[42px] leading-[1.05] tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{copy.kicker}</p>
+                            <h1 className="text-[36px] sm:text-[42px] leading-[1.05] tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
                                 {copy.titulo}
                             </h1>
-                            <p className="text-[14px] text-stone-600 mt-4 leading-relaxed">{copy.corpo}</p>
+                            <p className="text-[14px] text-muted-foreground mt-4 leading-relaxed">{copy.corpo}</p>
 
                             {data?.reason && (
-                                <div className="mt-6 text-left px-4 py-3.5 rounded-xl border border-stone-200 bg-white/70">
-                                    <p className="text-[11px] uppercase tracking-[0.18em] text-stone-500 mb-1">Motivo</p>
-                                    <p className="text-[14px] text-stone-800 leading-relaxed">{data.reason}</p>
+                                <div className="mt-6 text-left px-4 py-3.5 rounded-xl border border-border bg-card/70">
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-1">Motivo</p>
+                                    <p className="text-[14px] text-foreground leading-relaxed">{data.reason}</p>
                                 </div>
                             )}
 
                             {(data?.storeName || data?.slug) && (
-                                <div className="mt-4 text-left px-4 py-3.5 rounded-xl border border-stone-200 bg-white/70 space-y-2">
+                                <div className="mt-4 text-left px-4 py-3.5 rounded-xl border border-border bg-card/70 space-y-2">
                                     {data.storeName && (
                                         <div>
-                                            <p className="text-[11px] uppercase tracking-[0.18em] text-stone-500">Loja</p>
-                                            <p className="text-[14px] text-stone-800">{data.storeName}</p>
+                                            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Loja</p>
+                                            <p className="text-[14px] text-foreground">{data.storeName}</p>
                                         </div>
                                     )}
                                     {data.slug && (
                                         <div>
-                                            <p className="text-[11px] uppercase tracking-[0.18em] text-stone-500">Endereço reservado</p>
-                                            <p className="text-[14px] text-stone-800 break-all">/loja/{data.slug}</p>
+                                            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Endereço reservado</p>
+                                            <p className="text-[14px] text-foreground break-all">/loja/{data.slug}</p>
                                         </div>
                                     )}
                                 </div>
                             )}
 
                             <button onClick={sair}
-                                    className="mt-8 h-11 px-5 rounded-xl border border-stone-300 text-[13px] text-stone-600 hover:text-stone-900 hover:border-stone-400 inline-flex items-center justify-center gap-1.5 transition-colors">
+                                    className="mt-8 h-11 px-5 rounded-xl border border-border text-[13px] text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 inline-flex items-center justify-center gap-1.5 transition-colors">
                                 <LogOut className="w-3.5 h-3.5" /> Sair
                             </button>
                         </>

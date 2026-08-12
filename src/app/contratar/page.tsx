@@ -15,17 +15,17 @@ type Step = "conta" | "loja" | "endereco" | "contrato";
 const STEPS: Step[] = ["conta", "loja", "endereco", "contrato"];
 
 const inputClass =
-    "w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[15px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 disabled:bg-stone-50 disabled:text-stone-500";
+    "w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20 disabled:bg-muted disabled:text-muted-foreground";
 
 function Field({ icon: Icon, label, optional, children }: {
     icon?: React.ElementType; label: string; optional?: boolean; children: React.ReactNode;
 }) {
     return (
         <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500">
+            <label className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground">
                 {Icon && <Icon className="w-3 h-3" />}
                 {label}
-                {optional && <span className="text-stone-400 text-[10px] normal-case tracking-normal font-normal">(opcional)</span>}
+                {optional && <span className="text-muted-foreground/70 text-[10px] normal-case tracking-normal font-normal">(opcional)</span>}
             </label>
             {children}
         </div>
@@ -127,7 +127,7 @@ export default function ContratarPage() {
 
             <header className="relative z-10 px-6 sm:px-10 pt-8 flex items-center justify-between">
                 <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[170px] sm:w-[240px] h-auto object-contain" />
-                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-stone-500">Contratação</span>
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Contratação</span>
             </header>
 
             <main className="relative z-10 flex items-center justify-center px-6 py-10 sm:py-14">
@@ -136,13 +136,13 @@ export default function ContratarPage() {
                         {STEPS.map((s, i) => (
                             <div key={s} className={cn(
                                 "h-1 rounded-full transition-all duration-500",
-                                i === indice ? "w-6 bg-stone-900" : i < indice ? "w-3 bg-stone-400" : "w-1.5 bg-stone-300",
+                                i === indice ? "w-6 bg-foreground" : i < indice ? "w-3 bg-muted-foreground/60" : "w-1.5 bg-muted-foreground/30",
                             )} />
                         ))}
                     </div>
 
                     {error && (
-                        <p className="flex items-start gap-1.5 text-xs text-red-600 mb-5">
+                        <p className="flex items-start gap-1.5 text-xs text-destructive mb-5">
                             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                             <span>{error}</span>
                         </p>
@@ -151,9 +151,9 @@ export default function ContratarPage() {
                     {step === "conta" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Passo 1 de 4</p>
-                                <h1 className="text-[38px] sm:text-[44px] leading-[1.0] tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
-                                    Sua <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>conta</em>.
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Passo 1 de 4</p>
+                                <h1 className="text-[38px] sm:text-[44px] leading-[1.0] tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                                    Sua <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>conta</em>.
                                 </h1>
                             </div>
                             <div className="space-y-5">
@@ -175,12 +175,12 @@ export default function ContratarPage() {
                                     onClick={() => avancar("loja",
                                         !!email.trim() && password.length >= LIMITS.password_min && password === confirm,
                                         password && password !== confirm ? "As senhas não conferem." : "Preencha e-mail e senha (mínimo 8 caracteres).")}
-                                    className="group w-full h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all hover:bg-stone-800 active:scale-[0.99] shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                                    className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.99] shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
                                     Continuar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                 </button>
-                                <p className="text-center text-[12px] text-stone-500">
-                                    Já tem conta? <Link href="/acesso" className="text-stone-900 underline underline-offset-2">Entrar</Link>
+                                <p className="text-center text-[12px] text-muted-foreground">
+                                    Já tem conta? <Link href="/acesso" className="text-foreground underline underline-offset-2">Entrar</Link>
                                 </p>
                             </div>
                         </section>
@@ -189,9 +189,9 @@ export default function ContratarPage() {
                     {step === "loja" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Passo 2 de 4</p>
-                                <h1 className="text-[38px] sm:text-[44px] leading-[1.0] tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
-                                    Sua <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>loja</em>.
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Passo 2 de 4</p>
+                                <h1 className="text-[38px] sm:text-[44px] leading-[1.0] tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                                    Sua <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>loja</em>.
                                 </h1>
                             </div>
                             <div className="space-y-5">
@@ -213,14 +213,14 @@ export default function ContratarPage() {
                                 </Field>
                                 <div className="flex gap-3">
                                     <button onClick={() => { setError(""); setStep("conta"); }}
-                                            className="h-12 px-4 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center gap-1.5">
+                                            className="h-12 px-4 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
                                         <ArrowLeft className="w-3.5 h-3.5" /> Voltar
                                     </button>
                                     <button
                                         onClick={() => avancar("endereco",
                                             !!storeName.trim() && !!phone.trim() && !!address.trim(),
                                             "Preencha nome, telefone e endereço da loja.")}
-                                        className="group flex-1 h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-stone-800 active:scale-[0.99]"
+                                        className="group flex-1 h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.99]"
                                     >
                                         Continuar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                     </button>
@@ -232,11 +232,11 @@ export default function ContratarPage() {
                     {step === "endereco" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Passo 3 de 4</p>
-                                <h1 className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
-                                    Seu <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>link</em>.
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Passo 3 de 4</p>
+                                <h1 className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                                    Seu <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>link</em>.
                                 </h1>
-                                <p className="text-[14px] text-stone-600 mt-4 leading-relaxed">
+                                <p className="text-[14px] text-muted-foreground mt-4 leading-relaxed">
                                     É o endereço que você manda pros clientes no WhatsApp.
                                 </p>
                             </div>
@@ -245,19 +245,19 @@ export default function ContratarPage() {
                                     <input value={slug} onChange={(e) => setSlug(e.target.value)}
                                            placeholder={slugify(storeName) || "deposito-central"} autoFocus maxLength={40} className={inputClass} />
                                 </Field>
-                                <div className="px-3.5 py-3 rounded-xl bg-stone-100/70 border border-stone-200">
-                                    <p className="text-[11px] uppercase tracking-[0.18em] text-stone-500 mb-1">Ficará assim</p>
-                                    <p className="text-[14px] text-stone-900 break-all">/loja/{slugFinal || "—"}</p>
+                                <div className="px-3.5 py-3 rounded-xl bg-muted/70 border border-border">
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-1">Ficará assim</p>
+                                    <p className="text-[14px] text-foreground break-all">/loja/{slugFinal || "—"}</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => { setError(""); setStep("loja"); }}
-                                            className="h-12 px-4 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center gap-1.5">
+                                            className="h-12 px-4 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
                                         <ArrowLeft className="w-3.5 h-3.5" /> Voltar
                                     </button>
                                     <button
                                         onClick={() => avancar("contrato", slugFinal.length >= 3,
                                             "Escolha um endereço com pelo menos 3 caracteres.")}
-                                        className="group flex-1 h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-stone-800 active:scale-[0.99]"
+                                        className="group flex-1 h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.99]"
                                     >
                                         Continuar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                     </button>
@@ -269,32 +269,32 @@ export default function ContratarPage() {
                     {step === "contrato" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-3">Passo 4 de 4</p>
-                                <h1 className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
-                                    O <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>contrato</em>.
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Passo 4 de 4</p>
+                                <h1 className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                                    O <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>contrato</em>.
                                 </h1>
                             </div>
                             <form onSubmit={enviar} className="space-y-5">
-                                <div className="max-h-[280px] overflow-y-auto px-4 py-3.5 rounded-xl border border-stone-200 bg-white/70">
-                                    <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-stone-700 font-sans">{TERMS_TEXT}</pre>
-                                    <p className="mt-3 text-[11px] text-stone-400">Versão {TERMS_VERSION}</p>
+                                <div className="max-h-[280px] overflow-y-auto px-4 py-3.5 rounded-xl border border-border bg-card/70">
+                                    <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-foreground font-sans">{TERMS_TEXT}</pre>
+                                    <p className="mt-3 text-[11px] text-muted-foreground/70">Versão {TERMS_VERSION}</p>
                                 </div>
 
                                 <label className="flex items-start gap-2.5 cursor-pointer">
                                     <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)}
-                                           className="mt-0.5 w-4 h-4 rounded border-stone-300 accent-stone-900" />
-                                    <span className="text-[13px] text-stone-700 leading-relaxed">
+                                           className="mt-0.5 w-4 h-4 rounded border-border accent-foreground" />
+                                    <span className="text-[13px] text-foreground leading-relaxed">
                                         Li e aceito o contrato. Entendo que a liberação da loja depende de análise.
                                     </span>
                                 </label>
 
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => { setError(""); setStep("endereco"); }}
-                                            className="h-12 px-4 text-[13px] text-stone-500 hover:text-stone-900 inline-flex items-center gap-1.5">
+                                            className="h-12 px-4 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
                                         <ArrowLeft className="w-3.5 h-3.5" /> Voltar
                                     </button>
                                     <button type="submit" disabled={loading || !accepted}
-                                            className="group flex-1 h-12 rounded-xl bg-stone-900 text-white text-[14px] font-semibold flex items-center justify-center gap-2 hover:bg-stone-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed">
+                                            className="group flex-1 h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed">
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<>Enviar contratação <Check className="w-4 h-4" /></>)}
                                     </button>
                                 </div>
@@ -305,7 +305,7 @@ export default function ContratarPage() {
             </main>
 
             <footer className="relative z-10 px-6 pb-6 text-center">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400">PedidoAI · feito com ♡ no Brasil</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">PedidoAI · feito com ♡ no Brasil</p>
             </footer>
         </div>
     );
