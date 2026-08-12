@@ -29,16 +29,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [tema, setTema] = useState<Theme>("sistema");
     const [aplicado, setAplicado] = useState<ThemeAplicado>("claro");
 
+    // Lê a preferência do aparelho depois da montagem. `localStorage` e
+    // `matchMedia` não existem no servidor, então isto não pode acontecer
+    // durante o render — o estado inicial "sistema" é só o que o HTML do
+    // servidor consegue afirmar, e o script inline do <head> já pintou a tela
+    // certa antes daqui.
+    //
+    // DÍVIDA CONHECIDA: isto dispara `react-hooks/set-state-in-effect`, e o
+    // aviso tem razão — são dois renders na montagem. A correção de verdade é
+    // `useSyncExternalStore`, que existe exatamente para ler store externo
+    // (localStorage + matchMedia) sem cascata. Ficou de fora por ser reescrita
+    // do provider inteiro no fim de um sprint grande.
+    //
+    // O que NÃO fazer: embrulhar em `queueMicrotask` só para o lint calar. Isso
+    // esconde o mesmo comportamento atrás de um timing diferente e faz o
+    // próximo leitor achar que estava resolvido.
     useEffect(() => {
-        // setState roda dentro de um microtask, não direto no corpo do
-        // efeito: mesmo timing (antes da pintura), mas fora do padrão que o
-        // lint de efeitos sinaliza como possível cascata de renders.
-        queueMicrotask(() => {
-            const salvo = window.localStorage.getItem(THEME_KEY);
-            const inicial: Theme = isTheme(salvo) ? salvo : "sistema";
-            setTema(inicial);
-            setAplicado(resolveTheme(inicial, sistemaEscuro()));
-        });
+        const salvo = window.localStorage.getItem(THEME_KEY);
+        const inicial: Theme = isTheme(salvo) ? salvo : "sistema";
+        setTema(inicial);
+        setAplicado(resolveTheme(inicial, sistemaEscuro()));
     }, []);
 
     useEffect(() => {
