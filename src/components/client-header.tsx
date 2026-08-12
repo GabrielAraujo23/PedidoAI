@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 import { BrandMark } from "@/components/brand-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
     { label: "Catálogo", href: "/cliente/catalogo" },
@@ -146,6 +147,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                             </span>
                         </Link>
                     )}
+                    <ThemeToggle />
                     <button
                         onClick={handleLogout}
                         className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-lg transition-colors"

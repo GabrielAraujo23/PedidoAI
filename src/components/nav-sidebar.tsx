@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { BrandMark } from "@/components/brand-mark";
 import { PoweredBy } from "@/components/powered-by";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const menuItems = [
     { icon: LayoutDashboard,  label: "Dashboard",        href: "/" },
@@ -182,6 +183,7 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
                             </span>
                         </div>
                     </div>
+                    <ThemeToggle />
                 </div>
 
                 <button

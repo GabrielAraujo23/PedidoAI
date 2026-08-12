@@ -4,6 +4,7 @@ import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth-provider";
 import { BrandProvider } from "@/components/brand-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { CartProvider } from "@/context/CartContext";
 
 const geistSans = Geist({
@@ -45,19 +46,33 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          // Roda ANTES da primeira pintura. Sem isto, quem escolheu
+          // escuro vê um flash branco a cada carregamento: o React só
+          // monta depois que o HTML chega, e aí já é tarde. Não há
+          // outra forma — qualquer coisa presa ao ciclo de vida do
+          // React chega atrasada.
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('pedidoai_tema');var e=t==='escuro'||((!t||t==='sistema')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(e)document.documentElement.classList.add('dark')}catch(_){}})()`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${manrope.variable} antialiased`}
       >
-        <TooltipProvider>
-          <CartProvider>
-            <BrandProvider>
-              <AuthProvider>
-                {children}
-              </AuthProvider>
-            </BrandProvider>
-          </CartProvider>
-        </TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <CartProvider>
+              <BrandProvider>
+                <AuthProvider>
+                  {children}
+                </AuthProvider>
+              </BrandProvider>
+            </CartProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
