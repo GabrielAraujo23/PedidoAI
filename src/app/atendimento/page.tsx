@@ -9,10 +9,10 @@ import { sanitizeExternalText, LIMITS } from "@/lib/validators";
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const displayStyle   = { fontFamily: "var(--font-display)", fontWeight: 400 };
-const eyebrowClass   = "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
-const labelClass     = "block text-[11px] uppercase tracking-[0.18em] font-semibold text-stone-500 mb-1.5";
-const inputClass     = "w-full h-11 px-3.5 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5";
-const cardClass      = "bg-white rounded-2xl border border-stone-200/70 shadow-sm";
+const eyebrowClass   = "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
+const labelClass     = "block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5";
+const inputClass     = "w-full h-11 px-3.5 rounded-xl border border-input bg-card text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20";
+const cardClass      = "bg-card rounded-2xl border border-border/70 shadow-sm";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Step = 1 | 2 | 3;
@@ -82,21 +82,21 @@ function StepIndicator({ current }: { current: Step }) {
                         <div className="flex flex-col items-center gap-1.5">
                             <div className={cn(
                                 "w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold transition-all duration-300",
-                                done   && "bg-stone-900 text-white shadow-[0_2px_8px_rgba(28,25,23,0.22)]",
-                                active && "bg-orange-500 text-white shadow-[0_2px_12px_rgba(249,115,22,0.35)] ring-4 ring-orange-500/20",
-                                !done && !active && "bg-white border-2 border-stone-200 text-stone-400"
+                                done   && "bg-foreground text-background shadow-[0_2px_8px_rgba(28,25,23,0.22)]",
+                                active && "bg-primary text-primary-foreground shadow-[0_2px_12px_rgba(249,115,22,0.35)] ring-4 ring-primary/20",
+                                !done && !active && "bg-card border-2 border-border text-muted-foreground/70"
                             )}>
                                 {done ? <Check className="w-4 h-4" strokeWidth={3} /> : n}
                             </div>
                             <span className={cn(
                                 "text-[11px] font-semibold whitespace-nowrap transition-colors",
-                                active ? "text-stone-900" : done ? "text-stone-500" : "text-stone-400"
+                                active ? "text-foreground" : done ? "text-muted-foreground" : "text-muted-foreground/70"
                             )}>{label}</span>
                         </div>
                         {i < steps.length - 1 && (
                             <div className={cn(
                                 "h-[2px] w-20 sm:w-28 mx-3 mt-[17px] rounded-full transition-all duration-500",
-                                current > n ? "bg-stone-900" : "bg-stone-200"
+                                current > n ? "bg-foreground" : "bg-border"
                             )} />
                         )}
                     </div>
@@ -154,12 +154,12 @@ export default function AtendimentoPage() {
             <header className="space-y-1">
                 <p className={cn(eyebrowClass)}>Atendimento</p>
                 <h1
-                    className="text-[42px] leading-[0.96] tracking-tight text-stone-900"
+                    className="text-[42px] leading-[0.96] tracking-tight text-foreground"
                     style={displayStyle}
                 >
                     Pedido por Ligação
                 </h1>
-                <p className="text-[13px] text-stone-500 pt-1">{stepSubtitles[step]}</p>
+                <p className="text-[13px] text-muted-foreground pt-1">{stepSubtitles[step]}</p>
             </header>
 
             <StepIndicator current={step} />
@@ -339,7 +339,7 @@ function Step1Client({ selected, onSelect, onNext }: {
             <div className={cn(cardClass, "p-6 space-y-4")}>
                 <p className={eyebrowClass}>Buscar cliente existente</p>
                 <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                     <input
                         type="text"
                         value={query}
@@ -348,7 +348,7 @@ function Step1Client({ selected, onSelect, onNext }: {
                         className={cn(inputClass, "pl-10")}
                     />
                     {searching && (
-                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                        <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 animate-spin" />
                     )}
                 </div>
 
@@ -363,28 +363,28 @@ function Step1Client({ selected, onSelect, onNext }: {
                                     className={cn(
                                         "w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200",
                                         isSelected
-                                            ? "border-orange-400 bg-orange-50 shadow-[0_0_0_3px_rgba(249,115,22,0.12)]"
-                                            : "border-stone-200 hover:border-stone-300 bg-white hover:shadow-sm"
+                                            ? "border-primary/40 bg-primary/10 shadow-[0_0_0_3px_rgba(249,115,22,0.12)]"
+                                            : "border-border hover:border-muted-foreground bg-card hover:shadow-sm"
                                     )}
                                 >
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="min-w-0 flex items-center gap-3">
                                             <div className={cn(
                                                 "w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[13px] font-bold",
-                                                isSelected ? "bg-orange-500 text-white" : "bg-stone-100 text-stone-500"
+                                                isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                                             )}>
                                                 {c.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[13px] font-semibold text-stone-900">{c.name}</p>
-                                                <p className="text-[12px] text-stone-400 truncate">
+                                                <p className="text-[13px] font-semibold text-foreground">{c.name}</p>
+                                                <p className="text-[12px] text-muted-foreground/70 truncate">
                                                     {c.phone}{c.address ? ` · ${c.address}` : ""}
                                                 </p>
                                             </div>
                                         </div>
                                         {isSelected && (
-                                            <div className="shrink-0 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
-                                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                            <div className="shrink-0 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                                                <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
                                             </div>
                                         )}
                                     </div>
@@ -395,7 +395,7 @@ function Step1Client({ selected, onSelect, onNext }: {
                 )}
 
                 {query.trim().length >= 2 && !searching && results.length === 0 && (
-                    <div className="flex items-center gap-2 py-2 text-stone-400">
+                    <div className="flex items-center gap-2 py-2 text-muted-foreground/70">
                         <User className="w-4 h-4 shrink-0" />
                         <p className="text-[13px]">Nenhum cliente encontrado para &ldquo;{query}&rdquo;.</p>
                     </div>
@@ -410,18 +410,18 @@ function Step1Client({ selected, onSelect, onNext }: {
             )}>
                 <button
                     onClick={() => setShowForm((v) => !v)}
-                    className="w-full px-6 py-4 text-left flex items-center justify-between gap-2 hover:bg-stone-50/80 transition-colors"
+                    className="w-full px-6 py-4 text-left flex items-center justify-between gap-2 hover:bg-muted/80 transition-colors"
                 >
-                    <span className="text-[13px] font-semibold text-stone-700">
+                    <span className="text-[13px] font-semibold text-foreground">
                         {showForm ? "Cancelar cadastro" : "+ Cadastrar novo cliente"}
                     </span>
                     {showForm && (
-                        <span className="text-stone-400 text-[11px] font-medium">ESC para fechar</span>
+                        <span className="text-muted-foreground/70 text-[11px] font-medium">ESC para fechar</span>
                     )}
                 </button>
 
                 {showForm && (
-                    <div className="px-6 pb-6 space-y-4 border-t border-stone-100 pt-5">
+                    <div className="px-6 pb-6 space-y-4 border-t border-border pt-5">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label className={labelClass}>
@@ -453,7 +453,7 @@ function Step1Client({ selected, onSelect, onNext }: {
                         {/* CEP */}
                         <div>
                             <label className={labelClass}>
-                                <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> CEP <span className="normal-case tracking-normal font-normal text-stone-400">(opcional)</span></span>
+                                <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> CEP <span className="normal-case tracking-normal font-normal text-muted-foreground/70">(opcional)</span></span>
                             </label>
                             <div className="relative">
                                 <input
@@ -465,35 +465,35 @@ function Step1Client({ selected, onSelect, onNext }: {
                                     onChange={(e) => handleCepChange(e.target.value)}
                                     className={cn(
                                         inputClass, "pr-10",
-                                        cepStatus === "error" && "border-red-300 focus:border-red-400 focus:ring-red-400/10",
-                                        cepStatus === "ok"    && "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10",
+                                        cepStatus === "error" && "border-destructive/40 focus:border-destructive/60 focus:ring-destructive/10",
+                                        cepStatus === "ok"    && "border-success/60 focus:border-success focus:ring-success/10",
                                     )}
                                 />
                                 {cepStatus === "loading" && (
-                                    <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 animate-spin" />
+                                    <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 animate-spin" />
                                 )}
                                 {cepStatus === "ok" && (
-                                    <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" strokeWidth={3} />
+                                    <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-success" strokeWidth={3} />
                                 )}
                             </div>
                             {cepStatus === "error" && (
-                                <p className="text-[12px] text-red-600 mt-1">{cepError}</p>
+                                <p className="text-[12px] text-destructive mt-1">{cepError}</p>
                             )}
                         </div>
 
                         {/* Address preview — appears when CEP resolves */}
                         {cepStatus === "ok" && addrFields.street && (
-                            <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-stone-50/80 rounded-xl p-4 border border-stone-100">
+                            <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-muted/80 rounded-xl p-4 border border-border">
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 mb-0.5">Endereço</p>
-                                    <p className="text-[13px] text-stone-800 leading-snug">
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">Endereço</p>
+                                    <p className="text-[13px] text-foreground leading-snug">
                                         {addrFields.street}
-                                        {addrFields.neighborhood ? <span className="text-stone-500">, {addrFields.neighborhood}</span> : null}
+                                        {addrFields.neighborhood ? <span className="text-muted-foreground">, {addrFields.neighborhood}</span> : null}
                                     </p>
-                                    <p className="text-[12px] text-stone-500">{addrFields.city}/{addrFields.state}</p>
+                                    <p className="text-[12px] text-muted-foreground">{addrFields.city}/{addrFields.state}</p>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 block mb-1">Número</label>
+                                    <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 block mb-1">Número</label>
                                     <input
                                         type="text"
                                         placeholder="123"
@@ -507,14 +507,14 @@ function Step1Client({ selected, onSelect, onNext }: {
                         )}
 
                         {createError && (
-                            <p className="text-[12px] text-red-600">{createError}</p>
+                            <p className="text-[12px] text-destructive">{createError}</p>
                         )}
 
                         <div className="flex justify-end pt-1">
                             <button
                                 onClick={createClient}
                                 disabled={creating}
-                                className="h-10 px-6 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
+                                className="h-10 px-6 bg-foreground text-background rounded-xl text-[13px] font-semibold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
                             >
                                 {creating ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" /> Cadastrando...</>
@@ -532,20 +532,20 @@ function Step1Client({ selected, onSelect, onNext }: {
                 <div className="min-w-0">
                     {selected ? (
                         <div className="flex items-center gap-2 text-[13px]">
-                            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                            <div className="w-5 h-5 rounded-full bg-success flex items-center justify-center shrink-0">
                                 <Check className="w-3 h-3 text-white" strokeWidth={3} />
                             </div>
-                            <span className="font-semibold text-stone-900 truncate">{selected.name}</span>
-                            <span className="text-stone-400 shrink-0">selecionado</span>
+                            <span className="font-semibold text-foreground truncate">{selected.name}</span>
+                            <span className="text-muted-foreground/70 shrink-0">selecionado</span>
                         </div>
                     ) : (
-                        <p className="text-[13px] text-stone-400">Nenhum cliente selecionado</p>
+                        <p className="text-[13px] text-muted-foreground/70">Nenhum cliente selecionado</p>
                     )}
                 </div>
                 <button
                     onClick={onNext}
                     disabled={!selected}
-                    className="h-10 px-6 bg-orange-500 text-white rounded-xl text-[13px] font-semibold hover:bg-orange-400 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_2px_10px_rgba(249,115,22,0.3)] disabled:shadow-none shrink-0"
+                    className="h-10 px-6 bg-primary text-primary-foreground rounded-xl text-[13px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_2px_10px_rgba(249,115,22,0.3)] disabled:shadow-none shrink-0"
                 >
                     Avançar →
                 </button>
@@ -593,8 +593,8 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
 
     if (loadError) return (
         <div className={cn(cardClass, "p-8 text-center space-y-3")}>
-            <p className="text-red-500 text-[13px]">{loadError}</p>
-            <button onClick={() => window.location.reload()} className="h-9 px-4 bg-stone-900 text-white rounded-xl text-[13px] font-semibold">
+            <p className="text-destructive text-[13px]">{loadError}</p>
+            <button onClick={() => window.location.reload()} className="h-9 px-4 bg-foreground text-background rounded-xl text-[13px] font-semibold">
                 Tentar novamente
             </button>
         </div>
@@ -607,21 +607,21 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
                 <div className="flex items-center gap-2.5 min-w-0">
                     {cartCount > 0 ? (
                         <>
-                            <span className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+                            <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[11px] font-bold shrink-0">
                                 {cartCount}
                             </span>
-                            <span className="text-[13px] text-stone-700 font-medium truncate">
+                            <span className="text-[13px] text-foreground font-medium truncate">
                                 R$ {cartTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </span>
                         </>
                     ) : (
-                        <span className="text-[13px] text-stone-400">Nenhum item selecionado</span>
+                        <span className="text-[13px] text-muted-foreground/70">Nenhum item selecionado</span>
                     )}
                 </div>
                 <button
                     onClick={onNext}
                     disabled={cartCount === 0}
-                    className="h-9 px-5 bg-orange-500 text-white rounded-xl text-[13px] font-semibold hover:bg-orange-400 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_2px_8px_rgba(249,115,22,0.25)] disabled:shadow-none shrink-0"
+                    className="h-9 px-5 bg-primary text-primary-foreground rounded-xl text-[13px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_2px_8px_rgba(249,115,22,0.25)] disabled:shadow-none shrink-0"
                 >
                     Avançar →
                 </button>
@@ -637,8 +637,8 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
                             className={cn(
                                 "shrink-0 h-7 px-3 rounded-full text-[12px] font-semibold transition-all duration-200",
                                 category === cat
-                                    ? "bg-stone-900 text-white shadow-sm"
-                                    : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                                    ? "bg-foreground text-background shadow-sm"
+                                    : "bg-muted text-muted-foreground hover:bg-border"
                             )}
                         >
                             {cat}
@@ -648,7 +648,7 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
 
                 {/* Search */}
                 <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                     <input
                         type="text"
                         value={search}
@@ -662,11 +662,11 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
                 {loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="h-[100px] bg-stone-100 rounded-xl animate-pulse" />
+                            <div key={i} className="h-[100px] bg-muted rounded-xl animate-pulse" />
                         ))}
                     </div>
                 ) : filtered.length === 0 ? (
-                    <p className="text-[13px] text-stone-400 text-center py-8">Nenhum produto encontrado.</p>
+                    <p className="text-[13px] text-muted-foreground/70 text-center py-8">Nenhum produto encontrado.</p>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
                         {filtered.map((p) => {
@@ -677,44 +677,44 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
                                     className={cn(
                                         "rounded-xl border p-3.5 transition-all duration-200",
                                         qty > 0
-                                            ? "border-orange-300 bg-orange-50/70 shadow-sm"
-                                            : "border-stone-200 bg-white hover:border-stone-300"
+                                            ? "border-primary/30 bg-primary/10 shadow-sm"
+                                            : "border-border bg-card hover:border-muted-foreground"
                                     )}
                                 >
                                     {qty > 0 && (
                                         <div className="flex justify-end mb-1">
-                                            <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
+                                            <span className="text-[10px] font-bold text-primary bg-primary/15 px-1.5 py-0.5 rounded-full">
                                                 ×{qty}
                                             </span>
                                         </div>
                                     )}
                                     <p className={cn(
                                         "text-[12px] font-semibold leading-tight",
-                                        qty > 0 ? "text-stone-900" : "text-stone-800",
+                                        qty > 0 ? "text-foreground" : "text-foreground",
                                         qty === 0 && "mb-1"
                                     )}>
                                         {p.name}
                                     </p>
-                                    <p className="text-[11px] text-stone-400 mb-3">
+                                    <p className="text-[11px] text-muted-foreground/70 mb-3">
                                         R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} / {p.unit}
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => onUpdateCart(p, -1)}
                                             disabled={qty === 0}
-                                            className="w-7 h-7 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-25 disabled:cursor-not-allowed text-stone-700 font-bold text-[15px] flex items-center justify-center transition-colors"
+                                            className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-25 disabled:cursor-not-allowed text-foreground font-bold text-[15px] flex items-center justify-center transition-colors"
                                         >
                                             −
                                         </button>
                                         <span className={cn(
                                             "flex-1 text-center text-[13px] font-bold tabular-nums",
-                                            qty > 0 ? "text-orange-500" : "text-stone-300"
+                                            qty > 0 ? "text-primary" : "text-muted-foreground/50"
                                         )}>
                                             {qty || "·"}
                                         </span>
                                         <button
                                             onClick={() => onUpdateCart(p, 1)}
-                                            className="w-7 h-7 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 font-bold text-[15px] flex items-center justify-center transition-colors"
+                                            className="w-7 h-7 rounded-lg border border-border bg-card hover:bg-muted text-foreground font-bold text-[15px] flex items-center justify-center transition-colors"
                                         >
                                             +
                                         </button>
@@ -726,7 +726,7 @@ function Step2Products({ adminId, cart, onUpdateCart, cartTotal, onBack, onNext 
                 )}
             </div>
 
-            <button onClick={onBack} className="text-[13px] text-stone-400 hover:text-stone-700 transition-colors">
+            <button onClick={onBack} className="text-[13px] text-muted-foreground/70 hover:text-foreground transition-colors">
                 ← Voltar
             </button>
         </div>
@@ -786,13 +786,13 @@ function Step3Confirm({ client, cart, cartTotal, notes, onNotesChange, onBack, o
         <div className="space-y-3">
             {/* Client */}
             <div className={cn(cardClass, "p-5 flex items-center gap-4")}>
-                <div className="w-11 h-11 rounded-full bg-stone-900 flex items-center justify-center text-white text-[15px] font-bold shrink-0" style={displayStyle}>
+                <div className="w-11 h-11 rounded-full bg-foreground flex items-center justify-center text-background text-[15px] font-bold shrink-0" style={displayStyle}>
                     {client.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
                     <p className={cn(eyebrowClass, "mb-0.5")}>Cliente</p>
-                    <p className="text-[15px] font-semibold text-stone-900 leading-tight">{client.name}</p>
-                    <p className="text-[12px] text-stone-400 truncate mt-0.5">
+                    <p className="text-[15px] font-semibold text-foreground leading-tight">{client.name}</p>
+                    <p className="text-[12px] text-muted-foreground/70 truncate mt-0.5">
                         {client.phone}{client.address ? ` · ${client.address}` : ""}
                     </p>
                 </div>
@@ -801,24 +801,24 @@ function Step3Confirm({ client, cart, cartTotal, notes, onNotesChange, onBack, o
             {/* Items */}
             <div className={cn(cardClass, "p-5")}>
                 <p className={cn(eyebrowClass, "mb-4")}>Itens do pedido</p>
-                <div className="divide-y divide-stone-100">
+                <div className="divide-y divide-border">
                     {cart.map((item) => (
                         <div key={item.product_id} className="py-3 flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                                <p className="text-[13px] font-medium text-stone-900">{item.product_name}</p>
-                                <p className="text-[12px] text-stone-400 mt-0.5">
+                                <p className="text-[13px] font-medium text-foreground">{item.product_name}</p>
+                                <p className="text-[12px] text-muted-foreground/70 mt-0.5">
                                     {item.quantity} {item.unit} × R$ {item.unit_price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                 </p>
                             </div>
-                            <span className="text-[13px] font-semibold text-stone-900 tabular-nums shrink-0">
+                            <span className="text-[13px] font-semibold text-foreground tabular-nums shrink-0">
                                 R$ {(item.unit_price * item.quantity).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                     ))}
                 </div>
-                <div className="border-t border-stone-200 mt-1 pt-4 flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-stone-900">Total</span>
-                    <span className="text-[22px] font-bold text-stone-900 tabular-nums" style={displayStyle}>
+                <div className="border-t border-border mt-1 pt-4 flex items-center justify-between">
+                    <span className="text-[14px] font-bold text-foreground">Total</span>
+                    <span className="text-[22px] font-bold text-foreground tabular-nums" style={displayStyle}>
                         R$ {cartTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </span>
                 </div>
@@ -827,33 +827,33 @@ function Step3Confirm({ client, cart, cartTotal, notes, onNotesChange, onBack, o
             {/* Notes */}
             <div className={cn(cardClass, "p-5")}>
                 <label className={cn(labelClass)}>
-                    Observações <span className="normal-case tracking-normal font-normal text-stone-400">(opcional)</span>
+                    Observações <span className="normal-case tracking-normal font-normal text-muted-foreground/70">(opcional)</span>
                 </label>
                 <textarea
                     value={notes}
                     onChange={(e) => onNotesChange(e.target.value)}
                     placeholder="Entregar no fundo, portão azul..."
                     rows={3}
-                    className="w-full px-3.5 py-3 rounded-xl border border-stone-200 bg-white text-[14px] text-stone-900 placeholder:text-stone-400 outline-none transition-all duration-200 focus:border-stone-900 focus:ring-4 focus:ring-stone-900/5 resize-none"
+                    className="w-full px-3.5 py-3 rounded-xl border border-input bg-card text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20 resize-none"
                 />
             </div>
 
             {submitError && (
-                <p className="text-[12px] text-red-600 text-center py-1">{submitError}</p>
+                <p className="text-[12px] text-destructive text-center py-1">{submitError}</p>
             )}
 
             <div className="flex items-center justify-between gap-4 pt-1">
                 <button
                     onClick={onBack}
                     disabled={submitting}
-                    className="text-[13px] text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
+                    className="text-[13px] text-muted-foreground/70 hover:text-foreground transition-colors disabled:opacity-50"
                 >
                     ← Editar produtos
                 </button>
                 <button
                     onClick={confirm}
                     disabled={submitting}
-                    className="h-11 px-8 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(28,25,23,0.22)]"
+                    className="h-11 px-8 bg-foreground text-background rounded-xl text-[13px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2.5 shadow-[0_4px_14px_rgba(28,25,23,0.22)]"
                 >
                     {submitting ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Criando pedido...</>

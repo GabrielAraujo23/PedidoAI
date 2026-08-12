@@ -32,20 +32,24 @@ const STATUS_LABELS: Record<Status, string> = {
     cancelado: "Cancelado",
 };
 
+// Mesma paleta de 5 status do kanban (kanban-item.tsx / kanban-board.tsx):
+// novo/confirmado/rota usam os tokens categóricos --chart-2/4/5, entregue e
+// cancelado usam os tokens semânticos success/destructive. As duas telas
+// mostram os mesmos pedidos e não podem discordar de cor.
 const STATUS_COLORS: Record<Status, string> = {
-    novo:       "bg-blue-50   text-blue-600   border-blue-100",
-    confirmado: "bg-amber-50  text-amber-600  border-amber-100",
-    rota:       "bg-violet-50 text-violet-600 border-violet-100",
-    entregue:   "bg-emerald-50 text-emerald-600 border-emerald-100",
-    cancelado:  "bg-red-50 text-red-600 border-red-100",
+    novo:       "bg-chart-2/10   text-chart-2   border-chart-2/20",
+    confirmado: "bg-chart-4/10   text-chart-4   border-chart-4/20",
+    rota:       "bg-chart-5/10   text-chart-5   border-chart-5/20",
+    entregue:   "bg-success-surface text-success border-success/30",
+    cancelado:  "bg-destructive-surface text-destructive border-destructive/30",
 };
 
 const STATUS_DOT: Record<Status, string> = {
-    novo:       "bg-blue-500",
-    confirmado: "bg-amber-400",
-    rota:       "bg-violet-500",
-    entregue:   "bg-emerald-500",
-    cancelado:  "bg-red-500",
+    novo:       "bg-chart-2",
+    confirmado: "bg-chart-4",
+    rota:       "bg-chart-5",
+    entregue:   "bg-success",
+    cancelado:  "bg-destructive",
 };
 
 const STAT_CARDS: {
@@ -61,17 +65,17 @@ const STAT_CARDS: {
         status: "total",
         label: "Total de Pedidos",
         icon: ShoppingCart,
-        gradient: "from-slate-700 to-slate-900",
-        ring: "ring-slate-200",
-        text: "text-white",
-        iconBg: "bg-white/15",
+        gradient: "from-foreground to-foreground/85",
+        ring: "ring-border",
+        text: "text-background",
+        iconBg: "bg-background/15",
     },
     {
         status: "novo",
         label: "Novos",
         icon: TrendingUp,
-        gradient: "from-blue-500 to-blue-700",
-        ring: "ring-blue-100",
+        gradient: "from-chart-2 to-chart-2/70",
+        ring: "ring-chart-2/20",
         text: "text-white",
         iconBg: "bg-white/15",
     },
@@ -79,8 +83,8 @@ const STAT_CARDS: {
         status: "confirmado",
         label: "Confirmados",
         icon: CheckCircle2,
-        gradient: "from-amber-400 to-orange-500",
-        ring: "ring-amber-100",
+        gradient: "from-chart-4 to-chart-4/70",
+        ring: "ring-chart-4/20",
         text: "text-white",
         iconBg: "bg-white/15",
     },
@@ -88,8 +92,8 @@ const STAT_CARDS: {
         status: "rota",
         label: "Em Rota",
         icon: Truck,
-        gradient: "from-violet-500 to-purple-700",
-        ring: "ring-violet-100",
+        gradient: "from-chart-5 to-chart-5/70",
+        ring: "ring-chart-5/20",
         text: "text-white",
         iconBg: "bg-white/15",
     },
@@ -97,21 +101,23 @@ const STAT_CARDS: {
         status: "entregue",
         label: "Entregues",
         icon: PackageCheck,
-        gradient: "from-emerald-500 to-green-700",
-        ring: "ring-emerald-100",
+        gradient: "from-success to-success/70",
+        ring: "ring-success/20",
         text: "text-white",
         iconBg: "bg-white/15",
     },
 ];
 
+// Paleta decorativa (sem significado de status) para o avatar de iniciais,
+// escolhida por hash do nome. A tabela do plano não cobre este caso; reaproveita
+// os 5 tokens categóricos --chart-1..5 (mesma família usada nos status) em vez
+// de inventar um token novo só para variedade visual.
 const AVATAR_COLORS = [
-    "bg-blue-100 text-blue-700",
-    "bg-amber-100 text-amber-700",
-    "bg-violet-100 text-violet-700",
-    "bg-emerald-100 text-emerald-700",
-    "bg-rose-100 text-rose-700",
-    "bg-teal-100 text-teal-700",
-    "bg-indigo-100 text-indigo-700",
+    "bg-chart-1/10 text-chart-1",
+    "bg-chart-2/10 text-chart-2",
+    "bg-chart-3/10 text-chart-3",
+    "bg-chart-4/10 text-chart-4",
+    "bg-chart-5/10 text-chart-5",
 ];
 
 const PAGE_SIZE = 8;
@@ -223,14 +229,14 @@ export default function PedidosPage() {
                     <p className="text-sm text-muted-foreground mt-1">Controle o fluxo de logística e vendas em tempo real.</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button variant="outline" className="gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 h-9 text-sm">
+                    <Button variant="outline" className="gap-2 border-border text-muted-foreground hover:bg-muted h-9 text-sm">
                         <Filter className="w-4 h-4" /> Filtros
                     </Button>
-                    <Button variant="outline" className="gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 h-9 text-sm">
+                    <Button variant="outline" className="gap-2 border-border text-muted-foreground hover:bg-muted h-9 text-sm">
                         <Download className="w-4 h-4" /> Exportar
                     </Button>
                     <Button
-                        className="bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20 gap-2 h-9 text-sm"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 gap-2 h-9 text-sm"
                         onClick={() => setDialogOpen(true)}
                     >
                         <Plus className="w-4 h-4" /> Novo Pedido
@@ -281,24 +287,24 @@ export default function PedidosPage() {
                         </Badge>
                     )}
                     {statusFilter === "todos" && (
-                        <p className="text-sm text-slate-500">
-                            <span className="font-semibold text-slate-700">{filteredOrders.length}</span> pedidos encontrados
+                        <p className="text-sm text-muted-foreground">
+                            <span className="font-semibold text-foreground">{filteredOrders.length}</span> pedidos encontrados
                         </p>
                     )}
                 </div>
 
                 <div className="flex items-center gap-2">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                         <Input
                             placeholder="Buscar pedido ou cliente..."
-                            className="pl-9 w-56 h-9 border-slate-200 bg-white text-sm"
+                            className="pl-9 w-56 h-9 border-border bg-card text-sm"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     {/* View toggle */}
-                    <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                    <div className="flex items-center border border-border rounded-lg overflow-hidden bg-card shadow-sm">
                         {(["hybrid", "kanban", "list"] as const).map((v, i) => (
                             <button
                                 key={v}
@@ -306,8 +312,8 @@ export default function PedidosPage() {
                                 title={v === "hybrid" ? "Híbrido" : v === "kanban" ? "Kanban" : "Lista"}
                                 className={cn(
                                     "px-3 py-2 transition-colors",
-                                    i > 0 && "border-l border-slate-200",
-                                    view === v ? "bg-primary text-white" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                                    i > 0 && "border-l border-border",
+                                    view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground/70 hover:text-muted-foreground hover:bg-muted"
                                 )}
                             >
                                 {v === "list" ? <ListIcon className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
@@ -327,21 +333,21 @@ export default function PedidosPage() {
 
                 {/* Detailed report */}
                 {(view === "hybrid" || view === "list") && (
-                    <Card className="border border-slate-200 shadow-sm bg-white overflow-hidden flex flex-col">
-                        <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between space-y-0 flex-shrink-0">
-                            <CardTitle className="text-base font-semibold text-slate-800">Relatório Detalhado</CardTitle>
-                            <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-medium cursor-pointer hover:bg-slate-200 transition-colors select-none">
+                    <Card className="border border-border shadow-sm bg-card overflow-hidden flex flex-col">
+                        <CardHeader className="pb-3 border-b border-border flex flex-row items-center justify-between space-y-0 flex-shrink-0">
+                            <CardTitle className="text-base font-semibold text-foreground">Relatório Detalhado</CardTitle>
+                            <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium cursor-pointer hover:bg-border transition-colors select-none">
                                 Todos os períodos ▾
                             </span>
                         </CardHeader>
                         <CardContent className="p-0 flex-1">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-slate-100">
-                                        <TableHead className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest pl-4">ID Pedido</TableHead>
-                                        <TableHead className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Cliente</TableHead>
-                                        <TableHead className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Data</TableHead>
-                                        <TableHead className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Status</TableHead>
+                                    <TableRow className="hover:bg-transparent border-border">
+                                        <TableHead className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest pl-4">ID Pedido</TableHead>
+                                        <TableHead className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">Cliente</TableHead>
+                                        <TableHead className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">Data</TableHead>
+                                        <TableHead className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">Status</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -351,28 +357,28 @@ export default function PedidosPage() {
                                         return (
                                             <TableRow
                                                 key={order.id}
-                                                className="hover:bg-slate-50/80 border-slate-100 transition-colors group"
+                                                className="hover:bg-muted/50 border-border transition-colors group"
                                             >
                                                 <TableCell className="pl-4">
-                                                    <span className="text-sm font-bold text-orange-500">{formatOrderId(order.id)}</span>
+                                                    <span className="text-sm font-bold text-primary">{formatOrderId(order.id)}</span>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2.5">
                                                         <div className={cn(
-                                                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ring-2 ring-white shadow-sm",
+                                                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ring-2 ring-card shadow-sm",
                                                             avatarColor
                                                         )}>
                                                             {getInitials(order.client)}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="text-sm font-semibold text-slate-800 truncate max-w-[130px]">{order.client}</p>
-                                                            <p className="text-xs text-slate-400 truncate max-w-[130px]">{order.products}</p>
+                                                            <p className="text-sm font-semibold text-foreground truncate max-w-[130px]">{order.client}</p>
+                                                            <p className="text-xs text-muted-foreground/70 truncate max-w-[130px]">{order.products}</p>
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <p className="text-xs font-medium text-slate-700">{date}</p>
-                                                    <p className="text-xs text-slate-400">{relative}</p>
+                                                    <p className="text-xs font-medium text-muted-foreground">{date}</p>
+                                                    <p className="text-xs text-muted-foreground/70">{relative}</p>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className={cn(
@@ -389,7 +395,7 @@ export default function PedidosPage() {
                                     {pagedOrders.length === 0 && (
                                         <TableRow>
                                             <TableCell colSpan={4} className="py-16 text-center">
-                                                <div className="flex flex-col items-center gap-2 text-slate-400">
+                                                <div className="flex flex-col items-center gap-2 text-muted-foreground/70">
                                                     <ShoppingCart className="w-8 h-8 opacity-30" />
                                                     <p className="text-sm">Nenhum pedido encontrado</p>
                                                 </div>
@@ -401,10 +407,10 @@ export default function PedidosPage() {
                         </CardContent>
 
                         {/* Pagination */}
-                        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 flex-shrink-0">
-                            <p className="text-xs text-slate-400">
-                                <span className="font-semibold text-slate-600">{pagedOrders.length}</span> de{" "}
-                                <span className="font-semibold text-slate-600">{filteredOrders.length}</span> resultados
+                        <div className="flex items-center justify-between px-4 py-3 border-t border-border flex-shrink-0">
+                            <p className="text-xs text-muted-foreground/70">
+                                <span className="font-semibold text-muted-foreground">{pagedOrders.length}</span> de{" "}
+                                <span className="font-semibold text-muted-foreground">{filteredOrders.length}</span> resultados
                             </p>
                             <div className="flex items-center gap-0.5">
                                 {[
@@ -423,7 +429,7 @@ export default function PedidosPage() {
                                             onClick={() => setPage(p)}
                                             className={cn(
                                                 "h-7 w-7 rounded text-xs font-semibold transition-all",
-                                                p === page ? "bg-primary text-white shadow-sm" : "text-slate-500 hover:bg-slate-100"
+                                                p === page ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"
                                             )}
                                         >
                                             {p}
@@ -482,7 +488,7 @@ export default function PedidosPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={creating}>Cancelar</Button>
                         <Button
-                            className="bg-primary hover:bg-primary/90 text-white"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                             onClick={handleCreateOrder}
                             disabled={creating || !newClient.trim() || !newProducts.trim()}
                         >

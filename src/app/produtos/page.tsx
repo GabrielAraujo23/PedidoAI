@@ -270,7 +270,7 @@ export default function ProdutosPage() {
             {toast && (
                 <div className={cn(
                     "fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium",
-                    toast.type === "success" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                    toast.type === "success" ? "bg-success text-white" : "bg-destructive text-white"
                 )}>
                     {toast.type === "success"
                         ? <Check className="w-4 h-4 shrink-0" />
@@ -290,7 +290,7 @@ export default function ProdutosPage() {
                         <p className="text-sm text-muted-foreground">Gerencie o catálogo de produtos da loja</p>
                     </div>
                 </div>
-                <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-white gap-2 self-start sm:self-auto">
+                <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 self-start sm:self-auto">
                     <Plus className="w-4 h-4" /> Adicionar Produto
                 </Button>
             </div>
@@ -303,17 +303,17 @@ export default function ProdutosPage() {
                     ))
                 ) : (
                     <>
-                        <div className="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white/30">
+                        <div className="bg-card/60 backdrop-blur rounded-2xl p-4 border border-border/30">
                             <p className="text-xs text-muted-foreground">Total</p>
                             <p className="text-2xl font-bold text-secondary mt-1">{products.length}</p>
                             <p className="text-xs text-muted-foreground">produtos</p>
                         </div>
-                        <div className="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white/30">
+                        <div className="bg-card/60 backdrop-blur rounded-2xl p-4 border border-border/30">
                             <p className="text-xs text-muted-foreground">Ativos</p>
-                            <p className="text-2xl font-bold text-emerald-600 mt-1">{totalActive}</p>
+                            <p className="text-2xl font-bold text-success mt-1">{totalActive}</p>
                             <p className="text-xs text-muted-foreground">disponíveis</p>
                         </div>
-                        <div className="bg-white/60 backdrop-blur rounded-2xl p-4 border border-white/30">
+                        <div className="bg-card/60 backdrop-blur rounded-2xl p-4 border border-border/30">
                             <p className="text-xs text-muted-foreground">Categorias</p>
                             <p className="text-2xl font-bold text-primary mt-1">{uniqueCategories}</p>
                             <p className="text-xs text-muted-foreground">em uso</p>
@@ -330,13 +330,13 @@ export default function ProdutosPage() {
                         placeholder="Buscar produtos..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 bg-white/60"
+                        className="pl-9 bg-card/60"
                     />
                 </div>
                 <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
-                    className="h-10 rounded-xl border border-input bg-white/60 px-3 text-sm text-secondary min-w-[180px]"
+                    className="h-10 rounded-xl border border-input bg-card/60 px-3 text-sm text-secondary min-w-[180px]"
                 >
                     <option value="Todos">Todas as categorias</option>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -347,7 +347,7 @@ export default function ProdutosPage() {
                         "flex items-center gap-2 px-4 h-10 rounded-xl border text-sm font-medium transition-colors",
                         showInactive
                             ? "bg-primary/10 border-primary/30 text-primary"
-                            : "bg-white/60 border-input text-muted-foreground"
+                            : "bg-card/60 border-input text-muted-foreground"
                     )}
                 >
                     {showInactive
@@ -358,7 +358,7 @@ export default function ProdutosPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white/60 backdrop-blur rounded-2xl border border-white/30 overflow-hidden">
+            <div className="bg-card/60 backdrop-blur rounded-2xl border border-border/30 overflow-hidden">
                 {loading ? (
                     <div className="p-4 space-y-3">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -378,7 +378,7 @@ export default function ProdutosPage() {
                 ) : (
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-white/30 bg-white/30">
+                            <tr className="border-b border-border/30 bg-muted/30">
                                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nome</th>
                                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Categoria</th>
                                 <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Unidade</th>
@@ -393,8 +393,8 @@ export default function ProdutosPage() {
                                 <tr
                                     key={p.id}
                                     className={cn(
-                                        "border-b border-white/20 transition-colors hover:bg-white/40",
-                                        idx % 2 === 0 ? "bg-white/10" : "bg-transparent"
+                                        "border-b border-border/20 transition-colors hover:bg-muted/40",
+                                        idx % 2 === 0 ? "bg-muted/10" : "bg-transparent"
                                     )}
                                 >
                                     <td className="px-4 py-3">
@@ -422,7 +422,7 @@ export default function ProdutosPage() {
                                             className="mx-auto"
                                         >
                                             {p.active
-                                                ? <ToggleRight className="w-6 h-6 text-emerald-500" />
+                                                ? <ToggleRight className="w-6 h-6 text-success" />
                                                 : <ToggleLeft className="w-6 h-6 text-muted-foreground/40" />}
                                         </button>
                                     </td>
@@ -538,7 +538,7 @@ export default function ProdutosPage() {
                                 onClick={() => setField("active", !form.active)}
                             >
                                 {form.active
-                                    ? <ToggleRight className="w-6 h-6 text-emerald-500" />
+                                    ? <ToggleRight className="w-6 h-6 text-success" />
                                     : <ToggleLeft className="w-6 h-6 text-muted-foreground" />}
                             </button>
                             <span className="text-sm text-secondary">
@@ -547,7 +547,7 @@ export default function ProdutosPage() {
                         </div>
 
                         {formError && (
-                            <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive-surface p-3 rounded-lg">
                                 <AlertCircle className="w-4 h-4 shrink-0" />
                                 {formError}
                             </div>
@@ -558,7 +558,7 @@ export default function ProdutosPage() {
                         <Button variant="ghost" onClick={() => setShowModal(false)} disabled={saving}>
                             Cancelar
                         </Button>
-                        <Button onClick={handleSave} disabled={saving} className="bg-primary text-white">
+                        <Button onClick={handleSave} disabled={saving} className="bg-primary text-primary-foreground">
                             {saving ? "Salvando..." : editingId ? "Salvar Alterações" : "Adicionar"}
                         </Button>
                     </DialogFooter>

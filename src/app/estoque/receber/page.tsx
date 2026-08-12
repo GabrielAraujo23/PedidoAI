@@ -28,7 +28,7 @@ const CATEGORIES = [
 ];
 
 const sectionTitleStyle = { fontFamily: "var(--font-display)", fontWeight: 400 };
-const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
+const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
 
 export default function ReceberPage() {
     const { adminSession } = useAuth();
@@ -203,26 +203,26 @@ export default function ReceberPage() {
     }
 
     const statusConfig: Record<ItemStatus, { label: string; dot: string }> = {
-        match:   { label: "Match exato", dot: "bg-emerald-500" },
-        partial: { label: "Match parcial — confirme", dot: "bg-amber-400" },
-        new:     { label: "Produto novo", dot: "bg-red-500" },
+        match:   { label: "Match exato", dot: "bg-success" },
+        partial: { label: "Match parcial — confirme", dot: "bg-warning" },
+        new:     { label: "Produto novo", dot: "bg-destructive" },
     };
 
     return (
         <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <header>
                 <p className={cn(eyebrowClass, "mb-3")}>Estoque</p>
-                <h1 className="text-[40px] leading-[0.96] tracking-tight text-stone-900" style={sectionTitleStyle}>
+                <h1 className="text-[40px] leading-[0.96] tracking-tight text-foreground" style={sectionTitleStyle}>
                     Receber Mercadoria
                 </h1>
             </header>
 
             {/* Tabs */}
-            <div className="flex gap-1 bg-stone-100 rounded-xl p-1 w-fit">
+            <div className="flex gap-1 bg-muted rounded-xl p-1 w-fit">
                 {(["nfe", "barcode"] as Tab[]).map((t) => (
                     <button key={t} onClick={() => setTab(t)} className={cn(
                         "px-4 py-2 rounded-lg text-[13px] font-semibold transition-all",
-                        tab === t ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
+                        tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                     )}>
                         {t === "nfe" ? "Importar NF-e" : "Código de Barras"}
                     </button>
@@ -233,61 +233,61 @@ export default function ReceberPage() {
             {tab === "nfe" && (
                 <div className="space-y-5">
                     {confirmed ? (
-                        <div className="bg-emerald-50 border border-emerald-200/60 rounded-2xl p-8 text-center">
-                            <Check className="w-10 h-10 text-emerald-600 mx-auto mb-3" />
-                            <p className="text-[18px] font-semibold text-emerald-900" style={sectionTitleStyle}>Recebimento confirmado!</p>
-                            <p className="text-[13px] text-emerald-700 mt-1">Estoque atualizado com sucesso.</p>
-                            <button onClick={() => setConfirmed(false)} className="mt-4 px-4 h-9 rounded-xl border border-emerald-300 text-[13px] font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors">
+                        <div className="bg-success-surface border border-success/30 rounded-2xl p-8 text-center">
+                            <Check className="w-10 h-10 text-success mx-auto mb-3" />
+                            <p className="text-[18px] font-semibold text-success" style={sectionTitleStyle}>Recebimento confirmado!</p>
+                            <p className="text-[13px] text-success mt-1">Estoque atualizado com sucesso.</p>
+                            <button onClick={() => setConfirmed(false)} className="mt-4 px-4 h-9 rounded-xl border border-success/40 text-[13px] font-semibold text-success hover:bg-success-surface/80 transition-colors">
                                 Novo recebimento
                             </button>
                         </div>
                     ) : (
                         <>
-                            <div className="bg-white rounded-2xl border border-stone-200/70 p-5 space-y-4">
+                            <div className="bg-card rounded-2xl border border-border/70 p-5 space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[12px] font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Chave de Acesso (44 dígitos)</label>
+                                        <label className="block text-[12px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Chave de Acesso (44 dígitos)</label>
                                         <input
                                             type="text" maxLength={44}
                                             value={chaveAcesso}
                                             onChange={(e) => setChaveAcesso(e.target.value.replace(/\D/g, "").slice(0, 44))}
                                             placeholder="Digite ou cole a chave"
-                                            className="w-full h-10 px-3 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900 font-mono"
+                                            className="w-full h-10 px-3 rounded-xl border border-input text-[13px] focus:outline-none focus:border-ring font-mono"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[12px] font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Fornecedor (opcional)</label>
+                                        <label className="block text-[12px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Fornecedor (opcional)</label>
                                         <input
                                             type="text"
                                             value={supplierName}
                                             onChange={(e) => setSupplierName(e.target.value)}
                                             placeholder="Nome do fornecedor"
-                                            className="w-full h-10 px-3 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900"
+                                            className="w-full h-10 px-3 rounded-xl border border-input text-[13px] focus:outline-none focus:border-ring"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-[12px] font-semibold text-stone-500 mb-1.5 uppercase tracking-wider">Upload do XML da NF-e</label>
+                                    <label className="block text-[12px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Upload do XML da NF-e</label>
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="w-full h-24 rounded-xl border-2 border-dashed border-stone-200 hover:border-stone-400 flex flex-col items-center justify-center gap-2 text-stone-400 hover:text-stone-600 transition-colors"
+                                        className="w-full h-24 rounded-xl border-2 border-dashed border-input hover:border-muted-foreground flex flex-col items-center justify-center gap-2 text-muted-foreground/70 hover:text-muted-foreground transition-colors"
                                     >
                                         <Upload className="w-5 h-5" />
                                         <span className="text-[13px] font-medium">Clique para selecionar o arquivo XML</span>
                                     </button>
                                     <input ref={fileInputRef} type="file" accept=".xml" onChange={handleXmlUpload} className="hidden" />
-                                    {xmlError && <p className="text-[12px] text-red-600 mt-2">{xmlError}</p>}
+                                    {xmlError && <p className="text-[12px] text-destructive mt-2">{xmlError}</p>}
                                 </div>
                             </div>
 
                             {reviewItems.length > 0 && (
-                                <div className="bg-white rounded-2xl border border-stone-200/70 overflow-hidden">
-                                    <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-                                        <p className="font-semibold text-stone-900">{reviewItems.length} produtos na nota</p>
-                                        <p className="text-[12px] text-stone-500">{reviewItems.filter((i) => i.confirmed).length} selecionados</p>
+                                <div className="bg-card rounded-2xl border border-border/70 overflow-hidden">
+                                    <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                                        <p className="font-semibold text-foreground">{reviewItems.length} produtos na nota</p>
+                                        <p className="text-[12px] text-muted-foreground">{reviewItems.filter((i) => i.confirmed).length} selecionados</p>
                                     </div>
-                                    <div className="divide-y divide-stone-100">
+                                    <div className="divide-y divide-border">
                                         {reviewItems.map((item, idx) => {
                                             const cfg = statusConfig[item.status];
                                             return (
@@ -296,27 +296,27 @@ export default function ReceberPage() {
                                                         type="checkbox"
                                                         checked={item.confirmed}
                                                         onChange={(e) => setReviewItems((prev) => prev.map((it, i) => i === idx ? { ...it, confirmed: e.target.checked } : it))}
-                                                        className="mt-0.5 accent-stone-900"
+                                                        className="mt-0.5 accent-primary"
                                                     />
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-[13px] font-semibold text-stone-900 truncate">{item.nfeProduct.xProd}</p>
+                                                        <p className="text-[13px] font-semibold text-foreground truncate">{item.nfeProduct.xProd}</p>
                                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                                            <span className="inline-flex items-center gap-1 text-[11px] text-stone-500">
+                                                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                                                 <span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />
                                                                 {cfg.label}
                                                             </span>
-                                                            <span className="text-[11px] text-stone-400">{item.nfeProduct.qCom} {item.nfeProduct.uCom} · R$ {item.nfeProduct.vUnCom.toFixed(2)}</span>
+                                                            <span className="text-[11px] text-muted-foreground/70">{item.nfeProduct.qCom} {item.nfeProduct.uCom} · R$ {item.nfeProduct.vUnCom.toFixed(2)}</span>
                                                         </div>
                                                         {item.status === "partial" && (
                                                             <div className="mt-2 flex items-center gap-2">
-                                                                <span className="text-[12px] text-stone-500">Vincular a:</span>
+                                                                <span className="text-[12px] text-muted-foreground">Vincular a:</span>
                                                                 <select
                                                                     value={item.matchedProductId ?? ""}
                                                                     onChange={(e) => {
                                                                         const prod = products.find((p) => p.id === e.target.value);
                                                                         setReviewItems((prev) => prev.map((it, i) => i === idx ? { ...it, matchedProductId: e.target.value || null, matchedProductName: prod?.name ?? null, confirmed: !!e.target.value } : it));
                                                                     }}
-                                                                    className="h-7 px-2 text-[12px] border border-stone-200 rounded-lg focus:outline-none focus:border-stone-900"
+                                                                    className="h-7 px-2 text-[12px] border border-input rounded-lg focus:outline-none focus:border-ring"
                                                                 >
                                                                     <option value="">— Criar novo —</option>
                                                                     {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -327,7 +327,7 @@ export default function ReceberPage() {
                                                             <select
                                                                 value={item.category}
                                                                 onChange={(e) => setReviewItems((prev) => prev.map((it, i) => i === idx ? { ...it, category: e.target.value } : it))}
-                                                                className="mt-1.5 h-7 px-2 text-[12px] border border-stone-200 rounded-lg focus:outline-none focus:border-stone-900"
+                                                                className="mt-1.5 h-7 px-2 text-[12px] border border-input rounded-lg focus:outline-none focus:border-ring"
                                                             >
                                                                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                                                             </select>
@@ -337,11 +337,11 @@ export default function ReceberPage() {
                                             );
                                         })}
                                     </div>
-                                    <div className="border-t border-stone-100 px-5 py-4">
+                                    <div className="border-t border-border px-5 py-4">
                                         <button
                                             onClick={handleConfirmReceipt}
                                             disabled={confirming || reviewItems.filter((i) => i.confirmed).length === 0}
-                                            className="w-full h-11 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                            className="w-full h-11 bg-foreground text-background rounded-xl text-[13px] font-semibold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                         >
                                             {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                             Confirmar Recebimento ({reviewItems.filter((i) => i.confirmed).length} itens)
@@ -368,18 +368,18 @@ export default function ReceberPage() {
                         />
                     )}
 
-                    <div className="bg-white rounded-2xl border border-stone-200/70 p-5 space-y-4">
+                    <div className="bg-card rounded-2xl border border-border/70 p-5 space-y-4">
                         <div className="flex gap-2">
                             <input
                                 type="text"
                                 value={scannedBarcode}
                                 onChange={(e) => { setScannedBarcode(e.target.value); if (e.target.value.length >= 8) lookupBarcode(e.target.value); }}
                                 placeholder="Código EAN / GTIN"
-                                className="flex-1 h-10 px-3 rounded-xl border border-stone-200 text-[13px] font-mono focus:outline-none focus:border-stone-900"
+                                className="flex-1 h-10 px-3 rounded-xl border border-input text-[13px] font-mono focus:outline-none focus:border-ring"
                             />
                             <button
                                 onClick={() => setScannerOpen(true)}
-                                className="h-10 px-4 bg-stone-900 text-white rounded-xl text-[13px] font-semibold flex items-center gap-2 hover:bg-stone-800 transition-colors"
+                                className="h-10 px-4 bg-foreground text-background rounded-xl text-[13px] font-semibold flex items-center gap-2 hover:opacity-90 transition-colors"
                             >
                                 <Camera className="w-4 h-4" />
                                 <span className="hidden sm:inline">Câmera</span>
@@ -387,7 +387,7 @@ export default function ReceberPage() {
                         </div>
 
                         {barcodeLoading && (
-                            <div className="flex items-center gap-2 text-[13px] text-stone-500">
+                            <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
                                 <Loader2 className="w-4 h-4 animate-spin" /> Buscando produto...
                             </div>
                         )}
@@ -395,31 +395,31 @@ export default function ReceberPage() {
                         {scannedBarcode && !barcodeLoading && (
                             <div className="space-y-3">
                                 <div>
-                                    <label className="block text-[12px] font-semibold text-stone-500 mb-1 uppercase tracking-wider">Nome do produto</label>
+                                    <label className="block text-[12px] font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Nome do produto</label>
                                     <input
                                         type="text"
                                         value={barcodeInfo?.name ?? ""}
                                         onChange={(e) => setBarcodeInfo((prev) => ({ name: e.target.value, unit: prev?.unit ?? "por unidade" }))}
                                         placeholder="Nome do produto"
-                                        className="w-full h-10 px-3 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900"
+                                        className="w-full h-10 px-3 rounded-xl border border-input text-[13px] focus:outline-none focus:border-ring"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-[12px] font-semibold text-stone-500 mb-1 uppercase tracking-wider">Quantidade recebida</label>
+                                        <label className="block text-[12px] font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Quantidade recebida</label>
                                         <input
                                             type="number" min={1}
                                             value={barcodeQty}
                                             onChange={(e) => setBarcodeQty(e.target.value)}
-                                            className="w-full h-10 px-3 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900"
+                                            className="w-full h-10 px-3 rounded-xl border border-input text-[13px] focus:outline-none focus:border-ring"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[12px] font-semibold text-stone-500 mb-1 uppercase tracking-wider">Categoria</label>
+                                        <label className="block text-[12px] font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Categoria</label>
                                         <select
                                             value={barcodeCategory}
                                             onChange={(e) => setBarcodeCategory(e.target.value)}
-                                            className="w-full h-10 px-3 rounded-xl border border-stone-200 text-[13px] focus:outline-none focus:border-stone-900"
+                                            className="w-full h-10 px-3 rounded-xl border border-input text-[13px] focus:outline-none focus:border-ring"
                                         >
                                             {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                                         </select>
@@ -428,7 +428,7 @@ export default function ReceberPage() {
                                 <button
                                     onClick={handleBarcodeSave}
                                     disabled={barcodeSaving || !barcodeInfo?.name || barcodeSaved}
-                                    className="w-full h-11 bg-stone-900 text-white rounded-xl text-[13px] font-semibold hover:bg-stone-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="w-full h-11 bg-foreground text-background rounded-xl text-[13px] font-semibold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {barcodeSaved ? <><Check className="w-4 h-4" /> Salvo!</> :
                                      barcodeSaving ? <Loader2 className="w-4 h-4 animate-spin" /> :

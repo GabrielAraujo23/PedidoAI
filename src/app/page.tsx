@@ -14,12 +14,14 @@ import { cn } from "@/lib/utils";
 import { Order, Status } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 
+// Mesma paleta de 5 status do kanban (kanban-item.tsx / kanban-board.tsx),
+// src/app/pedidos/page.tsx e src/app/clientes/page.tsx.
 const STATUS_CONFIG: Record<Status, { label: string; tone: string }> = {
-    novo:       { label: "Novo",       tone: "bg-amber-50 text-amber-700 border-amber-200/60" },
-    confirmado: { label: "Confirmado", tone: "bg-orange-50 text-orange-700 border-orange-200/60" },
-    rota:       { label: "Em rota",    tone: "bg-violet-50 text-violet-700 border-violet-200/60" },
-    entregue:   { label: "Entregue",   tone: "bg-emerald-50 text-emerald-700 border-emerald-200/60" },
-    cancelado:  { label: "Cancelado",  tone: "bg-red-50 text-red-700 border-red-200/60" },
+    novo:       { label: "Novo",       tone: "bg-chart-2/10 text-chart-2 border-chart-2/20" },
+    confirmado: { label: "Confirmado", tone: "bg-chart-4/10 text-chart-4 border-chart-4/20" },
+    rota:       { label: "Em rota",    tone: "bg-chart-5/10 text-chart-5 border-chart-5/20" },
+    entregue:   { label: "Entregue",   tone: "bg-success-surface text-success border-success/30" },
+    cancelado:  { label: "Cancelado",  tone: "bg-destructive-surface text-destructive border-destructive/30" },
 };
 
 
@@ -31,7 +33,7 @@ interface DashboardStats {
     recentOrders: Order[];
 }
 
-const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-stone-500";
+const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
 const sectionTitleStyle = { fontFamily: "var(--font-display)", fontWeight: 400 };
 
 export default function DashboardPage() {
@@ -107,28 +109,28 @@ export default function DashboardPage() {
             label: "Total de pedidos",
             value: stats.totalOrders,
             icon: Package,
-            gradient: "from-stone-700 to-stone-900",
+            gradient: "from-foreground to-foreground/85",
             iconBg: "bg-white/15",
         },
         {
             label: "Clientes ativos",
             value: stats.totalClients,
             icon: Users,
-            gradient: "from-amber-400 to-orange-500",
+            gradient: "from-primary to-primary/70",
             iconBg: "bg-white/15",
         },
         {
             label: "Em rota",
             value: stats.rotaCount,
             icon: Truck,
-            gradient: "from-violet-500 to-purple-700",
+            gradient: "from-chart-5 to-chart-5/70",
             iconBg: "bg-white/15",
         },
         {
             label: "Aguardando",
             value: stats.novoCount,
             icon: Clock,
-            gradient: "from-blue-500 to-blue-700",
+            gradient: "from-chart-2 to-chart-2/70",
             iconBg: "bg-white/15",
         },
     ];
@@ -141,25 +143,25 @@ export default function DashboardPage() {
                 <div>
                     <p className={cn(eyebrowClass, "mb-3")}>Bem-vindo, {adminName}</p>
                     <h1
-                        className="text-[40px] sm:text-[48px] leading-[0.96] tracking-tight text-stone-900"
+                        className="text-[40px] sm:text-[48px] leading-[0.96] tracking-tight text-foreground"
                         style={sectionTitleStyle}
                     >
                         Sua loja, em{" "}
-                        <em className="font-medium text-orange-700" style={{ fontStyle: "italic" }}>
+                        <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>
                             tempo real.
                         </em>
                     </h1>
-                    <p className="text-[14px] text-stone-600 mt-3 leading-relaxed max-w-[520px]">
+                    <p className="text-[14px] text-muted-foreground mt-3 leading-relaxed max-w-[520px]">
                         Acompanhe pedidos, clientes e operação de entrega num só lugar.
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    <button className="px-4 h-10 rounded-xl border border-stone-300/70 bg-white/70 text-[13px] font-semibold text-stone-700 hover:bg-white hover:border-stone-500 transition-all">
+                    <button className="px-4 h-10 rounded-xl border border-border/70 bg-card/70 text-[13px] font-semibold text-muted-foreground hover:bg-card hover:border-muted-foreground transition-all">
                         Exportar relatório
                     </button>
                     <Link
                         href="/loja"
-                        className="group inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-stone-900 text-white text-[13px] font-semibold tracking-wide hover:bg-stone-800 transition-all duration-200 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
+                        className="group inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-foreground text-background text-[13px] font-semibold tracking-wide hover:opacity-90 transition-all duration-200 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                     >
                         Configurar loja
                         <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -173,7 +175,7 @@ export default function DashboardPage() {
                     <div
                         key={label}
                         className={cn(
-                            "relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br ring-1 ring-stone-200/60 transition-all duration-200 hover:shadow-lg hover:scale-[1.01]",
+                            "relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br ring-1 ring-border/60 transition-all duration-200 hover:shadow-lg hover:scale-[1.01]",
                             gradient
                         )}
                     >
@@ -196,18 +198,18 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Chart */}
-                <section className="lg:col-span-2 bg-white rounded-2xl border border-stone-200/70 overflow-hidden">
-                    <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-stone-100">
+                <section className="lg:col-span-2 bg-card rounded-2xl border border-border/70 overflow-hidden">
+                    <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-border">
                         <div>
                             <p className={eyebrowClass}>Movimento</p>
                             <h2
-                                className="text-[22px] tracking-tight text-stone-900 mt-0.5"
+                                className="text-[22px] tracking-tight text-foreground mt-0.5"
                                 style={sectionTitleStyle}
                             >
                                 Visão semanal
                             </h2>
                         </div>
-                        <div className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 px-2.5 py-1 rounded-full">
+                        <div className="inline-flex items-center gap-1.5 text-[12px] text-success bg-success-surface/80 border border-success/30 px-2.5 py-1 rounded-full">
                             <TrendingUp className="w-3 h-3" />
                             <span className="font-semibold">{chartData.reduce((s, d) => s + d.pedidos, 0)} esta semana</span>
                         </div>
@@ -218,39 +220,39 @@ export default function DashboardPage() {
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                                 <defs>
                                     <linearGradient id="warmGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#C2410C" stopOpacity={0.28} />
-                                        <stop offset="95%" stopColor="#C2410C" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.28} />
+                                        <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                 <XAxis
                                     dataKey="name"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: "#78716C", fontSize: 11, fontWeight: 600 }}
+                                    tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: 600 }}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: "#A8A29E", fontSize: 10 }}
+                                    tick={{ fill: "var(--muted-foreground)", fillOpacity: 0.7, fontSize: 10 }}
                                 />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: "#1C1917",
+                                        backgroundColor: "var(--popover)",
                                         borderRadius: "12px",
-                                        border: "none",
-                                        color: "white",
+                                        border: "1px solid var(--border)",
+                                        color: "var(--popover-foreground)",
                                         fontSize: "12px",
                                         boxShadow: "0 10px 25px -3px rgba(0,0,0,0.2)",
                                     }}
-                                    labelStyle={{ color: "#A8A29E", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "4px" }}
-                                    itemStyle={{ color: "#FB923C", fontWeight: 600 }}
-                                    cursor={{ stroke: "#1C1917", strokeWidth: 1, strokeOpacity: 0.2, strokeDasharray: "3 3" }}
+                                    labelStyle={{ color: "var(--muted-foreground)", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "4px" }}
+                                    itemStyle={{ color: "var(--chart-1)", fontWeight: 600 }}
+                                    cursor={{ stroke: "var(--foreground)", strokeWidth: 1, strokeOpacity: 0.2, strokeDasharray: "3 3" }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="pedidos"
-                                    stroke="#C2410C"
+                                    stroke="var(--chart-1)"
                                     strokeWidth={2.5}
                                     fillOpacity={1}
                                     fill="url(#warmGradient)"
@@ -261,12 +263,12 @@ export default function DashboardPage() {
                 </section>
 
                 {/* Recent Orders */}
-                <section className="bg-white rounded-2xl border border-stone-200/70 overflow-hidden flex flex-col">
-                    <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-stone-100 flex-shrink-0">
+                <section className="bg-card rounded-2xl border border-border/70 overflow-hidden flex flex-col">
+                    <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-border flex-shrink-0">
                         <div>
                             <p className={eyebrowClass}>Histórico</p>
                             <h2
-                                className="text-[18px] tracking-tight text-stone-900 mt-0.5"
+                                className="text-[18px] tracking-tight text-foreground mt-0.5"
                                 style={sectionTitleStyle}
                             >
                                 Pedidos recentes
@@ -277,34 +279,34 @@ export default function DashboardPage() {
                     <div className="flex-1">
                         {stats.recentOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mb-3">
-                                    <ShoppingBag className="w-5 h-5 text-stone-400" />
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                    <ShoppingBag className="w-5 h-5 text-muted-foreground/70" />
                                 </div>
                                 <p
-                                    className="text-[16px] tracking-tight text-stone-800"
+                                    className="text-[16px] tracking-tight text-foreground"
                                     style={sectionTitleStyle}
                                 >
                                     Nenhum pedido ainda.
                                 </p>
-                                <p className="text-[12px] text-stone-500 mt-1.5 max-w-[220px] leading-relaxed">
+                                <p className="text-[12px] text-muted-foreground mt-1.5 max-w-[220px] leading-relaxed">
                                     Quando chegar o primeiro pedido, ele aparece aqui.
                                 </p>
                             </div>
                         ) : (
-                            <ul className="divide-y divide-stone-100">
+                            <ul className="divide-y divide-border">
                                 {stats.recentOrders.map((order) => {
                                     const cfg = STATUS_CONFIG[order.status];
                                     return (
                                         <li key={order.id}>
                                             <Link
                                                 href={`/pedidos`}
-                                                className="flex items-center gap-3 px-6 py-3.5 group hover:bg-stone-50/60 transition-colors"
+                                                className="flex items-center gap-3 px-6 py-3.5 group hover:bg-muted/60 transition-colors"
                                             >
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-stone-400 mb-0.5">
+                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">
                                                         #ORD-{order.id.padStart(4, "0")}
                                                     </p>
-                                                    <p className="text-[13px] font-semibold text-stone-900 truncate">
+                                                    <p className="text-[13px] font-semibold text-foreground truncate">
                                                         {order.client}
                                                     </p>
                                                 </div>
@@ -314,7 +316,7 @@ export default function DashboardPage() {
                                                 )}>
                                                     {cfg.label}
                                                 </span>
-                                                <ChevronRight className="w-3.5 h-3.5 text-stone-400 transition-all group-hover:text-stone-700 group-hover:translate-x-0.5" />
+                                                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70 transition-all group-hover:text-foreground group-hover:translate-x-0.5" />
                                             </Link>
                                         </li>
                                     );
@@ -325,7 +327,7 @@ export default function DashboardPage() {
 
                     <Link
                         href="/pedidos"
-                        className="border-t border-stone-100 px-6 py-3 text-center text-[12px] uppercase tracking-[0.2em] font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-50/40 transition-colors group"
+                        className="border-t border-border px-6 py-3 text-center text-[12px] uppercase tracking-[0.2em] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors group"
                     >
                         Ver todos
                         <ArrowUpRight className="w-3.5 h-3.5 inline ml-1 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

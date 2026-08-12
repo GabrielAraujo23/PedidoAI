@@ -24,10 +24,10 @@ const FILTROS: { valor: TenantStatus | "todos"; label: string }[] = [
 ];
 
 const BADGE: Record<TenantStatus, string> = {
-    pendente: "bg-amber-50 text-amber-700 border-amber-200",
-    ativa:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-    suspensa: "bg-stone-100 text-stone-600 border-stone-300",
-    recusada: "bg-red-50 text-red-700 border-red-200",
+    pendente: "bg-warning-surface text-warning border-warning/30",
+    ativa:    "bg-success-surface text-success border-success/30",
+    suspensa: "bg-muted text-muted-foreground border-border",
+    recusada: "bg-destructive-surface text-destructive border-destructive/30",
 };
 
 function formatData(iso: string | null) {
@@ -96,8 +96,8 @@ export default function ContratacoesPage() {
     return (
         <div className="p-6 sm:p-10 max-w-[1100px] mx-auto">
             <header className="mb-8">
-                <p className="text-[11px] uppercase tracking-[0.25em] text-stone-500 mb-2">PedidoAI · administração</p>
-                <h1 className="text-[32px] leading-tight tracking-tight text-stone-900" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-2">PedidoAI · administração</p>
+                <h1 className="text-[32px] leading-tight tracking-tight text-foreground" style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
                     Contratações
                 </h1>
             </header>
@@ -106,29 +106,29 @@ export default function ContratacoesPage() {
                 {FILTROS.map((f) => (
                     <button key={f.valor} onClick={() => setFiltro(f.valor)}
                             className={cn("h-9 px-4 rounded-full text-[13px] font-medium border transition-colors",
-                                filtro === f.valor ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-600 border-stone-200 hover:border-stone-400")}>
+                                filtro === f.valor ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border hover:border-muted-foreground")}>
                         {f.label}
                     </button>
                 ))}
-                <button onClick={carregar} className="h-9 px-3 rounded-full border border-stone-200 text-stone-500 hover:text-stone-900 hover:border-stone-400 inline-flex items-center gap-1.5 text-[13px]">
+                <button onClick={carregar} className="h-9 px-3 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground inline-flex items-center gap-1.5 text-[13px]">
                     <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /> Atualizar
                 </button>
             </div>
 
-            {erro && <p className="mb-5 text-[13px] text-red-600">{erro}</p>}
+            {erro && <p className="mb-5 text-[13px] text-destructive">{erro}</p>}
 
             {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-stone-400" />
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground/70" />
             ) : lista.length === 0 ? (
-                <p className="text-[14px] text-stone-500">Nenhuma contratação neste filtro.</p>
+                <p className="text-[14px] text-muted-foreground">Nenhuma contratação neste filtro.</p>
             ) : (
                 <div className="space-y-4">
                     {lista.map((c) => (
-                        <article key={c.adminId} className="rounded-2xl border border-stone-200 bg-white p-5">
+                        <article key={c.adminId} className="rounded-2xl border border-border bg-card p-5">
                             <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                                 <div>
-                                    <h2 className="text-[17px] font-semibold text-stone-900">{c.loja.storeName ?? "(sem nome)"}</h2>
-                                    <p className="text-[13px] text-stone-500">{c.email}</p>
+                                    <h2 className="text-[17px] font-semibold text-foreground">{c.loja.storeName ?? "(sem nome)"}</h2>
+                                    <p className="text-[13px] text-muted-foreground">{c.email}</p>
                                 </div>
                                 <span className={cn("h-7 px-3 rounded-full border text-[11px] uppercase tracking-[0.14em] inline-flex items-center", BADGE[c.status])}>
                                     {c.status}
@@ -136,40 +136,40 @@ export default function ContratacoesPage() {
                             </div>
 
                             <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-[13px] mb-4">
-                                <div><dt className="text-stone-500">Endereço público</dt><dd className="text-stone-800 break-all">/loja/{c.loja.slug ?? "—"}</dd></div>
-                                <div><dt className="text-stone-500">Telefone</dt><dd className="text-stone-800">{c.loja.phone ?? "—"}</dd></div>
-                                <div><dt className="text-stone-500">CNPJ</dt><dd className="text-stone-800">{c.loja.cnpj ?? "—"}</dd></div>
-                                <div><dt className="text-stone-500">Endereço</dt><dd className="text-stone-800">{c.loja.address ?? "—"}</dd></div>
-                                <div><dt className="text-stone-500">Pedido em</dt><dd className="text-stone-800">{formatData(c.createdAt)}</dd></div>
-                                <div><dt className="text-stone-500">Aceite</dt><dd className="text-stone-800">{formatData(c.terms.acceptedAt)} · v{c.terms.version ?? "—"} · {c.terms.ip ?? "—"}</dd></div>
+                                <div><dt className="text-muted-foreground">Endereço público</dt><dd className="text-foreground break-all">/loja/{c.loja.slug ?? "—"}</dd></div>
+                                <div><dt className="text-muted-foreground">Telefone</dt><dd className="text-foreground">{c.loja.phone ?? "—"}</dd></div>
+                                <div><dt className="text-muted-foreground">CNPJ</dt><dd className="text-foreground">{c.loja.cnpj ?? "—"}</dd></div>
+                                <div><dt className="text-muted-foreground">Endereço</dt><dd className="text-foreground">{c.loja.address ?? "—"}</dd></div>
+                                <div><dt className="text-muted-foreground">Pedido em</dt><dd className="text-foreground">{formatData(c.createdAt)}</dd></div>
+                                <div><dt className="text-muted-foreground">Aceite</dt><dd className="text-foreground">{formatData(c.terms.acceptedAt)} · v{c.terms.version ?? "—"} · {c.terms.ip ?? "—"}</dd></div>
                             </dl>
 
                             {c.reason && (
-                                <p className="text-[13px] text-stone-600 mb-4"><span className="text-stone-500">Motivo:</span> {c.reason}</p>
+                                <p className="text-[13px] text-muted-foreground mb-4"><span className="text-muted-foreground">Motivo:</span> {c.reason}</p>
                             )}
 
                             <div className="flex flex-wrap gap-2">
                                 {c.status === "pendente" && (
                                     <>
                                         <button onClick={() => mudar(c.adminId, "ativa", false)} disabled={agindo === c.adminId}
-                                                className="h-10 px-4 rounded-xl bg-stone-900 text-white text-[13px] font-semibold inline-flex items-center gap-1.5 hover:bg-stone-800 disabled:opacity-40">
+                                                className="h-10 px-4 rounded-xl bg-foreground text-background text-[13px] font-semibold inline-flex items-center gap-1.5 hover:opacity-90 disabled:opacity-40">
                                             {agindo === c.adminId ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Liberar
                                         </button>
                                         <button onClick={() => mudar(c.adminId, "recusada", true)} disabled={agindo === c.adminId}
-                                                className="h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-stone-400 disabled:opacity-40">
+                                                className="h-10 px-4 rounded-xl border border-border text-foreground text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-muted-foreground disabled:opacity-40">
                                             <X className="w-3.5 h-3.5" /> Recusar
                                         </button>
                                     </>
                                 )}
                                 {c.status === "ativa" && (
                                     <button onClick={() => mudar(c.adminId, "suspensa", true)} disabled={agindo === c.adminId}
-                                            className="h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-stone-400 disabled:opacity-40">
+                                            className="h-10 px-4 rounded-xl border border-border text-foreground text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-muted-foreground disabled:opacity-40">
                                         <PauseCircle className="w-3.5 h-3.5" /> Suspender
                                     </button>
                                 )}
                                 {c.status === "suspensa" && (
                                     <button onClick={() => mudar(c.adminId, "ativa", false)} disabled={agindo === c.adminId}
-                                            className="h-10 px-4 rounded-xl bg-stone-900 text-white text-[13px] font-semibold inline-flex items-center gap-1.5 hover:bg-stone-800 disabled:opacity-40">
+                                            className="h-10 px-4 rounded-xl bg-foreground text-background text-[13px] font-semibold inline-flex items-center gap-1.5 hover:opacity-90 disabled:opacity-40">
                                         <PlayCircle className="w-3.5 h-3.5" /> Reativar
                                     </button>
                                 )}
@@ -177,7 +177,7 @@ export default function ContratacoesPage() {
                                     onClick={() => alternarWhiteLabel(c.adminId, c.loja.whiteLabel)}
                                     disabled={agindo === c.adminId}
                                     title="Esconde ou mostra o crédito 'desenvolvido por PedidoAI' nas telas desta loja"
-                                    className="h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-stone-400 disabled:opacity-40"
+                                    className="h-10 px-4 rounded-xl border border-border text-foreground text-[13px] font-semibold inline-flex items-center gap-1.5 hover:border-muted-foreground disabled:opacity-40"
                                 >
                                     {c.loja.whiteLabel ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                                     {c.loja.whiteLabel ? "Marca oculta" : "Marca visível"}

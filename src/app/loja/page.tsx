@@ -517,7 +517,7 @@ export default function LojaPage() {
             {toast && (
                 <div className={cn(
                     "fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium max-w-sm",
-                    toast.type === "success" ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+                    toast.type === "success" ? "bg-success text-white" : "bg-destructive text-white"
                 )}>
                     {toast.type === "success"
                         ? <Check className="w-4 h-4 shrink-0" />
@@ -547,10 +547,10 @@ export default function LojaPage() {
                                         {/* Campo com o prefixo fixo do link */}
                                         <Label htmlFor="store-slug" className="sr-only">Endereço da loja</Label>
                                         <div className={cn(
-                                            "flex items-stretch rounded-lg border bg-white/80 overflow-hidden",
+                                            "flex items-stretch rounded-lg border bg-card/80 overflow-hidden",
                                             "focus-within:ring-2 focus-within:ring-primary/50",
-                                            slugFeedback.status === "error" ? "border-red-400"
-                                                : slugFeedback.status === "ok" ? "border-emerald-400"
+                                            slugFeedback.status === "error" ? "border-destructive/60"
+                                                : slugFeedback.status === "ok" ? "border-success/60"
                                                     : "border-primary/20",
                                         )}>
                                             <span className="px-3 py-1.5 text-xs font-mono text-muted-foreground bg-black/[0.03] border-r border-primary/10 whitespace-nowrap self-center shrink-0 hidden sm:block">
@@ -570,8 +570,8 @@ export default function LojaPage() {
                                             />
                                             <span className="pr-3 flex items-center shrink-0">
                                                 {slugFeedback.status === "checking" && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
-                                                {slugFeedback.status === "ok" && <Check className="w-3.5 h-3.5 text-emerald-500" />}
-                                                {slugFeedback.status === "error" && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
+                                                {slugFeedback.status === "ok" && <Check className="w-3.5 h-3.5 text-success" />}
+                                                {slugFeedback.status === "error" && <AlertCircle className="w-3.5 h-3.5 text-destructive" />}
                                             </span>
                                         </div>
 
@@ -580,8 +580,8 @@ export default function LojaPage() {
                                             aria-live="polite"
                                             className={cn(
                                                 "text-xs mt-1.5",
-                                                slugFeedback.status === "error" ? "text-red-500"
-                                                    : slugFeedback.status === "ok" ? "text-emerald-600"
+                                                slugFeedback.status === "error" ? "text-destructive"
+                                                    : slugFeedback.status === "ok" ? "text-success"
                                                         : "text-muted-foreground",
                                             )}
                                         >
@@ -590,7 +590,7 @@ export default function LojaPage() {
 
                                         {/* Link completo + copiar */}
                                         <div className="flex items-center gap-2 mt-3">
-                                            <code className="text-xs bg-white/80 border border-primary/20 rounded-lg px-3 py-1.5 text-primary font-mono truncate flex-1">
+                                            <code className="text-xs bg-card/80 border border-primary/20 rounded-lg px-3 py-1.5 text-primary font-mono truncate flex-1">
                                                 {publicLink || `${slugPrefix}minha-loja`}
                                             </code>
                                             {/* Copiar só o que já funciona: um link
@@ -613,7 +613,7 @@ export default function LojaPage() {
 
                                         {/* O aviso só aparece quando há mesmo um link antigo em risco. */}
                                         {savedSlug && candidateSlug !== savedSlug ? (
-                                            <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2 mt-2">
+                                            <p className="text-xs text-warning bg-warning-surface rounded-md px-3 py-2 mt-2">
                                                 ⚠️ Ao salvar, o link anterior (<span className="font-mono">/loja/{savedSlug}</span>) deixa de funcionar.
                                                 Quem já tiver o link antigo vai precisar do novo.
                                             </p>
@@ -638,13 +638,13 @@ export default function LojaPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     {dirty && (
-                        <span className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="flex items-center gap-1.5 text-xs text-warning font-medium">
+                            <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
                             Alterações não salvas
                         </span>
                     )}
                     <Button
-                        className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 gap-2"
                         onClick={handleSave}
                         disabled={saving || loading}
                     >
@@ -676,11 +676,11 @@ export default function LojaPage() {
                                         <Input
                                             id="store-name"
                                             placeholder="Ex: ConstruMais"
-                                            className={cn("glass border-none", errors.storeName && "ring-2 ring-red-400")}
+                                            className={cn("glass border-none", errors.storeName && "ring-2 ring-destructive/60")}
                                             value={form.storeName}
                                             onChange={(e) => setField("storeName", e.target.value)}
                                         />
-                                        {errors.storeName && <p className="text-xs text-red-500">{errors.storeName}</p>}
+                                        {errors.storeName && <p className="text-xs text-destructive">{errors.storeName}</p>}
                                     </>
                                 )}
                             </div>
@@ -691,11 +691,11 @@ export default function LojaPage() {
                                         <Input
                                             id="cnpj"
                                             placeholder="00.000.000/0000-00"
-                                            className={cn("glass border-none", errors.cnpj && "ring-2 ring-red-400")}
+                                            className={cn("glass border-none", errors.cnpj && "ring-2 ring-destructive/60")}
                                             value={form.cnpj}
                                             onChange={(e) => setField("cnpj", maskCnpj(e.target.value))}
                                         />
-                                        {errors.cnpj && <p className="text-xs text-red-500">{errors.cnpj}</p>}
+                                        {errors.cnpj && <p className="text-xs text-destructive">{errors.cnpj}</p>}
                                     </>
                                 )}
                             </div>
@@ -719,8 +719,8 @@ export default function LojaPage() {
                                                 placeholder="00000-000"
                                                 className={cn(
                                                     "glass border-none pr-9",
-                                                    cepStatus === "error" && "ring-2 ring-red-400",
-                                                    cepStatus === "ok" && "ring-2 ring-emerald-400",
+                                                    cepStatus === "error" && "ring-2 ring-destructive/60",
+                                                    cepStatus === "ok" && "ring-2 ring-success/60",
                                                 )}
                                                 value={form.cep}
                                                 onChange={(e) => {
@@ -743,12 +743,12 @@ export default function LojaPage() {
                                             />
                                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                                 {cepStatus === "loading" && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
-                                                {cepStatus === "ok" && <Check className="w-4 h-4 text-emerald-500" />}
-                                                {cepStatus === "error" && <AlertCircle className="w-4 h-4 text-red-500" />}
+                                                {cepStatus === "ok" && <Check className="w-4 h-4 text-success" />}
+                                                {cepStatus === "error" && <AlertCircle className="w-4 h-4 text-destructive" />}
                                             </div>
                                         </div>
                                         {cepStatus === "error" && cepError && (
-                                            <p className="text-xs text-red-500">{cepError}</p>
+                                            <p className="text-xs text-destructive">{cepError}</p>
                                         )}
                                     </div>
 
@@ -761,7 +761,7 @@ export default function LojaPage() {
                                                 <Input
                                                     readOnly
                                                     value={form.street}
-                                                    className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                    className="glass border-none bg-muted text-muted-foreground cursor-default"
                                                 />
                                             </div>
 
@@ -795,7 +795,7 @@ export default function LojaPage() {
                                                 <Input
                                                     readOnly
                                                     value={form.neighborhood}
-                                                    className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                    className="glass border-none bg-muted text-muted-foreground cursor-default"
                                                 />
                                             </div>
 
@@ -806,7 +806,7 @@ export default function LojaPage() {
                                                     <Input
                                                         readOnly
                                                         value={form.city}
-                                                        className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                        className="glass border-none bg-muted text-muted-foreground cursor-default"
                                                     />
                                                 </div>
                                                 <div className="space-y-1">
@@ -814,19 +814,19 @@ export default function LojaPage() {
                                                     <Input
                                                         readOnly
                                                         value={form.state}
-                                                        className="glass border-none bg-[#F9FAFB] text-muted-foreground cursor-default"
+                                                        className="glass border-none bg-muted text-muted-foreground cursor-default"
                                                     />
                                                 </div>
                                             </div>
 
                                             {/* Coords not found warning */}
                                             {coordsNotFound && (
-                                                <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2">
+                                                <p className="text-xs text-warning bg-warning-surface rounded-md px-3 py-2">
                                                     ⚠️ Coordenadas não encontradas. Preencha latitude e longitude manualmente.
                                                 </p>
                                             )}
                                             {coordsAutoFilled && (
-                                                <p className="text-xs text-emerald-600">
+                                                <p className="text-xs text-success">
                                                     ✅ Latitude e longitude preenchidas automaticamente.
                                                 </p>
                                             )}
@@ -846,12 +846,12 @@ export default function LojaPage() {
                                             <Input
                                                 id="phone"
                                                 placeholder="(00) 00000-0000"
-                                                className={cn("glass border-none pl-9", errors.phone && "ring-2 ring-red-400")}
+                                                className={cn("glass border-none pl-9", errors.phone && "ring-2 ring-destructive/60")}
                                                 value={form.phone}
                                                 onChange={(e) => setField("phone", maskPhone(e.target.value))}
                                             />
                                         </div>
-                                        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                                        {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
                                     </>
                                 )}
                             </div>
@@ -883,13 +883,13 @@ export default function LojaPage() {
                         <CardTitle className="text-lg">Identidade visual</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-stone-600 mb-4">
+                        <p className="text-sm text-muted-foreground mb-4">
                             A logo da loja agora fica em <strong>Personalizar</strong>, junto do resto da
                             aparência.
                         </p>
                         <Link
                             href="/personalizar"
-                            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-stone-300 text-stone-700 text-[13px] font-semibold hover:border-stone-400"
+                            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-border text-foreground text-[13px] font-semibold hover:border-muted-foreground"
                         >
                             <Palette className="w-3.5 h-3.5" /> Ir para Personalizar
                         </Link>
@@ -917,12 +917,12 @@ export default function LojaPage() {
                                             min="0"
                                             step="0.01"
                                             placeholder="0,00"
-                                            className={cn("glass border-none pl-9", errors.deliveryRate && "ring-2 ring-red-400")}
+                                            className={cn("glass border-none pl-9", errors.deliveryRate && "ring-2 ring-destructive/60")}
                                             value={form.deliveryRate}
                                             onChange={(e) => setField("deliveryRate", e.target.value)}
                                         />
                                     </div>
-                                    {errors.deliveryRate && <p className="text-xs text-red-500">{errors.deliveryRate}</p>}
+                                    {errors.deliveryRate && <p className="text-xs text-destructive">{errors.deliveryRate}</p>}
                                 </>
                             )}
                         </div>
@@ -963,7 +963,7 @@ export default function LojaPage() {
                                             placeholder="-23.5505"
                                             className={cn(
                                                 "glass border-none",
-                                                coordsAutoFilled && "ring-2 ring-emerald-400",
+                                                coordsAutoFilled && "ring-2 ring-success/60",
                                             )}
                                             value={form.latitude}
                                             onChange={(e) => {
@@ -983,7 +983,7 @@ export default function LojaPage() {
                                             placeholder="-46.6333"
                                             className={cn(
                                                 "glass border-none",
-                                                coordsAutoFilled && "ring-2 ring-emerald-400",
+                                                coordsAutoFilled && "ring-2 ring-success/60",
                                             )}
                                             value={form.longitude}
                                             onChange={(e) => {
@@ -1017,7 +1017,7 @@ export default function LojaPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeCategory(cat)}
-                                                    className="ml-0.5 hover:text-red-500 transition-colors"
+                                                    className="ml-0.5 hover:text-destructive transition-colors"
                                                 >
                                                     <X className="w-3 h-3" />
                                                 </button>
