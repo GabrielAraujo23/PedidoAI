@@ -225,7 +225,7 @@ export default function PedidosPage() {
             {/* ── Header ── */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-secondary">Gestão de Pedidos</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Gestão de Pedidos</h2>
                     <p className="text-sm text-muted-foreground mt-1">Controle o fluxo de logística e vendas em tempo real.</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">

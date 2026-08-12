@@ -286,7 +286,7 @@ export default function ProdutosPage() {
                         <ShoppingBag className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-secondary">Produtos</h1>
+                        <h1 className="text-2xl font-bold text-foreground">Produtos</h1>
                         <p className="text-sm text-muted-foreground">Gerencie o catálogo de produtos da loja</p>
                     </div>
                 </div>
@@ -305,7 +305,7 @@ export default function ProdutosPage() {
                     <>
                         <div className="bg-card/60 backdrop-blur rounded-2xl p-4 border border-border/30">
                             <p className="text-xs text-muted-foreground">Total</p>
-                            <p className="text-2xl font-bold text-secondary mt-1">{products.length}</p>
+                            <p className="text-2xl font-bold text-foreground mt-1">{products.length}</p>
                             <p className="text-xs text-muted-foreground">produtos</p>
                         </div>
                         <div className="bg-card/60 backdrop-blur rounded-2xl p-4 border border-border/30">
@@ -336,7 +336,7 @@ export default function ProdutosPage() {
                 <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
-                    className="h-10 rounded-xl border border-input bg-card/60 px-3 text-sm text-secondary min-w-[180px]"
+                    className="h-10 rounded-xl border border-input bg-card/60 px-3 text-sm text-foreground min-w-[180px]"
                 >
                     <option value="Todos">Todas as categorias</option>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -368,7 +368,7 @@ export default function ProdutosPage() {
                 ) : filtered.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center px-4">
                         <Package className="w-10 h-10 text-muted-foreground/40 mb-3" />
-                        <p className="font-semibold text-secondary">Nenhum produto encontrado</p>
+                        <p className="font-semibold text-foreground">Nenhum produto encontrado</p>
                         <p className="text-sm text-muted-foreground mt-1">
                             {search || filterCategory !== "Todos"
                                 ? "Tente ajustar os filtros de busca."
@@ -398,7 +398,7 @@ export default function ProdutosPage() {
                                     )}
                                 >
                                     <td className="px-4 py-3">
-                                        <p className="font-semibold text-secondary">{p.name}</p>
+                                        <p className="font-semibold text-foreground">{p.name}</p>
                                         {p.subcategory && (
                                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                                 <Tag className="w-3 h-3" />{p.subcategory}
@@ -411,7 +411,7 @@ export default function ProdutosPage() {
                                         </Badge>
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{p.unit}</td>
-                                    <td className="px-4 py-3 text-right font-semibold text-secondary">{formatCurrency(p.price)}</td>
+                                    <td className="px-4 py-3 text-right font-semibold text-foreground">{formatCurrency(p.price)}</td>
                                     <td className="px-4 py-3 text-center hidden md:table-cell">
                                         <StockBadge quantity={p.stock_quantity} showNumber={false} />
                                     </td>
@@ -541,7 +541,7 @@ export default function ProdutosPage() {
                                     ? <ToggleRight className="w-6 h-6 text-success" />
                                     : <ToggleLeft className="w-6 h-6 text-muted-foreground" />}
                             </button>
-                            <span className="text-sm text-secondary">
+                            <span className="text-sm text-foreground">
                                 {form.active ? "Produto ativo (visível no catálogo)" : "Produto inativo (oculto no catálogo)"}
                             </span>
                         </div>

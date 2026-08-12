@@ -537,7 +537,7 @@ export default function LojaPage() {
                                 <Link2 className="w-4 h-4 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-secondary mb-0.5">Endereço da sua loja</p>
+                                <p className="text-sm font-semibold text-foreground mb-0.5">Endereço da sua loja</p>
                                 <p className="text-xs text-muted-foreground mb-2">
                                     Escolha o endereço que seus clientes vão usar para fazer pedidos.
                                 </p>
@@ -633,7 +633,7 @@ export default function LojaPage() {
             {/* Header */}
             <div className="flex items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-secondary">Informações da Loja</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Informações da Loja</h2>
                     <p className="text-muted-foreground">Configure os dados fundamentais para o funcionamento do seu negócio.</p>
                 </div>
                 <div className="flex items-center gap-3">

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:cores": "node scripts/check-cores.mjs"
+    "check:cores": "node scripts/check-cores.mjs",
+    "check:contraste": "node scripts/check-contraste.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
