@@ -26,6 +26,11 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-surface: var(--destructive-surface);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -49,37 +54,81 @@
 
 :root {
   --radius: 0.75rem;
-  --background: #FFFFFF;
-  --foreground: #1A1A1A;
+  --background: #F7F2EA;
+  --foreground: #1C1917;
   --card: #FFFFFF;
-  --card-foreground: #1A1A1A;
+  --card-foreground: #1C1917;
   --popover: #FFFFFF;
-  --popover-foreground: #1A1A1A;
-  --primary: #FFAC26;
+  --popover-foreground: #1C1917;
+  --primary: #C2410C;
   --primary-foreground: #FFFFFF;
-  --secondary: #156A8A;
-  --secondary-foreground: #FFFFFF;
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
-  --accent: #FFAC26;
-  --accent-foreground: #FFFFFF;
-  --destructive: #EF4444;
-  --border: #E5E7EB;
-  --input: #E5E7EB;
-  --ring: #FFAC26;
-  --chart-1: #FFAC26;
+  --secondary: #EFE9E1;
+  --secondary-foreground: #1C1917;
+  --muted: #EFE9E1;
+  --muted-foreground: #78716C;
+  --accent: #EFE9E1;
+  --accent-foreground: #1C1917;
+  --destructive: #DC2626;
+  --destructive-surface: #FEF2F2;
+  --success: #059669;
+  --success-surface: #ECFDF5;
+  --warning: #D97706;
+  --warning-surface: #FFFBEB;
+  --border: #E7E5E4;
+  --input: #E7E5E4;
+  --ring: #1C1917;
+  --chart-1: #C2410C;
   --chart-2: #156A8A;
-  --chart-3: #10B981;
-  --chart-4: #F59E0B;
+  --chart-3: #059669;
+  --chart-4: #D97706;
   --chart-5: #6366F1;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #1A1A1A;
-  --sidebar-primary: #FFAC26;
+  --sidebar: #F7F2EA;
+  --sidebar-foreground: #1C1917;
+  --sidebar-primary: #C2410C;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #FFF7ED;
-  --sidebar-accent-foreground: #FFAC26;
-  --sidebar-border: #F3F4F6;
-  --sidebar-ring: #FFAC26;
+  --sidebar-accent: #EFE9E1;
+  --sidebar-accent-foreground: #1C1917;
+  --sidebar-border: #E7E5E4;
+  --sidebar-ring: #C2410C;
+}
+
+.dark {
+  --background: #17130F;
+  --foreground: #F0E9E0;
+  --card: #221C17;
+  --card-foreground: #F0E9E0;
+  --popover: #221C17;
+  --popover-foreground: #F0E9E0;
+  --primary: #E8935A;
+  --primary-foreground: #17130F;
+  --secondary: #2C241E;
+  --secondary-foreground: #F0E9E0;
+  --muted: #2C241E;
+  --muted-foreground: #B0A398;
+  --accent: #2C241E;
+  --accent-foreground: #F0E9E0;
+  --destructive: #F87171;
+  --destructive-surface: #2A1615;
+  --success: #4ADE80;
+  --success-surface: #14281C;
+  --warning: #FBBF24;
+  --warning-surface: #2A2113;
+  --border: #362D26;
+  --input: #3D332B;
+  --ring: #E8935A;
+  --chart-1: #E8935A;
+  --chart-2: #4FA3C4;
+  --chart-3: #4ADE80;
+  --chart-4: #FBBF24;
+  --chart-5: #8B8CF0;
+  --sidebar: #1C1714;
+  --sidebar-foreground: #F0E9E0;
+  --sidebar-primary: #E8935A;
+  --sidebar-primary-foreground: #17130F;
+  --sidebar-accent: #2C241E;
+  --sidebar-accent-foreground: #F0E9E0;
+  --sidebar-border: #362D26;
+  --sidebar-ring: #E8935A;
 }
 
 @layer base {
@@ -93,6 +142,12 @@
       radial-gradient(at 0% 0%, hsla(37, 100%, 98%, 1) 0px, transparent 50%),
       radial-gradient(at 100% 0%, hsla(197, 74%, 98%, 1) 0px, transparent 50%);
     min-height: 100vh;
+  }
+
+  /* Os gradientes acima são pastel quase branco: sobre o fundo escuro viram
+     duas manchas leitosas nos cantos superiores. */
+  .dark body {
+    background-image: none;
   }
 }
 
@@ -142,7 +197,7 @@
   /* Editorial warm cream + light grain — replaces inline <svg> grain.
      Mobile-safe: no mix-blend, no fixed-position SVG, no feTurbulence at runtime */
   .bg-warm {
-    background-color: #F7F2EA;
+    background-color: var(--background);
   }
 
   /* Hide grain on mobile to keep first-paint fast and avoid Safari quirks */
@@ -151,6 +206,11 @@
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
       background-size: 160px 160px;
       background-repeat: repeat;
+    }
+    /* O grão é preto com 4,5% de opacidade: some no claro, vira sujeira
+       visível sobre o marrom escuro. Melhor não ter textura que ter a errada. */
+    .dark .bg-warm {
+      background-image: none;
     }
   }
 }
