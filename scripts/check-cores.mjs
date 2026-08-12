@@ -21,6 +21,14 @@ const EXCECOES = [
     "src/app/login/page.tsx",
     "src/app/contratar/page.tsx",
     "src/app/contratar/status/page.tsx",
+
+    // O visor da câmera imita cromo de hardware: é escuro SEMPRE, nos dois
+    // temas. Convertê-lo para tokens o deixaria claro no tema claro, com texto
+    // de baixo contraste sobre a imagem da câmera. A cor fixa aqui é a decisão
+    // certa, e esta lista é onde ela fica declarada — em vez de disfarçada em
+    // hex arbitrário (`bg-[#1c1917]`), que enganaria este script sem resolver
+    // nada e ainda seria mais difícil de ler.
+    "src/components/barcode-scanner.tsx",
 ];
 
 const PALETAS = "stone|orange|amber|emerald|red|blue|purple|green|yellow|gray|slate|zinc|neutral|indigo|pink|teal|cyan|rose|lime|sky|violet|fuchsia";

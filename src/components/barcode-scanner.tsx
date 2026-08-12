@@ -174,7 +174,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                 {/* Chrome de câmera: fica sempre escuro, como um visor de scanner de
                     verdade, independente do tema do app — por isso usa hex fixo em
                     vez de token. Ver relatório da Task 2 (tema-tokens). */}
-                <div className="relative rounded-2xl overflow-hidden bg-[#1c1917] aspect-square">
+                <div className="relative rounded-2xl overflow-hidden bg-stone-900 aspect-square">
                     {/* The video element is always mounted so srcObject can be set */}
                     <video
                         ref={videoRef}
@@ -188,26 +188,26 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                     {!hasError && !loading && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="w-52 h-52 relative">
-                                <span className="absolute top-0 left-0 w-8 h-8 border-[#fb923c] border-t-[3px] border-l-[3px] rounded-tl-sm" />
-                                <span className="absolute top-0 right-0 w-8 h-8 border-[#fb923c] border-t-[3px] border-r-[3px] rounded-tr-sm" />
-                                <span className="absolute bottom-0 left-0 w-8 h-8 border-[#fb923c] border-b-[3px] border-l-[3px] rounded-bl-sm" />
-                                <span className="absolute bottom-0 right-0 w-8 h-8 border-[#fb923c] border-b-[3px] border-r-[3px] rounded-br-sm" />
+                                <span className="absolute top-0 left-0 w-8 h-8 border-orange-400 border-t-[3px] border-l-[3px] rounded-tl-sm" />
+                                <span className="absolute top-0 right-0 w-8 h-8 border-orange-400 border-t-[3px] border-r-[3px] rounded-tr-sm" />
+                                <span className="absolute bottom-0 left-0 w-8 h-8 border-orange-400 border-b-[3px] border-l-[3px] rounded-bl-sm" />
+                                <span className="absolute bottom-0 right-0 w-8 h-8 border-orange-400 border-b-[3px] border-r-[3px] rounded-br-sm" />
                                 {/* Scan line animation */}
-                                <div className="absolute left-1 right-1 top-0 h-0.5 bg-[#fb923c]/80 animate-[scanline_2s_ease-in-out_infinite]" />
+                                <div className="absolute left-1 right-1 top-0 h-0.5 bg-orange-400/80 animate-[scanline_2s_ease-in-out_infinite]" />
                             </div>
                         </div>
                     )}
 
                     {loading && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1917] gap-3">
-                            <Loader2 className="w-8 h-8 text-[#fb923c] animate-spin" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-900 gap-3">
+                            <Loader2 className="w-8 h-8 text-orange-400 animate-spin" />
                             <p className="text-white/50 text-[12px]">Iniciando câmera…</p>
                         </div>
                     )}
 
                     {/* Permission denied — can re-prompt */}
                     {permState === "denied" && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1917] p-6 text-center gap-4">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-900 p-6 text-center gap-4">
                             <span className="text-4xl">📷</span>
                             <div>
                                 <p className="text-white text-[14px] font-semibold mb-1">Câmera sem permissão</p>
@@ -218,7 +218,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                             <button
                                 onClick={requestPermission}
                                 disabled={requesting}
-                                className="w-full h-10 bg-[#f97316] hover:bg-[#fb923c] disabled:opacity-60 text-white rounded-xl text-[13px] font-semibold transition-colors flex items-center justify-center gap-2"
+                                className="w-full h-10 bg-orange-500 hover:bg-orange-400 disabled:opacity-60 text-white rounded-xl text-[13px] font-semibold transition-colors flex items-center justify-center gap-2"
                             >
                                 {requesting
                                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Aguardando…</>
@@ -230,10 +230,10 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
 
                     {/* Permission permanently blocked */}
                     {permState === "blocked" && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1917] p-6 text-center gap-4">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-900 p-6 text-center gap-4">
                             <span className="text-4xl">🔒</span>
                             <div>
-                                <p className="text-[#fbbf24] text-[14px] font-semibold mb-1">Câmera bloqueada</p>
+                                <p className="text-amber-400 text-[14px] font-semibold mb-1">Câmera bloqueada</p>
                                 <p className="text-white/50 text-[11px] leading-relaxed">Libere manualmente:</p>
                             </div>
                             <ol className="w-full text-left space-y-2.5">
@@ -243,14 +243,14 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
                                     <>Clique em <strong className="text-white">Tentar novamente</strong> abaixo</>,
                                 ].map((step, i) => (
                                     <li key={i} className="flex gap-3 items-start">
-                                        <span className="w-5 h-5 rounded-full bg-[#f97316]/20 text-[#fb923c] text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                                        <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-400 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
                                         <span className="text-white/70 text-[12px] leading-relaxed">{step}</span>
                                     </li>
                                 ))}
                             </ol>
                             <button
                                 onClick={() => setRetryCount((c) => c + 1)}
-                                className="w-full h-9 bg-[#44403c] hover:bg-[#57534e] text-white rounded-xl text-[13px] font-semibold transition-colors flex items-center justify-center gap-2"
+                                className="w-full h-9 bg-stone-700 hover:bg-stone-600 text-white rounded-xl text-[13px] font-semibold transition-colors flex items-center justify-center gap-2"
                             >
                                 <RefreshCw className="w-3.5 h-3.5" /> Tentar novamente
                             </button>
@@ -259,12 +259,12 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
 
                     {/* Other errors */}
                     {otherError && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1c1917] p-6 text-center gap-4">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-stone-900 p-6 text-center gap-4">
                             <span className="text-3xl">⚠️</span>
-                            <p className="text-[#f87171] text-[13px] leading-relaxed">{otherError}</p>
+                            <p className="text-red-400 text-[13px] leading-relaxed">{otherError}</p>
                             <button
                                 onClick={() => setRetryCount((c) => c + 1)}
-                                className="w-full h-9 bg-[#44403c] hover:bg-[#57534e] text-white rounded-xl text-[13px] font-semibold transition-colors flex items-center justify-center gap-2"
+                                className="w-full h-9 bg-stone-700 hover:bg-stone-600 text-white rounded-xl text-[13px] font-semibold transition-colors flex items-center justify-center gap-2"
                             >
                                 <RefreshCw className="w-3.5 h-3.5" /> Tentar novamente
                             </button>
