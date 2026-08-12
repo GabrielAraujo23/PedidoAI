@@ -37,10 +37,10 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
         <header
             className="sticky top-0 z-50"
             style={{
-                background: "rgba(247, 242, 234, 0.96)",
+                background: "var(--sidebar)",
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
-                borderBottom: "1px solid rgba(120, 113, 108, 0.14)",
+                borderBottom: "1px solid var(--sidebar-border)",
                 fontFamily: "var(--font-body), ui-sans-serif, system-ui",
             }}
         >
@@ -63,15 +63,15 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                                 className={cn(
                                     "relative px-3 py-1.5 text-[13px] rounded-lg transition-colors",
                                     isActive
-                                        ? "text-stone-900 font-semibold"
-                                        : "text-stone-500 hover:text-stone-900"
+                                        ? "text-foreground font-semibold"
+                                        : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
                                 {item.label}
                                 {isActive && (
                                     <motion.div
                                         layoutId="client-nav-underline"
-                                        className="absolute -bottom-[19px] left-3 right-3 h-[2px] bg-orange-700 rounded-full"
+                                        className="absolute -bottom-[19px] left-3 right-3 h-[2px] bg-primary rounded-full"
                                         transition={{ type: "spring", damping: 28, stiffness: 380 }}
                                     />
                                 )}
@@ -85,20 +85,20 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                 {/* Desktop search */}
                 {onSearchChange != null && (
                     <div className="relative flex-1 max-w-[400px] hidden md:block">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                         <input
                             type="text"
                             value={searchValue}
                             placeholder="Buscar materiais…"
                             onChange={(e) => onSearchChange(e.target.value)}
-                            className="w-full h-9 pl-9 pr-9 rounded-full bg-white/70 border border-stone-300/60 text-[13px] text-stone-900 placeholder-stone-400 outline-none focus:bg-white focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5 transition-all duration-200"
+                            className="w-full h-9 pl-9 pr-9 rounded-full bg-background/70 border border-input text-[13px] text-foreground placeholder-muted-foreground outline-none focus:bg-background focus:border-ring focus:ring-4 focus:ring-ring/20 transition-all duration-200"
                         />
                         {searchValue && (
                             <button
                                 onClick={() => onSearchChange("")}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-stone-200 transition-colors"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
                             >
-                                <X className="w-3 h-3 text-stone-500" />
+                                <X className="w-3 h-3 text-muted-foreground" />
                             </button>
                         )}
                     </div>
@@ -108,7 +108,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                 {onSearchChange != null && (
                     <button
                         onClick={() => setMobileSearchOpen((v) => !v)}
-                        className="md:hidden p-2 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-stone-200/40 transition-colors"
+                        className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
                         aria-label="Buscar"
                     >
                         <Search className="w-4.5 h-4.5" />
@@ -119,7 +119,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                 {totalItems > 0 && (
                     <button
                         onClick={() => router.push("/cliente/checkout")}
-                        className="md:hidden flex items-center gap-1.5 bg-stone-900 text-white px-3 h-8 rounded-full text-[12px] font-semibold shrink-0"
+                        className="md:hidden flex items-center gap-1.5 bg-foreground text-background px-3 h-8 rounded-full text-[12px] font-semibold shrink-0"
                     >
                         <ShoppingBag className="w-3.5 h-3.5" />
                         {totalItems}
@@ -131,24 +131,24 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                     {session && (
                         <Link
                             href="/cliente/perfil"
-                            className="flex items-center gap-2 px-1 py-1 rounded-full hover:bg-stone-200/40 transition-colors"
+                            className="flex items-center gap-2 px-1 py-1 rounded-full hover:bg-muted/40 transition-colors"
                         >
-                            <div className="w-8 h-8 rounded-full bg-stone-900 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-foreground flex items-center justify-center">
                                 <span
-                                    className="text-white text-[12px] font-medium"
+                                    className="text-background text-[12px] font-medium"
                                     style={{ fontFamily: "var(--font-display)" }}
                                 >
                                     {session.name.charAt(0).toUpperCase()}
                                 </span>
                             </div>
-                            <span className="hidden lg:block text-[13px] font-medium text-stone-700 pr-1">
+                            <span className="hidden lg:block text-[13px] font-medium text-muted-foreground pr-1">
                                 {session.name.split(" ")[0]}
                             </span>
                         </Link>
                     )}
                     <button
                         onClick={handleLogout}
-                        className="p-2 text-stone-400 hover:text-stone-900 hover:bg-stone-200/40 rounded-lg transition-colors"
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-lg transition-colors"
                         title="Sair"
                     >
                         <LogOut className="w-4 h-4" />
@@ -165,32 +165,32 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="md:hidden overflow-hidden border-t border-stone-200/60"
+                        className="md:hidden overflow-hidden border-t border-border/60"
                     >
                         <div className="px-4 py-3">
                             <div className="relative">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                                 <input
                                     autoFocus
                                     type="text"
                                     value={searchValue}
                                     placeholder="Buscar materiais…"
                                     onChange={(e) => onSearchChange(e.target.value)}
-                                    className="w-full h-10 pl-9 pr-9 rounded-full bg-white border border-stone-300/60 text-[14px] text-stone-900 placeholder-stone-400 outline-none focus:border-stone-500 focus:ring-4 focus:ring-stone-900/5 transition-all duration-200"
+                                    className="w-full h-10 pl-9 pr-9 rounded-full bg-background border border-input text-[14px] text-foreground placeholder-muted-foreground outline-none focus:border-ring focus:ring-4 focus:ring-ring/20 transition-all duration-200"
                                 />
                                 {searchValue ? (
                                     <button
                                         onClick={() => onSearchChange("")}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-stone-200 transition-colors"
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
                                     >
-                                        <X className="w-3.5 h-3.5 text-stone-500" />
+                                        <X className="w-3.5 h-3.5 text-muted-foreground" />
                                     </button>
                                 ) : (
                                     <button
                                         onClick={() => setMobileSearchOpen(false)}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-stone-200 transition-colors"
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-muted transition-colors"
                                     >
-                                        <X className="w-3.5 h-3.5 text-stone-500" />
+                                        <X className="w-3.5 h-3.5 text-muted-foreground" />
                                     </button>
                                 )}
                             </div>

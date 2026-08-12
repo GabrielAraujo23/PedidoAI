@@ -48,7 +48,7 @@ export function BrandMark({ className, textClassName }: BrandMarkProps) {
         const texto = marca.kind === "text" ? marca.text : (brand?.storeName?.trim() || "PedidoAI");
         return (
             <span
-                className={cn("text-stone-900 leading-tight truncate", textClassName, className)}
+                className={cn("text-foreground leading-tight truncate", textClassName, className)}
                 style={{ fontFamily: "var(--font-display)", fontWeight: 500 }}
                 title={texto}
             >

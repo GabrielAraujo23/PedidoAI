@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             <div className="h-screen flex items-center justify-center bg-warm">
                 <div className="flex flex-col items-center gap-3">
                     <Image src="/Logo_PedidoAi.png" alt="PedidoAI" width={280} height={153} className="w-[280px] h-auto object-contain" />
-                    <Loader2 className="w-4 h-4 text-stone-700 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                 </div>
             </div>
         );
@@ -100,12 +100,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     style={{ fontFamily: "var(--font-body), ui-sans-serif, system-ui" }}
                 >
                     {/* Mobile top bar */}
-                    <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 border-b border-stone-200/60"
-                        style={{ background: "rgba(247, 242, 234, 0.96)", backdropFilter: "blur(10px)" }}
+                    <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 py-3 border-b border-sidebar-border/60"
+                        style={{ background: "var(--sidebar)", backdropFilter: "blur(10px)" }}
                     >
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="w-9 h-9 flex items-center justify-center rounded-xl text-stone-600 hover:bg-stone-200/60 transition-colors"
+                            className="w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted/60 transition-colors"
                         >
                             <Menu className="w-5 h-5" />
                         </button>

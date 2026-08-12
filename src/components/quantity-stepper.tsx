@@ -59,8 +59,8 @@ export function QuantityStepper({
     return (
         <div
             className={cn(
-                "flex items-stretch rounded-xl bg-stone-100 ring-1 ring-stone-200/80 overflow-hidden",
-                "focus-within:ring-2 focus-within:ring-orange-600",
+                "flex items-stretch rounded-xl bg-muted ring-1 ring-border/80 overflow-hidden",
+                "focus-within:ring-2 focus-within:ring-primary",
                 className
             )}
         >
@@ -71,10 +71,10 @@ export function QuantityStepper({
                 disabled={value <= 0}
                 className={cn(
                     btnWidth,
-                    "h-11 shrink-0 flex items-center justify-center text-stone-600 cursor-pointer",
-                    "hover:bg-stone-200 active:bg-stone-300 transition-colors",
+                    "h-11 shrink-0 flex items-center justify-center text-muted-foreground cursor-pointer",
+                    "hover:bg-foreground/10 active:bg-foreground/15 transition-colors",
                     "disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-transparent",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-600"
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                 )}
             >
                 <Minus className="w-4 h-4" strokeWidth={2.5} />
@@ -102,12 +102,12 @@ export function QuantityStepper({
                     }
                 }}
                 className={cn(
-                    "flex-1 min-w-0 w-full h-11 bg-white text-center tabular-nums cursor-text",
-                    "text-[15px] font-bold text-stone-900",
+                    "flex-1 min-w-0 w-full h-11 bg-background text-center tabular-nums cursor-text",
+                    "text-[15px] font-bold text-foreground",
                     // caret laranja e grosso o suficiente para a barra piscando ficar óbvia
-                    "caret-orange-700",
-                    "border-x border-stone-200/80 outline-none",
-                    "focus:bg-orange-50/70 transition-colors"
+                    "caret-primary",
+                    "border-x border-border/80 outline-none",
+                    "focus:bg-primary/10 transition-colors"
                 )}
             />
 
@@ -118,10 +118,10 @@ export function QuantityStepper({
                 disabled={value >= MAX_QUANTITY}
                 className={cn(
                     btnWidth,
-                    "h-11 shrink-0 flex items-center justify-center text-stone-600 cursor-pointer",
-                    "hover:bg-stone-200 active:bg-stone-300 transition-colors",
+                    "h-11 shrink-0 flex items-center justify-center text-muted-foreground cursor-pointer",
+                    "hover:bg-foreground/10 active:bg-foreground/15 transition-colors",
                     "disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-transparent",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-600"
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                 )}
             >
                 <Plus className="w-4 h-4" strokeWidth={2.5} />

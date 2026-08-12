@@ -29,12 +29,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+// Mesma paleta categórica de kanban-item.tsx (ver comentário lá): sem token
+// dedicado a 5 status na tabela do plano, reaproveita --chart-2/4/5 e os
+// tokens semânticos success/destructive. Mantém as duas listas em sincronia.
 const COLUMNS: { id: Status; title: string; dot: string; badge: string }[] = [
-    { id: "novo",       title: "Novo",       dot: "bg-blue-500",   badge: "bg-blue-50 text-blue-600" },
-    { id: "confirmado", title: "Confirmado", dot: "bg-orange-400", badge: "bg-orange-50 text-orange-600" },
-    { id: "rota",       title: "Em Rota",    dot: "bg-purple-500", badge: "bg-purple-50 text-purple-600" },
-    { id: "entregue",   title: "Entregue",   dot: "bg-green-500",  badge: "bg-green-50 text-green-600" },
-    { id: "cancelado",  title: "Cancelado",  dot: "bg-red-400",    badge: "bg-red-50 text-red-700" },
+    { id: "novo",       title: "Novo",       dot: "bg-chart-2",   badge: "bg-chart-2/10 text-chart-2" },
+    { id: "confirmado", title: "Confirmado", dot: "bg-chart-4",   badge: "bg-chart-4/10 text-chart-4" },
+    { id: "rota",       title: "Em Rota",    dot: "bg-chart-5",   badge: "bg-chart-5/10 text-chart-5" },
+    { id: "entregue",   title: "Entregue",   dot: "bg-success",   badge: "bg-success-surface text-success" },
+    { id: "cancelado",  title: "Cancelado",  dot: "bg-destructive", badge: "bg-destructive-surface text-destructive" },
 ];
 
 const PAYMENT_OPTIONS: { value: PaymentValue; label: string }[] = [
@@ -59,7 +62,7 @@ function DroppableColumn({ id, children }: { id: string; children: React.ReactNo
         <div
             ref={setNodeRef}
             className={cn(
-                "flex-1 space-y-3 p-2 rounded-xl bg-slate-50/60 border border-slate-100 min-h-[400px] transition-colors duration-150",
+                "flex-1 space-y-3 p-2 rounded-xl bg-muted/60 border border-border min-h-[400px] transition-colors duration-150",
                 isOver && "bg-primary/5 border-primary/30"
             )}
         >
@@ -229,7 +232,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
                             <div key={col.id} className="flex flex-col gap-3">
                                 <div className="flex items-center gap-2 px-1">
                                     <span className={cn("w-2 h-2 rounded-full", col.dot)} />
-                                    <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{col.title}</span>
+                                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{col.title}</span>
                                     <span className={cn("ml-auto text-xs font-semibold px-2 py-0.5 rounded-full", col.badge)}>
                                         {String(colOrders.length).padStart(2, "0")}
                                     </span>
@@ -260,7 +263,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
                                             </div>
                                         ))}
                                         {colOrders.length === 0 && (
-                                            <p className="text-xs text-slate-400 text-center pt-6">Nenhum pedido</p>
+                                            <p className="text-xs text-muted-foreground text-center pt-6">Nenhum pedido</p>
                                         )}
                                     </DroppableColumn>
                                 </SortableContext>
@@ -292,7 +295,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
                                             "h-10 rounded-lg border text-sm font-medium transition-colors",
                                             payment === opt.value
                                                 ? "border-primary bg-primary/10 text-primary"
-                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                : "border-border text-muted-foreground hover:bg-muted"
                                         )}
                                     >
                                         {opt.label}
@@ -313,7 +316,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
                                             "h-10 rounded-lg border text-sm font-medium transition-colors",
                                             delivery === value
                                                 ? "border-primary bg-primary/10 text-primary"
-                                                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                : "border-border text-muted-foreground hover:bg-muted"
                                         )}
                                     >
                                         {label}
@@ -341,7 +344,7 @@ export function KanbanBoard({ orders, visibleOrders, setOrders }: KanbanBoardPro
                             Cancelar
                         </Button>
                         <Button
-                            className="bg-primary hover:bg-primary/90 text-white"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                             onClick={handleConfirmSubmit}
                             disabled={saving}
                         >

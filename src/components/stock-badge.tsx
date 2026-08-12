@@ -12,9 +12,9 @@ export function StockBadge({ quantity, threshold = 5, showNumber = true, classNa
     const status = quantity === 0 ? "zero" : quantity <= threshold ? "low" : "ok";
 
     const config = {
-        ok:  { dot: "bg-emerald-500", bg: "bg-emerald-50  border-emerald-200/60 text-emerald-700" },
-        low: { dot: "bg-amber-400",   bg: "bg-amber-50   border-amber-200/60   text-amber-700"   },
-        zero:{ dot: "bg-red-500",     bg: "bg-red-50     border-red-200/60     text-red-700"     },
+        ok:  { dot: "bg-success", bg: "bg-success-surface border-success/30 text-success" },
+        low: { dot: "bg-warning", bg: "bg-warning-surface border-warning/30 text-warning" },
+        zero:{ dot: "bg-destructive", bg: "bg-destructive-surface border-destructive/30 text-destructive" },
     }[status];
 
     return (

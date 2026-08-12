@@ -73,12 +73,12 @@ export const ProductCard = memo(function ProductCard({
         <article
             data-product={product.id}
             className={cn(
-                "defer-offscreen group relative flex flex-col rounded-2xl overflow-hidden bg-white",
+                "defer-offscreen group relative flex flex-col rounded-2xl overflow-hidden bg-card",
                 "transition-[box-shadow,transform,outline-color] duration-300 ease-out",
                 "outline outline-offset-0",
                 selected
-                    ? "outline-2 outline-orange-700 shadow-[0_10px_34px_-8px_rgba(154,52,18,0.28)]"
-                    : "outline-1 outline-stone-200/80 hover:outline-stone-300 hover:shadow-[0_10px_28px_-10px_rgba(28,25,23,0.18)] hover:-translate-y-[3px]"
+                    ? "outline-2 outline-primary shadow-[0_10px_34px_-8px_rgba(154,52,18,0.28)]"
+                    : "outline-1 outline-border/80 hover:outline-border hover:shadow-[0_10px_28px_-10px_rgba(28,25,23,0.18)] hover:-translate-y-[3px]"
             )}
             style={{ containIntrinsicSize: "auto 320px" }}
         >
@@ -123,7 +123,7 @@ export const ProductCard = memo(function ProductCard({
 
                 {/* Selo de quantidade */}
                 {selected ? (
-                    <div className="absolute top-2.5 right-2.5 min-w-[26px] h-[26px] px-2 bg-orange-700 text-white rounded-full flex items-center justify-center text-[11px] font-bold tabular-nums shadow-[0_2px_10px_rgba(154,52,18,0.4)]">
+                    <div className="absolute top-2.5 right-2.5 min-w-[26px] h-[26px] px-2 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[11px] font-bold tabular-nums shadow-[0_2px_10px_rgba(154,52,18,0.4)]">
                         {quantity}
                     </div>
                 ) : null}
@@ -132,34 +132,34 @@ export const ProductCard = memo(function ProductCard({
                 <div
                     aria-hidden
                     className="absolute bottom-0 left-0 right-0 h-[2px]"
-                    style={{ background: selected ? "#C2410C" : tone.ink, opacity: selected ? 1 : 0.18 }}
+                    style={{ background: selected ? "var(--primary)" : tone.ink, opacity: selected ? 1 : 0.18 }}
                 />
             </div>
 
             {/* ── Corpo ──────────────────────────────────────────────── */}
             <div className="flex flex-col flex-1 p-3.5 sm:p-4">
-                <h3 className="font-semibold text-stone-900 text-[14px] leading-snug line-clamp-2">
+                <h3 className="font-semibold text-foreground text-[14px] leading-snug line-clamp-2">
                     {product.name}
                 </h3>
 
                 {subtitle ? (
                     <p
-                        className="text-[12px] text-stone-500 leading-tight mt-0.5"
+                        className="text-[12px] text-muted-foreground leading-tight mt-0.5"
                         style={{ fontStyle: "italic", fontFamily: "var(--font-display)" }}
                     >
                         {subtitle}
                     </p>
                 ) : null}
 
-                <p className="text-[9.5px] uppercase tracking-[0.2em] text-stone-400 font-semibold mt-1.5">
+                <p className="text-[9.5px] uppercase tracking-[0.2em] text-muted-foreground/70 font-semibold mt-1.5">
                     {product.unit}
                 </p>
 
                 {/* Empurra preço e controles para a base, alinhando cards de alturas diferentes */}
                 <div className="mt-auto pt-3">
-                    <div className="flex items-end justify-between gap-2 pt-3 border-t border-stone-100">
+                    <div className="flex items-end justify-between gap-2 pt-3 border-t border-border">
                         <p
-                            className="text-stone-900 tabular-nums leading-none"
+                            className="text-foreground tabular-nums leading-none"
                             style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "21px" }}
                         >
                             {formatCurrency(product.price)}
@@ -176,10 +176,10 @@ export const ProductCard = memo(function ProductCard({
                             className={cn(
                                 "w-8 h-8 shrink-0 rounded-lg flex items-center justify-center shadow-sm cursor-pointer",
                                 "transition-colors duration-200 active:scale-95",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-600 focus-visible:ring-offset-2",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                                 selected
-                                    ? "bg-orange-700 text-white hover:bg-orange-800"
-                                    : "bg-stone-900 text-white hover:bg-stone-800"
+                                    ? "bg-primary text-primary-foreground hover:opacity-90"
+                                    : "bg-foreground text-background hover:opacity-90"
                             )}
                         >
                             {selected

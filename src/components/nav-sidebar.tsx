@@ -79,17 +79,17 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
                 isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}
             style={{
-                background: "rgba(247, 242, 234, 0.96)",
+                background: "var(--sidebar)",
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
-                borderRight: "1px solid rgba(120, 113, 108, 0.16)",
+                borderRight: "1px solid var(--sidebar-border)",
                 fontFamily: "var(--font-body), ui-sans-serif, system-ui",
             }}
         >
             {/* Close button — mobile only */}
             <button
                 onClick={onClose}
-                className="absolute top-4 right-4 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 transition-colors"
+                className="absolute top-4 right-4 lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             >
                 <X className="w-4 h-4" />
             </button>
@@ -100,7 +100,7 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
             </Link>
 
             {/* Section label */}
-            <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-stone-400 px-2 mb-2">
+            <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-muted-foreground px-2 mb-2">
                 Menu
             </p>
 
@@ -116,13 +116,13 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
                             className={cn(
                                 "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-[13.5px]",
                                 isActive
-                                    ? "bg-stone-900 text-white shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
-                                    : "text-stone-600 hover:bg-white/70 hover:text-stone-900"
+                                    ? "bg-foreground text-background shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
+                                    : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
                             )}
                         >
                             <Icon className={cn(
                                 "w-4 h-4 shrink-0 transition-colors",
-                                isActive ? "text-orange-400" : "text-stone-400 group-hover:text-stone-700"
+                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                             )} />
                             <span className="font-medium flex-1">{item.label}</span>
                         </Link>
@@ -131,7 +131,7 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
 
                 {isOwner && (
                     <>
-                        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-stone-400 px-2 pt-5 pb-2">
+                        <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-muted-foreground px-2 pt-5 pb-2">
                             Sistema
                         </p>
                         <Link
@@ -140,18 +140,18 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
                             className={cn(
                                 "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-[13.5px]",
                                 pathname === OWNER_ITEM.href
-                                    ? "bg-stone-900 text-white shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
-                                    : "text-stone-600 hover:bg-white/70 hover:text-stone-900"
+                                    ? "bg-foreground text-background shadow-[0_2px_10px_rgba(28,25,23,0.18)]"
+                                    : "text-muted-foreground hover:bg-card/70 hover:text-foreground"
                             )}
                         >
                             <OWNER_ITEM.icon className={cn(
                                 "w-4 h-4 shrink-0 transition-colors",
-                                pathname === OWNER_ITEM.href ? "text-orange-400" : "text-stone-400 group-hover:text-stone-700"
+                                pathname === OWNER_ITEM.href ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                             )} />
                             <span className="font-medium flex-1">{OWNER_ITEM.label}</span>
                             {pendentes > 0 && (
                                 <span
-                                    className="min-w-[20px] h-5 px-1.5 rounded-full bg-orange-600 text-white text-[11px] font-semibold flex items-center justify-center"
+                                    className="min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center"
                                     title={`${pendentes} contratação(ões) aguardando decisão`}
                                 >
                                     {pendentes}
@@ -163,21 +163,21 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
             </nav>
 
             {/* Footer */}
-            <div className="mt-6 pt-5 border-t border-stone-200/60 space-y-3">
+            <div className="mt-6 pt-5 border-t border-border/60 space-y-3">
                 <div className="flex items-center gap-3 px-1">
-                    <div className="w-9 h-9 rounded-full bg-stone-900 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center shrink-0">
                         <span
-                            className="text-white text-[13px] font-medium"
+                            className="text-background text-[13px] font-medium"
                             style={{ fontFamily: "var(--font-display)" }}
                         >
                             {initial}
                         </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-semibold text-stone-900 truncate">{displayEmail}</p>
+                        <p className="text-[12px] font-semibold text-foreground truncate">{displayEmail}</p>
                         <div className="flex items-center gap-1 mt-0.5">
-                            <ShieldCheck className="w-3 h-3 text-orange-700" />
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-stone-500 font-semibold">
+                            <ShieldCheck className="w-3 h-3 text-primary" />
+                            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
                                 Administrador
                             </span>
                         </div>
@@ -186,7 +186,7 @@ export function NavSidebar({ isOpen = false, onClose }: NavSidebarProps) {
 
                 <button
                     onClick={signOut}
-                    className="w-full inline-flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12.5px] text-stone-500 hover:text-red-700 hover:bg-red-50/60 transition-colors"
+                    className="w-full inline-flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12.5px] text-muted-foreground hover:text-destructive hover:bg-destructive-surface/60 transition-colors"
                 >
                     <LogOut className="w-4 h-4 shrink-0" />
                     <span className="font-medium">Sair</span>

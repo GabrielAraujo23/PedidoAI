@@ -20,7 +20,7 @@ export function PoweredBy({ className }: { className?: string }) {
 
     return (
         <div className={cn("flex items-center gap-1.5 opacity-60", className)}>
-            <span className="text-[10px] uppercase tracking-[0.18em] text-stone-400">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                 desenvolvido por
             </span>
             <Image

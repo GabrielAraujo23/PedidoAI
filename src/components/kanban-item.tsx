@@ -30,12 +30,18 @@ interface KanbanItemProps {
     onMoveTo?: (status: Status) => void;
 }
 
+// As 5 cores de status não têm token dedicado na tabela de conversão do plano
+// (só existem tokens para os 3 estados success/warning/destructive). Reaproveita
+// a paleta categórica de --chart-1..5 para novo/confirmado/rota, que já é a
+// paleta de 5 cores do produto, e os tokens semânticos para entregue (sucesso)
+// e cancelado (erro). Mesma escolha usada em kanban-board.tsx — manter os dois
+// em sincronia, e replicar em pedidos/page.tsx na Task 3 para consistência.
 const STATUS_META: Record<Status, { icon: ElementType; color: string; bg: string; bar: string }> = {
-    novo:       { icon: Clock,        color: "text-blue-500",    bg: "bg-blue-50",    bar: "bg-blue-400" },
-    confirmado: { icon: CheckCircle2, color: "text-amber-500",   bg: "bg-amber-50",   bar: "bg-amber-400" },
-    rota:       { icon: Truck,        color: "text-violet-500",  bg: "bg-violet-50",  bar: "bg-violet-400" },
-    entregue:   { icon: PackageCheck, color: "text-emerald-500", bg: "bg-emerald-50", bar: "bg-emerald-400" },
-    cancelado:  { icon: XCircle,      color: "text-red-500",     bg: "bg-red-50",     bar: "bg-red-400" },
+    novo:       { icon: Clock,        color: "text-chart-2",   bg: "bg-chart-2/10",       bar: "bg-chart-2" },
+    confirmado: { icon: CheckCircle2, color: "text-chart-4",   bg: "bg-chart-4/10",       bar: "bg-chart-4" },
+    rota:       { icon: Truck,        color: "text-chart-5",   bg: "bg-chart-5/10",       bar: "bg-chart-5" },
+    entregue:   { icon: PackageCheck, color: "text-success",   bg: "bg-success-surface",  bar: "bg-success" },
+    cancelado:  { icon: XCircle,      color: "text-destructive", bg: "bg-destructive-surface", bar: "bg-destructive" },
 };
 
 function formatRelativeTime(dateStr?: string) {
@@ -63,12 +69,12 @@ export function KanbanItem({ id, client, products, status, created_at, cancelled
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <div className={cn(
-                "relative bg-white rounded-xl border border-slate-200/80 shadow-sm",
-                "hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5",
+                "relative bg-card rounded-xl border border-border/80 shadow-sm",
+                "hover:shadow-md hover:border-border hover:-translate-y-0.5",
                 "active:shadow-xl active:scale-[0.98] cursor-grab active:cursor-grabbing",
                 "transition-all duration-150 overflow-hidden",
                 isDragging && "opacity-50 rotate-1 shadow-2xl scale-105 border-primary/30",
-                cancelled && "border-red-200/60"
+                cancelled && "border-destructive/30"
             )}>
                 {/* Left accent bar */}
                 <div className={cn("absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl", meta.bar)} />
@@ -79,7 +85,7 @@ export function KanbanItem({ id, client, products, status, created_at, cancelled
                             <button
                                 type="button"
                                 onPointerDown={(e) => e.stopPropagation()}
-                                className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-10"
+                                className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
                                 aria-label="Mover pedido"
                             >
                                 <MoreVertical className="w-3.5 h-3.5" />
@@ -98,22 +104,22 @@ export function KanbanItem({ id, client, products, status, created_at, cancelled
                 <div className="pl-4 pr-3 pt-3 pb-3 space-y-2">
                     {/* Top row: ID + time */}
                     <div className="flex items-center justify-between pr-6">
-                        <span className="text-[11px] font-bold text-orange-500 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-md tracking-wide">
+                        <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md tracking-wide">
                             {formattedId}
                         </span>
                         {time && (
-                            <span className="text-[10px] text-slate-400 font-medium">{time}</span>
+                            <span className="text-[10px] text-muted-foreground font-medium">{time}</span>
                         )}
                     </div>
 
                     {/* Client name */}
-                    <p className="text-sm font-semibold text-slate-800 leading-snug">{client}</p>
+                    <p className="text-sm font-semibold text-foreground leading-snug">{client}</p>
 
                     {/* Products */}
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{products}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{products}</p>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-end pt-1 border-t border-slate-100/80">
+                    <div className="flex items-center justify-end pt-1 border-t border-border/80">
                         <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-semibold", meta.bg, meta.color)}>
                             <Icon className="w-3 h-3" />
                         </div>
