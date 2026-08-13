@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { TENANT_COOKIE, signTenant, tenantCookieOptions } from "@/lib/session-cookie";
+import { PALETTE_COOKIE, serializarPaleta, paletteCookieOptions } from "@/lib/palette-cookie";
 import { slugify } from "@/lib/slug";
 import { handleRouteError } from "@/lib/api-auth";
 import { isTenantActive } from "@/lib/tenant";
@@ -37,7 +38,7 @@ export async function GET(
 
         const { data, error } = await getSupabaseAdmin()
             .from("store_settings")
-            .select("admin_id, store_name, slug")
+            .select("admin_id, store_name, slug, palette_family, accent_color")
             .eq("slug", slug)
             .maybeSingle();
 
@@ -64,6 +65,11 @@ export async function GET(
             storeName: data.store_name ?? "",
         });
         res.cookies.set(TENANT_COOKIE, signed, tenantCookieOptions());
+        res.cookies.set(
+            PALETTE_COOKIE,
+            serializarPaleta(data.palette_family, data.accent_color),
+            paletteCookieOptions()
+        );
         return res;
     } catch (e) {
         return handleRouteError(e, "GET /loja/[slug]");

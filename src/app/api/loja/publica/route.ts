@@ -7,7 +7,7 @@ import { isTenantActive, listActiveAdminIds } from "@/lib/tenant";
 
 const PUBLIC_FIELDS =
     "admin_id, store_name, slug, latitude, longitude, delivery_radius_km, delivery_rate_per_km, " +
-    "logo_url, white_label";
+    "logo_url, white_label, palette_family, accent_color";
 
 /**
  * GET /api/loja/publica?slug=<slug> | ?admin=<uuid> — dados da loja sem sessão.

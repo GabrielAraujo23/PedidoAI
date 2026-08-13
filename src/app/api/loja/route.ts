@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin, readJson, jsonError, handleRouteError } from "@/lib/api-auth";
 import { slugify, isValidSlug } from "@/lib/slug";
+import { isPaletteFamily, isHex } from "@/lib/palette";
+import { PALETTE_COOKIE, serializarPaleta, paletteCookieOptions } from "@/lib/palette-cookie";
 
 /** GET /api/loja — configurações da loja autenticada (null se ainda não existir). */
 export async function GET(request: NextRequest) {
@@ -50,6 +52,16 @@ export async function PUT(request: NextRequest) {
         void _a; void _i; void _c; void _w;
 
         const db = getSupabaseAdmin();
+
+        if ("palette_family" in fields && !isPaletteFamily(fields.palette_family)) {
+            return jsonError("Família de cores inválida.", 400);
+        }
+        // Aviso de contraste é conselho e fica na tela. Formato é integridade e
+        // fica aqui: "azul" chegaria ao CSS e o navegador ignoraria em silêncio,
+        // deixando a cor anterior sem ninguém entender por quê.
+        if ("accent_color" in fields && fields.accent_color !== null && !isHex(fields.accent_color)) {
+            return jsonError("Cor de acento inválida.", 400);
+        }
 
         // ── Slug ──────────────────────────────────────────────────────────
         // O slug é o endereço público da loja e tem índice único no banco.
@@ -116,7 +128,15 @@ export async function PUT(request: NextRequest) {
             return jsonError(detail, 500);
         }
 
-        return NextResponse.json({ settings: data });
+        const res = NextResponse.json({ settings: data });
+        // Regrava a cor na hora: sem isto o lojista escolheria a paleta, veria a
+        // prévia mudar e o resto do painel continuar igual até o cookie expirar.
+        res.cookies.set(
+            PALETTE_COOKIE,
+            serializarPaleta(data.palette_family, data.accent_color),
+            paletteCookieOptions()
+        );
+        return res;
     } catch (e) {
         return handleRouteError(e, "PUT /api/loja");
     }

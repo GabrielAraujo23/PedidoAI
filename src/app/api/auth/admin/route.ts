@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hashPasswordServer, verifyPasswordServer, generateSecureTokenServer, safeCompareStrings } from "@/lib/server-crypto";
 import { signSession, sessionCookieOptions, SESSION_COOKIE } from "@/lib/session-cookie";
+import { PALETTE_COOKIE, serializarPaleta, paletteCookieOptions } from "@/lib/palette-cookie";
 import { rateLimit, getClientIP, LIMITS } from "@/lib/rate-limit";
 import { checkOrigin } from "@/lib/csrf";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
@@ -39,6 +40,21 @@ async function okWithSession(data: {
     // chega ao painel).
     const res = NextResponse.json({ adminId: data.adminId, email: data.email, role: data.role });
     res.cookies.set(SESSION_COOKIE, signed, sessionCookieOptions());
+
+    // Sem isto, o lojista veria o painel na cor do PedidoAI até abrir a própria
+    // loja pelo link público — que ele quase nunca faz.
+    const { data: loja } = await getSupabaseAdmin()
+        .from("store_settings")
+        .select("palette_family, accent_color")
+        .eq("admin_id", data.adminId)
+        .maybeSingle();
+
+    res.cookies.set(
+        PALETTE_COOKIE,
+        serializarPaleta(loja?.palette_family, loja?.accent_color),
+        paletteCookieOptions()
+    );
+
     return res;
 }
 
