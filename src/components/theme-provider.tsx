@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { isTheme, resolveTheme, nextTheme, THEME_KEY, type Theme, type ThemeAplicado } from "@/lib/theme";
+import { aplicarPaletaDoTema } from "@/lib/palette-cookie";
 
 interface ThemeContextValue {
     tema: Theme;
@@ -52,7 +53,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        document.documentElement.classList.toggle("dark", aplicado === "escuro");
+        const escuro = aplicado === "escuro";
+        document.documentElement.classList.toggle("dark", escuro);
+        // A paleta da loja vive como estilo INLINE no documentElement, gravada
+        // pelo script do <head>. Estilo inline vence qualquer CSS, então trocar
+        // a classe `.dark` sozinha não muda cor nenhuma — o fundo só mudaria
+        // recarregando, e o texto secundário ficaria com o tom do outro tema.
+        aplicarPaletaDoTema(escuro);
     }, [aplicado]);
 
     // Quem está em "sistema" acompanha o aparelho ao vivo: trocar o tema do

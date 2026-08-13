@@ -37,6 +37,56 @@ export function serializarPaleta(familia: unknown, acento: unknown): string {
     return [f, claro, escuro, textoSobre(claro), textoSobre(escuro)].join("|");
 }
 
+/**
+ * Reaplica a paleta ao trocar de tema. Só no navegador.
+ *
+ * O script inline do <head> grava as variáveis como estilo INLINE no
+ * documentElement, que tem precedência máxima. Trocar a classe `.dark` muda o
+ * que o CSS diria, mas não consegue sobrepor o inline — o resultado eram
+ * tokens de um tema pintados sobre o outro: fundo que só mudava recarregando,
+ * e texto secundário claro sobre fundo claro.
+ *
+ * Lê o mesmo cookie que o script inline, com as quatro cores já derivadas pelo
+ * servidor, e regrava a metade certa.
+ */
+export function aplicarPaletaDoTema(escuro: boolean): void {
+    if (typeof document === "undefined") return;
+
+    const m = document.cookie.match(/(?:^|; )pedidoai_paleta=([^;]*)/);
+    if (!m) return;
+
+    const p = decodeURIComponent(m[1]).split("|");
+    const familia: PaletteFamily = isPaletteFamily(p[0]) ? p[0] : "creme";
+    const v = FAMILIAS[familia][escuro ? "escuro" : "claro"];
+
+    const acento = isHex(p[escuro ? 2 : 1]) ? p[escuro ? 2 : 1] : ACENTO_PADRAO;
+    const sobre  = isHex(p[escuro ? 4 : 3]) ? p[escuro ? 4 : 3] : textoSobre(acento);
+
+    const s = document.documentElement.style;
+    const set = (k: string, valor: string) => s.setProperty(k, valor);
+
+    set("--background", v.background);
+    set("--card", v.card);
+    set("--popover", v.card);
+    set("--muted", v.muted);
+    set("--secondary", v.muted);
+    set("--accent", v.muted);
+    set("--foreground", v.foreground);
+    set("--card-foreground", v.foreground);
+    set("--popover-foreground", v.foreground);
+    set("--secondary-foreground", v.foreground);
+    set("--accent-foreground", v.foreground);
+    set("--muted-foreground", v.mutedForeground);
+    set("--border", v.border);
+    set("--input", v.border);
+    set("--primary", acento);
+    set("--primary-foreground", sobre);
+    set("--sidebar", v.background);
+    set("--sidebar-foreground", v.foreground);
+    set("--sidebar-border", v.border);
+    set("--sidebar-primary", acento);
+}
+
 export function paletteCookieOptions() {
     return {
         httpOnly: false, // o script inline precisa ler
