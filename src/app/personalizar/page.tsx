@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, Upload, Trash2, AlertCircle, Check, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-mark";
+import { PaletaForm } from "@/components/paleta-form";
 
 /**
  * /personalizar — como a loja aparece.
@@ -187,6 +188,8 @@ export default function PersonalizarPage() {
                     </div>
                 )}
             </section>
+
+            <PaletaForm />
 
             <Link href="/loja" className="inline-flex items-center gap-1.5 mt-6 text-[13px] text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-3.5 h-3.5" /> Dados da loja
