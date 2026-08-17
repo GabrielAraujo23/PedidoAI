@@ -50,11 +50,6 @@ const WARM = "#F7F2EA";
 
 type SortKey = "nome" | "menor" | "maior";
 
-const SORTS: { key: SortKey; label: string; icon: LucideIcon }[] = [
-    { key: "nome",  label: "A–Z",          icon: ArrowDownAZ },
-    { key: "menor", label: "Menor preço",  icon: ArrowUpNarrowWide },
-    { key: "maior", label: "Maior preço",  icon: ArrowDownWideNarrow },
-];
 
 function formatCurrency(v: number) {
     return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -62,6 +57,16 @@ function formatCurrency(v: number) {
 
 export default function CatalogPage() {
     const { t } = useCopy();
+
+        // Dentro do componente: em escopo de módulo isto seria montado quando
+        // o arquivo carrega, antes de existir loja, e os rótulos ignorariam o
+        // lojista para sempre.
+    const SORTS: { key: SortKey; label: string; icon: LucideIcon }[] = [
+        { key: "nome",  label: t("catalogo.ordenar_az"),    icon: ArrowDownAZ },
+        { key: "menor", label: t("catalogo.ordenar_menor"), icon: ArrowUpNarrowWide },
+        { key: "maior", label: t("catalogo.ordenar_maior"), icon: ArrowDownWideNarrow },
+    ];
+
     const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
     const [products, setProducts] = useState<CatalogProduct[]>([]);

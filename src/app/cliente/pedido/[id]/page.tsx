@@ -36,12 +36,6 @@ interface OrderData {
 
 // ── Status steps config ────────────────────────────────────────────────────────
 
-const STEPS: { status: Status; label: string; Icon: typeof Package }[] = [
-    { status: "novo",       label: "Pendente",   Icon: Clock },
-    { status: "confirmado", label: "Confirmado", Icon: CheckCircle },
-    { status: "rota",       label: "Em Entrega", Icon: Truck },
-    { status: "entregue",   label: "Entregue",   Icon: Star },
-];
 
 const STATUS_ORDER: Record<Status, number> = {
     novo: 0, confirmado: 1, rota: 2, entregue: 3, cancelado: -1,
@@ -63,6 +57,17 @@ function formatDate(iso: string) {
 
 export default function OrderTrackingPage() {
     const { t } = useCopy();
+
+        // Dentro do componente: em escopo de módulo isto seria montado quando
+        // o arquivo carrega, antes de existir loja, e os rótulos ignorariam o
+        // lojista para sempre.
+    const STEPS: { status: Status; label: string; Icon: typeof Package }[] = [
+        { status: "novo",       label: t("pedido.status_novo"),       Icon: Clock },
+        { status: "confirmado", label: t("pedido.status_confirmado"), Icon: CheckCircle },
+        { status: "rota",       label: t("pedido.status_rota"),       Icon: Truck },
+        { status: "entregue",   label: t("pedido.status_entregue"),   Icon: Star },
+    ];
+
     const { id } = useParams<{ id: string }>();
     const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);

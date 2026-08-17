@@ -67,13 +67,6 @@ function maskPhone(v: string): string {
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
-const STATUS_CONFIG: Record<Status, { label: string; tone: string; Icon: typeof Clock }> = {
-    novo:       { label: "Pendente",   tone: "bg-chart-2/10 text-chart-2 border-chart-2/20",     Icon: Clock },
-    confirmado: { label: "Confirmado", tone: "bg-chart-4/10 text-chart-4 border-chart-4/20",  Icon: CheckCircle },
-    rota:       { label: "Em rota",    tone: "bg-chart-5/10 text-chart-5 border-chart-5/20", Icon: Truck },
-    entregue:   { label: "Entregue",   tone: "bg-success-surface text-success border-success/30", Icon: Star },
-    cancelado:  { label: "Cancelado",  tone: "bg-destructive-surface text-destructive border-destructive/30",             Icon: X },
-};
 
 type NavItem = "perfil" | "pedidos" | "enderecos" | "configuracoes";
 
@@ -82,6 +75,18 @@ const sectionTitleStyle = { fontFamily: "var(--font-display)", fontWeight: 400 }
 
 export default function ProfilePage() {
     const { t } = useCopy();
+
+    // Dentro do componente: em escopo de módulo isto seria montado quando
+    // o arquivo carrega, antes de existir loja, e os rótulos ignorariam o
+    // lojista para sempre.
+    const STATUS_CONFIG: Record<Status, { label: string; tone: string; Icon: typeof Clock }> = {
+        novo:       { label: t("perfil.status_novo"),       tone: "bg-chart-2/10 text-chart-2 border-chart-2/20",     Icon: Clock },
+        confirmado: { label: t("perfil.status_confirmado"), tone: "bg-chart-4/10 text-chart-4 border-chart-4/20",  Icon: CheckCircle },
+        rota:       { label: t("perfil.status_rota"),       tone: "bg-chart-5/10 text-chart-5 border-chart-5/20", Icon: Truck },
+        entregue:   { label: t("perfil.status_entregue"),   tone: "bg-success-surface text-success border-success/30", Icon: Star },
+        cancelado:  { label: t("perfil.status_cancelado"),  tone: "bg-destructive-surface text-destructive border-destructive/30",             Icon: X },
+    };
+
 
     // Dentro do componente pelo mesmo motivo do NAV do cabeçalho: em escopo de
     // módulo a lista seria montada quando o arquivo carrega, antes de existir

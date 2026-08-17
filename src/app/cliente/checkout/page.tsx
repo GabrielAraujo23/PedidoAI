@@ -37,12 +37,6 @@ interface StoreCoords {
     rate: number;
 }
 
-const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; Icon: typeof QrCode }[] = [
-    { id: "pix",      label: "PIX",      Icon: QrCode },
-    { id: "cartao",   label: "Cartão",   Icon: CreditCard },
-    { id: "dinheiro", label: "Dinheiro", Icon: Banknote },
-    { id: "vr",       label: "VR / VA",  Icon: UtensilsCrossed },
-];
 
 const EMPTY_ADDR: AddrForm = {
     cep: "", street: "", neighborhood: "", city: "", state: "", number: "", complement: "",
@@ -65,6 +59,17 @@ const eyebrowClass =
 
 export default function CheckoutPage() {
     const { t } = useCopy();
+
+        // Dentro do componente: em escopo de módulo isto seria montado quando
+        // o arquivo carrega, antes de existir loja, e os rótulos ignorariam o
+        // lojista para sempre.
+    const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; Icon: typeof QrCode }[] = [
+        { id: "pix",      label: t("checkout.pagamento_pix"),      Icon: QrCode },
+        { id: "cartao",   label: t("checkout.pagamento_cartao"),   Icon: CreditCard },
+        { id: "dinheiro", label: t("checkout.pagamento_dinheiro"), Icon: Banknote },
+        { id: "vr",       label: t("checkout.pagamento_vr"),       Icon: UtensilsCrossed },
+    ];
+
     const { session, loading: sessionLoading } = useClientSession();
     const sessionRef = useRef(session);
     const [mounted, setMounted] = useState(false);
