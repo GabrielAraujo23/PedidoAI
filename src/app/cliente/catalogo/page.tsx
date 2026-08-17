@@ -10,7 +10,7 @@ import {
     ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowDownAZ, SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolverCopy } from "@/lib/copy";
+import { useCopy } from "@/components/copy-provider";
 import { ClientHeader } from "@/components/client-header";
 import { ProductCard, type CatalogProduct } from "@/components/product-card";
 import { useCart } from "@/context/CartContext";
@@ -61,6 +61,7 @@ function formatCurrency(v: number) {
 }
 
 export default function CatalogPage() {
+    const { t } = useCopy();
     const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
     const [products, setProducts] = useState<CatalogProduct[]>([]);
@@ -249,7 +250,7 @@ export default function CatalogPage() {
                     <div
                         className="flex gap-1.5 overflow-x-auto scrollbar-hide pt-3 pb-2"
                         role="tablist"
-                        aria-label={resolverCopy("catalogo.categorias", null)}
+                        aria-label={t("catalogo.categorias")}
                     >
                         {categories.map((cat) => {
                             const Icon = CATEGORY_ICONS[cat] ?? Package;
@@ -494,7 +495,7 @@ export default function CatalogPage() {
                                 onClick={() => router.push("/cliente/checkout")}
                                 className="group inline-flex items-center gap-1.5 bg-background text-foreground px-4 sm:px-5 h-10 rounded-xl text-[13px] font-semibold tracking-wide hover:bg-muted transition-colors duration-200 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-foreground"
                             >
-                                <span className="hidden sm:inline">{resolverCopy("catalogo.finalizar", null)}</span>
+                                <span className="hidden sm:inline">{t("catalogo.finalizar")}</span>
                                 <ShoppingCart className="w-4 h-4 sm:hidden" />
                                 <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                             </button>

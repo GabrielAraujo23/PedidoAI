@@ -6,7 +6,7 @@ import Link from "next/link";
 import { FileText, Printer, ArrowLeft, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientSession } from "@/lib/client-session";
-import { resolverCopy } from "@/lib/copy";
+import { useCopy } from "@/components/copy-provider";
 import { cn } from "@/lib/utils";
 import type { Status } from "@/lib/types";
 
@@ -62,6 +62,7 @@ function formatDate(iso: string) {
 }
 
 export default function ReciboPedidoPage() {
+    const { t } = useCopy();
     const { id } = useParams<{ id: string }>();
     const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
@@ -145,7 +146,7 @@ export default function ReciboPedidoPage() {
                     ) : !order ? (
                         <div className="text-center py-24">
                             <Package className="w-12 h-12 text-muted-foreground/70 mx-auto mb-3" />
-                            <p className="font-bold text-[#111827]">{resolverCopy("recibo.nao_encontrado", null)}</p>
+                            <p className="font-bold text-[#111827]">{t("recibo.nao_encontrado")}</p>
                             <Link
                                 href="/cliente/catalogo"
                                 className="text-sm text-[#F97316] hover:underline mt-2 inline-block"
@@ -163,7 +164,7 @@ export default function ReciboPedidoPage() {
                                         <FileText className="w-5 h-5 text-[#F97316]" />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">{resolverCopy("recibo.recibo_de_pedido", null)}</p>
+                                        <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">{t("recibo.recibo_de_pedido")}</p>
                                         <h1 className="text-xl font-bold text-[#111827]">
                                             Pedido #{String(order.id).padStart(4, "0")}
                                         </h1>
@@ -183,7 +184,7 @@ export default function ReciboPedidoPage() {
                             {/* Cliente */}
                             {client && (
                                 <div className="mb-6">
-                                    <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mb-2">{resolverCopy("recibo.cliente", null)}</p>
+                                    <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mb-2">{t("recibo.cliente")}</p>
                                     <p className="text-sm font-semibold text-[#111827]">{client.name}</p>
                                     <p className="text-sm text-[#6B7280]">{client.phone}</p>
                                     {client.address && (
@@ -194,16 +195,16 @@ export default function ReciboPedidoPage() {
 
                             {/* Itens */}
                             <div className="mb-6">
-                                <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mb-3">{resolverCopy("recibo.itens", null)}</p>
+                                <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider mb-3">{t("recibo.itens")}</p>
                                 {hasItems ? (
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b border-[#E5E7EB]">
-                                                <th className="text-left pb-2 font-medium text-[#6B7280]">{resolverCopy("recibo.produto", null)}</th>
-                                                <th className="text-center pb-2 font-medium text-[#6B7280]">{resolverCopy("recibo.und", null)}</th>
+                                                <th className="text-left pb-2 font-medium text-[#6B7280]">{t("recibo.produto")}</th>
+                                                <th className="text-center pb-2 font-medium text-[#6B7280]">{t("recibo.und")}</th>
                                                 <th className="text-center pb-2 font-medium text-[#6B7280]">Qtd</th>
-                                                <th className="text-right pb-2 font-medium text-[#6B7280]">{resolverCopy("recibo.unit", null)}</th>
-                                                <th className="text-right pb-2 font-medium text-[#6B7280]">{resolverCopy("recibo.total", null)}</th>
+                                                <th className="text-right pb-2 font-medium text-[#6B7280]">{t("recibo.unit")}</th>
+                                                <th className="text-right pb-2 font-medium text-[#6B7280]">{t("recibo.total")}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[#F3F4F6]">
@@ -231,11 +232,11 @@ export default function ReciboPedidoPage() {
                             {hasItems && (
                                 <div className="border-t border-[#E5E7EB] pt-4 space-y-1.5">
                                     <div className="flex justify-between text-sm text-[#6B7280]">
-                                        <span>{resolverCopy("recibo.subtotal", null)}</span>
+                                        <span>{t("recibo.subtotal")}</span>
                                         <span>{formatCurrency(totalValue)}</span>
                                     </div>
                                     <div className="flex justify-between text-base font-bold pt-2 border-t border-[#E5E7EB]">
-                                        <span className="text-[#111827]">{resolverCopy("recibo.total", null)}</span>
+                                        <span className="text-[#111827]">{t("recibo.total")}</span>
                                         <span className="text-[#F97316]">{formatCurrency(totalValue)}</span>
                                     </div>
                                 </div>
@@ -243,7 +244,7 @@ export default function ReciboPedidoPage() {
 
                             {/* Rodapé */}
                             <div className="mt-8 pt-4 border-t border-[#E5E7EB] text-center">
-                                <p className="text-xs text-[#6B7280]">{resolverCopy("recibo.obrigado", null)}</p>
+                                <p className="text-xs text-[#6B7280]">{t("recibo.obrigado")}</p>
                             </div>
                         </div>
                     )}

@@ -10,7 +10,7 @@ import {
     validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, LIMITS,
 } from "@/lib/validators";
 import { logEvent } from "@/lib/logger";
-import { resolverCopy } from "@/lib/copy";
+import { useCopy } from "@/components/copy-provider";
 import { BrandMark } from "@/components/brand-mark";
 import { PoweredBy } from "@/components/powered-by";
 
@@ -21,8 +21,6 @@ function getAdminIdFromUrl(): string {
     return new URLSearchParams(window.location.search).get("admin") ?? "";
 }
 
-/** Pedido para o cliente buscar o link certo quando a loja não foi definida. */
-const NEEDS_STORE_MESSAGE = resolverCopy("login.precisa_loja", null);
 
 /** Dados públicos da loja: nome para exibir e coordenadas para estimar frete. */
 interface PublicStore {
@@ -94,6 +92,12 @@ const inputClass =
     "w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all duration-200 focus:border-ring focus:ring-4 focus:ring-ring/20 disabled:bg-muted disabled:text-muted-foreground";
 
 export default function LoginPage() {
+    const { t } = useCopy();
+    // Dentro do componente, e não em escopo de módulo: em escopo de módulo
+    // isto rodaria uma vez, quando o arquivo carrega, antes de existir loja —
+    // e o texto ignoraria o lojista para sempre, sem teste nenhum apontar.
+    const needsStoreMessage = t("login.precisa_loja");
+
     const [step, setStep] = useState<Step>("phone");
     const [phone, setPhone] = useState("");
     const [name, setName] = useState("");
@@ -179,7 +183,7 @@ export default function LoginPage() {
 
             if (data.erro) {
                 setCepStatus("error");
-                setCepError(resolverCopy("login.cep_nao_encontrado", null));
+                setCepError(t("login.cep_nao_encontrado"));
                 return;
             }
 
@@ -208,7 +212,7 @@ export default function LoginPage() {
         } catch {
             if (fetchedCepRef.current === digits) {
                 setCepStatus("error");
-                setCepError(resolverCopy("login.cep_nao_encontrado", null));
+                setCepError(t("login.cep_nao_encontrado"));
             }
         } finally {
             clearTimeout(timer);
@@ -261,7 +265,7 @@ export default function LoginPage() {
             // seguir para o cadastro — ele cairia no mesmo erro.
             if (res.status === 409) {
                 setNeedsStore(true);
-                setError(NEEDS_STORE_MESSAGE);
+                setError(needsStoreMessage);
                 setLoading(false);
                 return;
             }
@@ -294,14 +298,14 @@ export default function LoginPage() {
             });
             if (res.status === 409) {
                 setNeedsStore(true);
-                setError(NEEDS_STORE_MESSAGE);
+                setError(needsStoreMessage);
                 setLoading(false);
                 return;
             }
             if (!res.ok) throw new Error("auth failed");
             router.push("/cliente/catalogo");
         } catch {
-            setError(resolverCopy("login.erro_entrar", null));
+            setError(t("login.erro_entrar"));
             setLoading(false);
         }
     }
@@ -334,9 +338,9 @@ export default function LoginPage() {
                 const data = await res.json().catch(() => ({})) as { error?: string; needsStore?: boolean };
                 if (res.status === 409 && data.needsStore) {
                     setNeedsStore(true);
-                    setError(NEEDS_STORE_MESSAGE);
+                    setError(needsStoreMessage);
                 } else {
-                    setError(data.error || resolverCopy("login.erro_cadastrar", null));
+                    setError(data.error || t("login.erro_cadastrar"));
                 }
                 setLoading(false);
                 return;
@@ -344,7 +348,7 @@ export default function LoginPage() {
             logEvent({ event_type: "client_registered", actor_type: "client" });
             router.push("/cliente/catalogo");
         } catch {
-            setError(resolverCopy("login.erro_cadastrar", null));
+            setError(t("login.erro_cadastrar"));
             setLoading(false);
         }
     }
@@ -389,7 +393,7 @@ export default function LoginPage() {
                     — esconder a confirmação justamente no celular anularia o
                     motivo de existir o slug. */}
                 <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-muted-foreground text-right max-w-[150px] sm:max-w-[220px] truncate">
-                    {storeName || resolverCopy("login.loja_aberta", null)}
+                    {storeName || t("login.loja_aberta")}
                 </span>
             </header>
 
@@ -404,7 +408,7 @@ export default function LoginPage() {
                         <div className="mb-6 flex items-start gap-2.5 px-4 py-3 rounded-xl border border-warning/30 bg-warning-surface/80">
                             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-warning" />
                             <p className="text-[13px] leading-relaxed text-warning">
-                                {NEEDS_STORE_MESSAGE}
+                                {needsStoreMessage}
                             </p>
                         </div>
                     )}
@@ -429,7 +433,7 @@ export default function LoginPage() {
                     {step === "phone" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{resolverCopy("login.bemvindo", null)}</p>
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{t("login.bemvindo")}</p>
                                 <h1
                                     className="text-[44px] sm:text-[52px] leading-[0.95] tracking-tight text-foreground"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -437,15 +441,15 @@ export default function LoginPage() {
                                     Faça seu pedido <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>agora.</em>
                                 </h1>
                                 <p className="text-[14px] text-muted-foreground mt-4 max-w-[320px] mx-auto leading-relaxed">
-                                    {resolverCopy("login.subtitulo", null)}
+                                    {t("login.subtitulo")}
                                 </p>
                             </div>
 
                             <form onSubmit={handlePhoneContinue} className="space-y-5">
-                                <Field icon={Phone} label={resolverCopy("login.telefone", null)}>
+                                <Field icon={Phone} label={t("login.telefone")}>
                                     <input
                                         type="tel"
-                                        placeholder={resolverCopy("login.placeholder_telefone", null)}
+                                        placeholder={t("login.placeholder_telefone")}
                                         value={phone}
                                         onChange={(e) => setPhone(maskPhone(e.target.value))}
                                         maxLength={15}
@@ -472,7 +476,7 @@ export default function LoginPage() {
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
                                         <>
-                                            {resolverCopy("login.continuar", null)}
+                                            {t("login.continuar")}
                                             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                         </>
                                     )}
@@ -480,7 +484,7 @@ export default function LoginPage() {
                             </form>
 
                             <p className="text-center text-[11px] text-muted-foreground mt-8 leading-relaxed">
-                                {resolverCopy("login.termos", null)}
+                                {t("login.termos")}
                             </p>
                         </section>
                     )}
@@ -491,7 +495,7 @@ export default function LoginPage() {
                             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-success-surface ring-8 ring-success-surface/60 mb-6">
                                 <Check className="w-7 h-7 text-success" strokeWidth={2.5} />
                             </div>
-                            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{resolverCopy("login.que_bom_te_ver", null)}</p>
+                            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{t("login.que_bom_te_ver")}</p>
                             <h1
                                 className="text-[40px] sm:text-[48px] leading-[1.0] tracking-tight text-foreground"
                                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -502,7 +506,7 @@ export default function LoginPage() {
                                 </em>
                             </h1>
                             <p className="text-[14px] text-muted-foreground mt-4 max-w-[320px] mx-auto leading-relaxed">
-                                {resolverCopy("login.pronto", null)}
+                                {t("login.pronto")}
                             </p>
 
                             <div className="space-y-3 mt-8">
@@ -512,14 +516,14 @@ export default function LoginPage() {
                                     className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
                                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                                        <>{resolverCopy("login.entrar_pedir", null)} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
+                                        <>{t("login.entrar_pedir")} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
                                     )}
                                 </button>
                                 <button
                                     onClick={() => { setStep("phone"); setFoundClient(null); setPhone(""); }}
                                     className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
                                 >
-                                    <ArrowLeft className="w-3.5 h-3.5" /> {resolverCopy("login.nao_sou_eu", null)}
+                                    <ArrowLeft className="w-3.5 h-3.5" /> {t("login.nao_sou_eu")}
                                 </button>
                             </div>
                         </section>
@@ -529,7 +533,7 @@ export default function LoginPage() {
                     {step === "new_client" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{resolverCopy("login.primeiro_acesso", null)}</p>
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{t("login.primeiro_acesso")}</p>
                                 <h1
                                     className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-foreground"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -537,7 +541,7 @@ export default function LoginPage() {
                                     Vamos te <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>conhecer</em>.
                                 </h1>
                                 <p className="text-[14px] text-muted-foreground mt-4 max-w-[340px] mx-auto leading-relaxed">
-                                    {resolverCopy("login.dados_rapidos", null)}
+                                    {t("login.dados_rapidos")}
                                 </p>
                             </div>
 
@@ -551,10 +555,10 @@ export default function LoginPage() {
                                     />
                                 </Field>
 
-                                <Field icon={User} label={resolverCopy("login.nome_completo", null)}>
+                                <Field icon={User} label={t("login.nome_completo")}>
                                     <input
                                         type="text"
-                                        placeholder={resolverCopy("login.como_posso_chamar", null)}
+                                        placeholder={t("login.como_posso_chamar")}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         autoComplete="name"
@@ -570,7 +574,7 @@ export default function LoginPage() {
                                         <input
                                             type="text"
                                             inputMode="numeric"
-                                            placeholder={resolverCopy("login.placeholder_cep", null)}
+                                            placeholder={t("login.placeholder_cep")}
                                             maxLength={9}
                                             value={cep}
                                             onChange={(e) => handleCepChange(e.target.value)}
@@ -596,17 +600,17 @@ export default function LoginPage() {
                                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 pt-1">
                                         <div className="grid grid-cols-3 gap-3">
                                             <div className="col-span-3">
-                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("login.endereco", null)}</label>
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{t("login.endereco")}</label>
                                                 <p className="text-[14px] text-foreground leading-snug mt-0.5">
                                                     {addrFields.street}, <span className="text-muted-foreground">{addrFields.neighborhood}</span>
                                                 </p>
                                                 <p className="text-[12px] text-muted-foreground">{addrFields.city}/{addrFields.state}</p>
                                             </div>
                                             <div className="col-span-3">
-                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("login.numero", null)}</label>
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{t("login.numero")}</label>
                                                 <input
                                                     type="text"
-                                                    placeholder={resolverCopy("login.placeholder_numero", null)}
+                                                    placeholder={t("login.placeholder_numero")}
                                                     value={numberField}
                                                     onChange={(e) => setNumberField(e.target.value)}
                                                     disabled={loading}
@@ -630,7 +634,7 @@ export default function LoginPage() {
                                                 <div className="text-[12px] leading-relaxed">
                                                     {deliveryInfo.fee === 0 ? (
                                                         <>
-                                                            <span className="font-semibold text-success">{resolverCopy("login.entrega_gratis", null)}</span>
+                                                            <span className="font-semibold text-success">{t("login.entrega_gratis")}</span>
                                                             <span className="text-success"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
                                                         </>
                                                     ) : (
@@ -659,7 +663,7 @@ export default function LoginPage() {
                                         className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                     >
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                                            <>{resolverCopy("login.cadastrar_entrar", null)} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
+                                            <>{t("login.cadastrar_entrar")} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
                                         )}
                                     </button>
                                     <button
@@ -667,7 +671,7 @@ export default function LoginPage() {
                                         onClick={resetNewClientStep}
                                         className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
                                     >
-                                        <ArrowLeft className="w-3.5 h-3.5" /> {resolverCopy("login.voltar", null)}
+                                        <ArrowLeft className="w-3.5 h-3.5" /> {t("login.voltar")}
                                     </button>
                                 </div>
                             </form>

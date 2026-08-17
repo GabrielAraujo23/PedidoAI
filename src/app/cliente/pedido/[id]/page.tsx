@@ -8,7 +8,7 @@ import {
     Package, MessageCircle, Plus, Loader2, XCircle, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { resolverCopy } from "@/lib/copy";
+import { useCopy } from "@/components/copy-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
 import { useClientSession } from "@/lib/client-session";
@@ -62,6 +62,7 @@ function formatDate(iso: string) {
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function OrderTrackingPage() {
+    const { t } = useCopy();
     const { id } = useParams<{ id: string }>();
     const { session, loading: sessionLoading } = useClientSession();
     const [mounted, setMounted] = useState(false);
@@ -145,7 +146,7 @@ export default function OrderTrackingPage() {
                 ) : !order ? (
                     <div className="text-center py-24">
                         <Package className="w-12 h-12 text-muted-foreground/70 mx-auto mb-3" />
-                        <p className="font-bold text-[#111827]">{resolverCopy("pedido.nao_encontrado", null)}</p>
+                        <p className="font-bold text-[#111827]">{t("pedido.nao_encontrado")}</p>
                         <Link href="/cliente/catalogo" className="text-sm text-[#F97316] hover:underline mt-2 inline-block">
                             Voltar ao cardápio
                         </Link>
@@ -162,13 +163,13 @@ export default function OrderTrackingPage() {
                                         <XCircle className="w-8 h-8 text-destructive" />
                                     </div>
                                     <h1 className="text-2xl font-bold text-[#111827] mb-2">Pedido #{order.id} cancelado</h1>
-                                    <p className="text-sm text-[#6B7280] mb-5">{resolverCopy("pedido.cancelado", null)}</p>
+                                    <p className="text-sm text-[#6B7280] mb-5">{t("pedido.cancelado")}</p>
                                     <Link
                                         href="/cliente/catalogo"
                                         className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                     >
                                         <Plus className="w-4 h-4" />
-                                        {resolverCopy("pedido.fazer_novo", null)}
+                                        {t("pedido.fazer_novo")}
                                     </Link>
                                 </div>
                             ) : (
@@ -176,7 +177,7 @@ export default function OrderTrackingPage() {
                                     <div className="w-14 h-14 bg-[#22C55E]/10 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <CheckCircle className="w-8 h-8 text-[#22C55E]" />
                                     </div>
-                                    <p className="text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">{resolverCopy("pedido.sucesso", null)}</p>
+                                    <p className="text-xs font-bold text-[#F97316] uppercase tracking-wider mb-1">{t("pedido.sucesso")}</p>
                                     <h1 className="text-2xl font-bold text-[#111827] mb-2">
                                         Pedido #{order.id} realizado!
                                     </h1>
@@ -198,7 +199,7 @@ export default function OrderTrackingPage() {
                                             className="flex items-center gap-2 px-5 py-2.5 border-2 border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                         >
                                             <Plus className="w-4 h-4" />
-                                            {resolverCopy("pedido.fazer_novo", null)}
+                                            {t("pedido.fazer_novo")}
                                         </Link>
                                     </div>
                                 </div>
@@ -210,7 +211,7 @@ export default function OrderTrackingPage() {
                                         <XCircle className="w-5 h-5 text-destructive" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-[#111827]">{resolverCopy("pedido.cancelado_label", null)}</p>
+                                        <p className="font-bold text-[#111827]">{t("pedido.cancelado_label")}</p>
                                         <p className="text-sm text-[#6B7280]">
                                             Pedido feito em {order.created_at ? formatDate(order.created_at) : "—"}
                                         </p>
@@ -218,7 +219,7 @@ export default function OrderTrackingPage() {
                                 </div>
                             ) : (
                                 <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow-sm">
-                                    <h2 className="font-bold text-[#111827] mb-6">{resolverCopy("pedido.status_envio", null)}</h2>
+                                    <h2 className="font-bold text-[#111827] mb-6">{t("pedido.status_envio")}</h2>
 
                                     <div className="relative flex justify-between">
                                         <div className="absolute top-5 left-0 right-0 h-0.5 bg-[#E5E7EB]" />
@@ -251,7 +252,7 @@ export default function OrderTrackingPage() {
                                                         {step.label}
                                                     </p>
                                                     {active && (
-                                                        <p className="text-[10px] text-[#6B7280] mt-0.5">{resolverCopy("pedido.a_caminho", null)}</p>
+                                                        <p className="text-[10px] text-[#6B7280] mt-0.5">{t("pedido.a_caminho")}</p>
                                                     )}
                                                     {done && order.created_at && (
                                                         <p className="text-[10px] text-[#6B7280] mt-0.5">{formatDate(order.created_at)}</p>
@@ -267,7 +268,7 @@ export default function OrderTrackingPage() {
                         {/* ── Right sidebar ─────────────────────────────────── */}
                         <div className="w-full lg:w-96 shrink-0">
                             <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 shadow-sm sticky top-20">
-                                <h2 className="font-bold text-[#111827] mb-4">{resolverCopy("pedido.resumo", null)}</h2>
+                                <h2 className="font-bold text-[#111827] mb-4">{t("pedido.resumo")}</h2>
 
                                 {/* Items */}
                                 <div className="space-y-3 mb-4">
@@ -295,15 +296,15 @@ export default function OrderTrackingPage() {
                                     <>
                                         <div className="border-t border-[#E5E7EB] pt-3 space-y-1.5 text-sm">
                                             <div className="flex justify-between text-[#6B7280]">
-                                                <span>{resolverCopy("pedido.subtotal", null)}</span>
+                                                <span>{t("pedido.subtotal")}</span>
                                                 <span>{formatCurrency(totalValue)}</span>
                                             </div>
                                             <div className="flex justify-between text-[#6B7280]">
-                                                <span>{resolverCopy("pedido.taxa_entrega", null)}</span>
-                                                <span className="text-[#22C55E] font-medium">{resolverCopy("pedido.a_calcular", null)}</span>
+                                                <span>{t("pedido.taxa_entrega")}</span>
+                                                <span className="text-[#22C55E] font-medium">{t("pedido.a_calcular")}</span>
                                             </div>
                                             <div className="flex justify-between font-bold text-base pt-1">
-                                                <span className="text-[#111827]">{resolverCopy("pedido.total", null)}</span>
+                                                <span className="text-[#111827]">{t("pedido.total")}</span>
                                                 <span className="text-[#F97316]">{formatCurrency(totalValue)}</span>
                                             </div>
                                         </div>
@@ -312,11 +313,11 @@ export default function OrderTrackingPage() {
 
                                 <div className="border-t border-[#E5E7EB] mt-3 pt-3 space-y-2">
                                     <div>
-                                        <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">{resolverCopy("pedido.cliente", null)}</p>
+                                        <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">{t("pedido.cliente")}</p>
                                         <p className="text-sm text-[#111827] mt-0.5">{order.client}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">{resolverCopy("pedido.pedido_feito_em", null)}</p>
+                                        <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">{t("pedido.pedido_feito_em")}</p>
                                         <p className="text-sm text-[#111827] mt-0.5">
                                             {order.created_at ? formatDate(order.created_at) : "—"}
                                         </p>
@@ -331,12 +332,12 @@ export default function OrderTrackingPage() {
                                                 disabled={cancelling}
                                                 className="w-full h-10 border border-destructive/40 text-destructive rounded-full text-sm font-bold hover:bg-destructive-surface transition-colors disabled:opacity-50"
                                             >
-                                                {resolverCopy("pedido.cancelar_pedido", null)}
+                                                {t("pedido.cancelar_pedido")}
                                             </button>
                                         ) : (
                                             <div className="bg-destructive-surface border border-destructive/30 rounded-xl p-4 space-y-3">
-                                                <p className="text-sm font-semibold text-destructive">{resolverCopy("pedido.tem_certeza", null)}</p>
-                                                <p className="text-xs text-destructive">{resolverCopy("pedido.acao_nao_desfeita", null)}</p>
+                                                <p className="text-sm font-semibold text-destructive">{t("pedido.tem_certeza")}</p>
+                                                <p className="text-xs text-destructive">{t("pedido.acao_nao_desfeita")}</p>
                                                 {cancelError && <p className="text-xs text-destructive">{cancelError}</p>}
                                                 <div className="flex gap-2">
                                                     <button
@@ -344,7 +345,7 @@ export default function OrderTrackingPage() {
                                                         disabled={cancelling}
                                                         className="flex-1 h-9 border border-destructive/40 text-destructive rounded-full text-xs font-bold hover:bg-card transition-colors disabled:opacity-50"
                                                     >
-                                                        {resolverCopy("pedido.manter", null)}
+                                                        {t("pedido.manter")}
                                                     </button>
                                                     <button
                                                         onClick={handleCancel}
@@ -352,7 +353,7 @@ export default function OrderTrackingPage() {
                                                         className="flex-1 h-9 bg-destructive text-white rounded-full text-xs font-bold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
                                                     >
                                                         {cancelling && <Loader2 className="w-3 h-3 animate-spin" />}
-                                                        {resolverCopy("pedido.sim_cancelar", null)}
+                                                        {t("pedido.sim_cancelar")}
                                                     </button>
                                                 </div>
                                             </div>
@@ -365,14 +366,14 @@ export default function OrderTrackingPage() {
                                     className="mt-3 flex items-center justify-center gap-2 w-full h-10 bg-[#F97316] text-white rounded-full text-sm font-bold hover:bg-[#F97316]/90 transition-colors"
                                 >
                                     <FileText className="w-4 h-4" />
-                                    {resolverCopy("pedido.ver_recibo", null)}
+                                    {t("pedido.ver_recibo")}
                                 </Link>
                                 <Link
                                     href="/cliente/catalogo"
                                     className="mt-2 flex items-center justify-center gap-2 w-full h-10 border border-[#F97316] text-[#F97316] rounded-full text-sm font-bold hover:bg-[#F97316]/5 transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    {resolverCopy("pedido.novo_pedido", null)}
+                                    {t("pedido.novo_pedido")}
                                 </Link>
                             </div>
                         </div>

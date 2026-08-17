@@ -6,6 +6,8 @@ import { AuthProvider } from "@/components/auth-provider";
 import { BrandProvider } from "@/components/brand-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CartProvider } from "@/context/CartContext";
+import { CopyProvider } from "@/components/copy-provider";
+import { lerOverridesDaLoja } from "@/lib/copy/servidor";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,11 +42,20 @@ export const viewport: Viewport = {
   themeColor: "#F7F2EA",
 };
 
-export default function RootLayout({
+/**
+ * O layout raiz é `async` e lê o cookie de tenant para trazer o texto da loja
+ * já resolvido. Isso torna as rotas dinâmicas — custo assumido de propósito:
+ * este é um SaaS com sessão em quase tudo, e a alternativa (buscar o texto no
+ * cliente, como o BrandProvider faz com a marca) trocaria esse custo por texto
+ * mudando na cara de quem está lendo.
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const copyOverrides = await lerOverridesDaLoja();
+
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
@@ -80,9 +91,11 @@ export default function RootLayout({
           <TooltipProvider>
             <CartProvider>
               <BrandProvider>
-                <AuthProvider>
-                  {children}
-                </AuthProvider>
+                <CopyProvider overrides={copyOverrides}>
+                  <AuthProvider>
+                    {children}
+                  </AuthProvider>
+                </CopyProvider>
               </BrandProvider>
             </CartProvider>
           </TooltipProvider>
