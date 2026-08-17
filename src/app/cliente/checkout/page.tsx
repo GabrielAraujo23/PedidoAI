@@ -361,7 +361,7 @@ export default function CheckoutPage() {
             <main className="relative z-10 max-w-[1280px] mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-24">
 
                 {/* Breadcrumb */}
-                <nav className="flex items-center gap-1.5 text-[12px] mb-8" aria-label={resolverCopy("checkout.breadcrumb", null)}>
+                <nav className="flex items-center gap-1.5 text-[12px] mb-8" aria-label="breadcrumb">
                     <Link href="/cliente/catalogo" className="text-muted-foreground hover:text-foreground transition-colors">
                         {resolverCopy("cabecalho.catalogo", null)}
                     </Link>
@@ -371,7 +371,7 @@ export default function CheckoutPage() {
 
                 {/* Page heading */}
                 <header className="mb-10 max-w-[820px]">
-                    <p className={cn(eyebrowClass, "mb-3")}>{resolverCopy("checkout.última_etapa", null)}</p>
+                    <p className={cn(eyebrowClass, "mb-3")}>{resolverCopy("checkout.ultima_etapa", null)}</p>
                     <h1
                         className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-foreground"
                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -455,7 +455,7 @@ export default function CheckoutPage() {
                                         className="text-[20px] tracking-tight text-foreground mt-0.5"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                     >
-                                        {resolverCopy("checkout.endereço_de_entrega", null)}
+                                        {resolverCopy("checkout.endereco_de_entrega", null)}
                                     </h2>
                                 </div>
                                 <MapPin className="w-5 h-5 text-muted-foreground/70" />
@@ -505,7 +505,7 @@ export default function CheckoutPage() {
                                         <div className="flex items-center gap-2 text-[12px] text-success bg-success-surface/80 border border-success/30 rounded-xl px-3.5 py-2.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                                             <span>
-                                                <span className="font-semibold">{resolverCopy("checkout.entrega_disponível", null)}</span> · {distanceKm.toFixed(1)} km da loja
+                                                <span className="font-semibold">{resolverCopy("checkout.entrega_disponivel", null)}</span> · {distanceKm.toFixed(1)} km da loja
                                             </span>
                                         </div>
                                     )}
@@ -513,7 +513,7 @@ export default function CheckoutPage() {
                                         <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive-surface/80 border border-destructive/30 rounded-xl px-3.5 py-2.5">
                                             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                             <span>
-                                                <span className="font-semibold">{resolverCopy("checkout.fora_da_área", null)}</span> Cobrimos até {storeCoords.radius} km.
+                                                <span className="font-semibold">{resolverCopy("checkout.fora_da_area", null)}</span> Cobrimos até {storeCoords.radius} km.
                                             </span>
                                         </div>
                                     )}
@@ -559,7 +559,7 @@ export default function CheckoutPage() {
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div className="grid grid-cols-3 gap-3 p-3.5 bg-muted/60 border border-border/50 rounded-xl">
                                                 <div className="col-span-3">
-                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("checkout.endereço_label", null)}</p>
+                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("checkout.endereco_label", null)}</p>
                                                     <p className="text-[13px] text-foreground leading-snug mt-0.5">
                                                         {addrForm.street}, <span className="text-muted-foreground">{addrForm.neighborhood}</span>
                                                     </p>
@@ -570,7 +570,7 @@ export default function CheckoutPage() {
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
                                                     <label className={cn(eyebrowClass)}>
-                                                        {resolverCopy("checkout.número", null)} <span className="text-destructive normal-case tracking-normal">*</span>
+                                                        {resolverCopy("checkout.numero", null)} <span className="text-destructive normal-case tracking-normal">*</span>
                                                     </label>
                                                     <input
                                                         type="text"
@@ -600,7 +600,7 @@ export default function CheckoutPage() {
                                                 <div className="flex items-center gap-2 text-[12px] text-success bg-success-surface/80 border border-success/30 rounded-xl px-3.5 py-2.5">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
                                                     <span>
-                                                        <span className="font-semibold">{resolverCopy("checkout.entrega_disponível", null)}</span> · {distanceKm.toFixed(1)} km da loja
+                                                        <span className="font-semibold">{resolverCopy("checkout.entrega_disponivel", null)}</span> · {distanceKm.toFixed(1)} km da loja
                                                     </span>
                                                 </div>
                                             )}
@@ -608,7 +608,7 @@ export default function CheckoutPage() {
                                                 <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive-surface/80 border border-destructive/30 rounded-xl px-3.5 py-2.5">
                                                     <AlertCircle className="w-3.5 h-3.5" />
                                                     <span>
-                                                        <span className="font-semibold">{resolverCopy("checkout.fora_da_área", null)}</span> Cobrimos até {storeCoords.radius} km.
+                                                        <span className="font-semibold">{resolverCopy("checkout.fora_da_area", null)}</span> Cobrimos até {storeCoords.radius} km.
                                                     </span>
                                                 </div>
                                             )}
@@ -691,7 +691,7 @@ export default function CheckoutPage() {
                                                 )}
                                             </span>
                                         ) : deliveryStatus === "too_far" ? (
-                                            <span className="text-destructive text-[12px] font-medium">{resolverCopy("checkout.fora_da_área_simple", null)}</span>
+                                            <span className="text-destructive text-[12px] font-medium">{resolverCopy("checkout.fora_da_area_simple", null)}</span>
                                         ) : (
                                             <span className="text-muted-foreground/70 text-[12px] italic">{resolverCopy("checkout.a_calcular", null)}</span>
                                         )}
@@ -738,7 +738,7 @@ export default function CheckoutPage() {
 
                             <p className="text-[10px] text-muted-foreground/70 text-center mt-3 leading-relaxed">
                                 {resolverCopy("checkout.ao_finalizar", null)} {" "}
-                                <span className="text-foreground cursor-pointer hover:underline">{resolverCopy("checkout.termos_de_serviço", null)}</span>.
+                                <span className="text-foreground cursor-pointer hover:underline">{resolverCopy("checkout.termos_de_servico", null)}</span>.
                             </p>
                         </div>
 
@@ -751,7 +751,7 @@ export default function CheckoutPage() {
                                     className="text-background text-[18px] mb-3"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 500 }}
                                 >
-                                    {resolverCopy("checkout.tem_um", null)} <em style={{ fontStyle: "italic" }} className="text-background">{resolverCopy("checkout.desconto", null)}</em>
+                                    Tem um <em style={{ fontStyle: "italic" }} className="text-background">desconto?</em>
                                 </p>
                                 <div className="flex gap-2">
                                     <input

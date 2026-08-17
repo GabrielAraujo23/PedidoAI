@@ -80,8 +80,8 @@ type NavItem = "perfil" | "pedidos" | "enderecos" | "configuracoes";
 const NAV_ITEMS: { id: NavItem; label: string; Icon: typeof User }[] = [
     { id: "perfil",        label: resolverCopy("perfil.meu_perfil", null),     Icon: User },
     { id: "pedidos",       label: resolverCopy("perfil.meus_pedidos", null),   Icon: Package },
-    { id: "enderecos",     label: resolverCopy("perfil.endereços", null),      Icon: MapPin },
-    { id: "configuracoes", label: resolverCopy("perfil.preferências", null),   Icon: Settings },
+    { id: "enderecos",     label: resolverCopy("perfil.enderecos", null),      Icon: MapPin },
+    { id: "configuracoes", label: resolverCopy("perfil.preferencias", null),   Icon: Settings },
 ];
 
 const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
@@ -322,7 +322,7 @@ export default function ProfilePage() {
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-5 pt-5 border-t border-border">
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("perfil.pedidos_rótulo", null)}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("perfil.pedidos_rotulo", null)}</p>
                                     <p
                                         className="text-foreground tabular-nums leading-none mt-1"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "20px" }}
@@ -331,7 +331,7 @@ export default function ProfilePage() {
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("perfil.membro_rótulo", null)}</p>
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("perfil.membro_rotulo", null)}</p>
                                     <p className="text-[12px] text-foreground leading-none mt-1.5">
                                         {client?.created_at
                                             ? new Date(client.created_at).getFullYear()
@@ -410,9 +410,9 @@ export default function ProfilePage() {
                                             <dd className="text-[14px] text-foreground mt-1">{client?.phone ?? "—"}</dd>
                                         </div>
                                         <div>
-                                            <dt className={eyebrowClass}>{resolverCopy("perfil.endereço", null)}</dt>
+                                            <dt className={eyebrowClass}>{resolverCopy("perfil.endereco", null)}</dt>
                                             <dd className="text-[14px] text-foreground mt-1 truncate" title={client?.address ?? undefined}>
-                                                {client?.address ?? <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>{resolverCopy("perfil.não_informado", null)}</span>}
+                                                {client?.address ?? <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>{resolverCopy("perfil.nao_informado", null)}</span>}
                                             </dd>
                                         </div>
                                         <div>
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                                 <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-center justify-between mb-6">
                                         <div>
-                                            <p className={eyebrowClass}>{resolverCopy("perfil.histórico", null)}</p>
+                                            <p className={eyebrowClass}>{resolverCopy("perfil.historico", null)}</p>
                                             <h2
                                                 className="text-[22px] tracking-tight text-foreground mt-0.5"
                                                 style={sectionTitleStyle}
@@ -503,7 +503,7 @@ export default function ProfilePage() {
                         {activeNav === "pedidos" && (
                             <section className="bg-card rounded-2xl border border-border/70 p-7">
                                 <div className="mb-6">
-                                    <p className={eyebrowClass}>{resolverCopy("perfil.histórico", null)}</p>
+                                    <p className={eyebrowClass}>{resolverCopy("perfil.historico", null)}</p>
                                     <h2
                                         className="text-[26px] tracking-tight text-foreground mt-0.5"
                                         style={sectionTitleStyle}
@@ -605,7 +605,7 @@ export default function ProfilePage() {
                                         className="text-[26px] tracking-tight text-foreground mt-0.5"
                                         style={sectionTitleStyle}
                                     >
-                                        {resolverCopy("perfil.endereços_section", null)}
+                                        {resolverCopy("perfil.enderecos_section", null)}
                                     </h2>
                                 </div>
 
@@ -639,7 +639,7 @@ export default function ProfilePage() {
                                             </div>
                                             <div>
                                                 <p className="text-[13.5px] font-medium text-muted-foreground">{resolverCopy("perfil.trabalho", null)}</p>
-                                                <p className="text-[11.5px]">{resolverCopy("perfil.adicionar_endereço_trabalho", null)}</p>
+                                                <p className="text-[11.5px]">{resolverCopy("perfil.adicionar_endereco_trabalho", null)}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -652,12 +652,12 @@ export default function ProfilePage() {
                             <div className="space-y-5">
                                 <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="mb-5">
-                                        <p className={eyebrowClass}>{resolverCopy("perfil.preferências", null)}</p>
+                                        <p className={eyebrowClass}>{resolverCopy("perfil.preferencias", null)}</p>
                                         <h2
                                             className="text-[22px] tracking-tight text-foreground mt-0.5"
                                             style={sectionTitleStyle}
                                         >
-                                            {resolverCopy("perfil.ajustes_rápidos", null)}
+                                            {resolverCopy("perfil.ajustes_rapidos", null)}
                                         </h2>
                                     </div>
 
@@ -668,8 +668,8 @@ export default function ProfilePage() {
                                                     <Bell className="w-4 h-4 text-foreground" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[14px] font-semibold text-foreground">{resolverCopy("perfil.notificações", null)}</p>
-                                                    <p className="text-[12px] text-muted-foreground">{resolverCopy("perfil.receber_atualizações", null)}</p>
+                                                    <p className="text-[14px] font-semibold text-foreground">{resolverCopy("perfil.notificacoes", null)}</p>
+                                                    <p className="text-[12px] text-muted-foreground">{resolverCopy("perfil.receber_atualizacoes", null)}</p>
                                                 </div>
                                             </div>
                                             <Toggle on={notifications} onChange={() => setNotifications(!notifications)} />
@@ -699,7 +699,7 @@ export default function ProfilePage() {
                                                 className="text-[22px] tracking-tight text-foreground mt-0.5"
                                                 style={sectionTitleStyle}
                                             >
-                                                {resolverCopy("perfil.informações_pessoais", null)}
+                                                {resolverCopy("perfil.informacoes_pessoais", null)}
                                             </h2>
                                         </div>
                                         {!editing && (
@@ -725,11 +725,11 @@ export default function ProfilePage() {
                                                     <dd className="text-[14px] text-foreground mt-1">{client?.phone ?? "—"}</dd>
                                                 </div>
                                                 <div>
-                                                    <dt className={eyebrowClass}>{resolverCopy("perfil.endereço_principal", null)}</dt>
+                                                    <dt className={eyebrowClass}>{resolverCopy("perfil.endereco_principal", null)}</dt>
                                                     <dd className="text-[14px] text-foreground mt-1">
                                                         {client?.address ?? (
                                                             <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
-                                                                {resolverCopy("perfil.não_informado", null)}
+                                                                {resolverCopy("perfil.nao_informado", null)}
                                                             </span>
                                                         )}
                                                     </dd>
@@ -816,7 +816,7 @@ export default function ProfilePage() {
                                             {cepStatus === "ok" && addrFields.street && (
                                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-muted/80 rounded-xl p-4 border border-border">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">{resolverCopy("perfil.endereço_label", null)}</p>
+                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">{resolverCopy("perfil.endereco_label", null)}</p>
                                                         <p className="text-[13px] text-foreground leading-snug">
                                                             {addrFields.street}
                                                             {addrFields.neighborhood && (
@@ -827,12 +827,12 @@ export default function ProfilePage() {
                                                     </div>
                                                     <div>
                                                         <label htmlFor="edit-number" className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 block mb-1">
-                                                            {resolverCopy("perfil.número", null)}
+                                                            {resolverCopy("perfil.numero", null)}
                                                         </label>
                                                         <input
                                                             id="edit-number"
                                                             type="text"
-                                                            placeholder={resolverCopy("perfil.placeholder_número", null)}
+                                                            placeholder={resolverCopy("perfil.placeholder_numero", null)}
                                                             value={numberField}
                                                             onChange={(e) => setNumberField(e.target.value)}
                                                             maxLength={LIMITS.address_number}
@@ -862,7 +862,7 @@ export default function ProfilePage() {
                                                     {saving ? (
                                                         <><Loader2 className="w-4 h-4 animate-spin" /> {resolverCopy("perfil.salvando", null)}</>
                                                     ) : (
-                                                        resolverCopy("perfil.salvar_alterações", null)
+                                                        resolverCopy("perfil.salvar_alteracoes", null)
                                                     )}
                                                 </button>
                                             </div>

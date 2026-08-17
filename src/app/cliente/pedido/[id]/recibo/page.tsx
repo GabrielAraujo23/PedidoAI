@@ -145,7 +145,7 @@ export default function ReciboPedidoPage() {
                     ) : !order ? (
                         <div className="text-center py-24">
                             <Package className="w-12 h-12 text-muted-foreground/70 mx-auto mb-3" />
-                            <p className="font-bold text-[#111827]">{resolverCopy("recibo.não_encontrado", null)}</p>
+                            <p className="font-bold text-[#111827]">{resolverCopy("recibo.nao_encontrado", null)}</p>
                             <Link
                                 href="/cliente/catalogo"
                                 className="text-sm text-[#F97316] hover:underline mt-2 inline-block"

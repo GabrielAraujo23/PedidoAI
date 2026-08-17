@@ -145,7 +145,7 @@ export default function OrderTrackingPage() {
                 ) : !order ? (
                     <div className="text-center py-24">
                         <Package className="w-12 h-12 text-muted-foreground/70 mx-auto mb-3" />
-                        <p className="font-bold text-[#111827]">{resolverCopy("pedido.não_encontrado", null)}</p>
+                        <p className="font-bold text-[#111827]">{resolverCopy("pedido.nao_encontrado", null)}</p>
                         <Link href="/cliente/catalogo" className="text-sm text-[#F97316] hover:underline mt-2 inline-block">
                             Voltar ao cardápio
                         </Link>
@@ -336,7 +336,7 @@ export default function OrderTrackingPage() {
                                         ) : (
                                             <div className="bg-destructive-surface border border-destructive/30 rounded-xl p-4 space-y-3">
                                                 <p className="text-sm font-semibold text-destructive">{resolverCopy("pedido.tem_certeza", null)}</p>
-                                                <p className="text-xs text-destructive">{resolverCopy("pedido.ação_não_desfeita", null)}</p>
+                                                <p className="text-xs text-destructive">{resolverCopy("pedido.acao_nao_desfeita", null)}</p>
                                                 {cancelError && <p className="text-xs text-destructive">{cancelError}</p>}
                                                 <div className="flex gap-2">
                                                     <button
