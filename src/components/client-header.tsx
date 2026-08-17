@@ -6,14 +6,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Search, X, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { resolverCopy } from "@/lib/copy";
 import { useCart } from "@/context/CartContext";
 import type { ClientSession } from "@/lib/auth-context";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
-    { label: "Catálogo", href: "/cliente/catalogo" },
-    { label: "Meus Pedidos", href: "/cliente/perfil" },
+    { label: resolverCopy("cabecalho.catalogo", null), href: "/cliente/catalogo" },
+    { label: resolverCopy("cabecalho.meus_pedidos", null), href: "/cliente/perfil" },
 ];
 
 interface ClientHeaderProps {
@@ -90,7 +91,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                         <input
                             type="text"
                             value={searchValue}
-                            placeholder="Buscar materiais…"
+                            placeholder={resolverCopy("cabecalho.buscar", null)}
                             onChange={(e) => onSearchChange(e.target.value)}
                             className="w-full h-9 pl-9 pr-9 rounded-full bg-background/70 border border-input text-[13px] text-foreground placeholder-muted-foreground outline-none focus:bg-background focus:border-ring focus:ring-4 focus:ring-ring/20 transition-all duration-200"
                         />
@@ -110,7 +111,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                     <button
                         onClick={() => setMobileSearchOpen((v) => !v)}
                         className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-                        aria-label="Buscar"
+                        aria-label={resolverCopy("cabecalho.buscar_rotulo", null)}
                     >
                         <Search className="w-4.5 h-4.5" />
                     </button>
@@ -151,7 +152,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                     <button
                         onClick={handleLogout}
                         className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-lg transition-colors"
-                        title="Sair"
+                        title={resolverCopy("cabecalho.sair", null)}
                     >
                         <LogOut className="w-4 h-4" />
                     </button>
@@ -176,7 +177,7 @@ export function ClientHeader({ session = null, searchValue = "", onSearchChange 
                                     autoFocus
                                     type="text"
                                     value={searchValue}
-                                    placeholder="Buscar materiais…"
+                                    placeholder={resolverCopy("cabecalho.buscar", null)}
                                     onChange={(e) => onSearchChange(e.target.value)}
                                     className="w-full h-10 pl-9 pr-9 rounded-full bg-background border border-input text-[14px] text-foreground placeholder-muted-foreground outline-none focus:border-ring focus:ring-4 focus:ring-ring/20 transition-all duration-200"
                                 />

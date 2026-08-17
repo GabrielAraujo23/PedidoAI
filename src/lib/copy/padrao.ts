@@ -41,6 +41,15 @@ export const COPY_PADRAO = {
     "login.loja_aberta":           "Loja Aberta",
     "login.erro_entrar":           "Erro ao entrar. Tente novamente.",
     "login.erro_cadastrar":        "Erro ao cadastrar. Tente novamente.",
+
+    "cabecalho.buscar":            "Buscar materiais…",
+    "cabecalho.buscar_rotulo":     "Buscar",
+    "cabecalho.sair":              "Sair",
+    "cabecalho.catalogo":          "Catálogo",
+    "cabecalho.meus_pedidos":      "Meus Pedidos",
+
+    "catalogo.categorias":         "Categorias",
+    "catalogo.finalizar":          "Finalizar",
 } as const;
 
 export type CopyKey = keyof typeof COPY_PADRAO;
@@ -61,4 +70,8 @@ export const LIMITES: Partial<Record<CopyKey, number>> = {
     "login.entrar_pedir":          24,
     "login.cadastrar_entrar":      24,
     "login.voltar":                16,
+    // Itens de menu no cabeçalho: cabem lado a lado numa barra estreita.
+    "cabecalho.catalogo":          18,
+    "cabecalho.meus_pedidos":      18,
+    "catalogo.finalizar":          16,
 };
