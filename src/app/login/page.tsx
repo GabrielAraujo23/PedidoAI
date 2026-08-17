@@ -10,6 +10,7 @@ import {
     validateName, validatePhone, sanitizeExternalCoords, sanitizeExternalText, LIMITS,
 } from "@/lib/validators";
 import { logEvent } from "@/lib/logger";
+import { resolverCopy } from "@/lib/copy";
 import { BrandMark } from "@/components/brand-mark";
 import { PoweredBy } from "@/components/powered-by";
 
@@ -21,8 +22,7 @@ function getAdminIdFromUrl(): string {
 }
 
 /** Pedido para o cliente buscar o link certo quando a loja não foi definida. */
-const NEEDS_STORE_MESSAGE =
-    "Não sabemos de qual loja você veio. Abra o link que a loja te enviou para continuar.";
+const NEEDS_STORE_MESSAGE = resolverCopy("login.precisa_loja", null);
 
 /** Dados públicos da loja: nome para exibir e coordenadas para estimar frete. */
 interface PublicStore {
@@ -179,7 +179,7 @@ export default function LoginPage() {
 
             if (data.erro) {
                 setCepStatus("error");
-                setCepError("CEP não encontrado.");
+                setCepError(resolverCopy("login.cep_nao_encontrado", null));
                 return;
             }
 
@@ -208,7 +208,7 @@ export default function LoginPage() {
         } catch {
             if (fetchedCepRef.current === digits) {
                 setCepStatus("error");
-                setCepError("CEP não encontrado.");
+                setCepError(resolverCopy("login.cep_nao_encontrado", null));
             }
         } finally {
             clearTimeout(timer);
@@ -301,7 +301,7 @@ export default function LoginPage() {
             if (!res.ok) throw new Error("auth failed");
             router.push("/cliente/catalogo");
         } catch {
-            setError("Erro ao entrar. Tente novamente.");
+            setError(resolverCopy("login.erro_entrar", null));
             setLoading(false);
         }
     }
@@ -336,7 +336,7 @@ export default function LoginPage() {
                     setNeedsStore(true);
                     setError(NEEDS_STORE_MESSAGE);
                 } else {
-                    setError(data.error || "Erro ao cadastrar. Tente novamente.");
+                    setError(data.error || resolverCopy("login.erro_cadastrar", null));
                 }
                 setLoading(false);
                 return;
@@ -344,7 +344,7 @@ export default function LoginPage() {
             logEvent({ event_type: "client_registered", actor_type: "client" });
             router.push("/cliente/catalogo");
         } catch {
-            setError("Erro ao cadastrar. Tente novamente.");
+            setError(resolverCopy("login.erro_cadastrar", null));
             setLoading(false);
         }
     }
@@ -389,7 +389,7 @@ export default function LoginPage() {
                     — esconder a confirmação justamente no celular anularia o
                     motivo de existir o slug. */}
                 <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-muted-foreground text-right max-w-[150px] sm:max-w-[220px] truncate">
-                    {storeName || "Loja Aberta"}
+                    {storeName || resolverCopy("login.loja_aberta", null)}
                 </span>
             </header>
 
@@ -429,7 +429,7 @@ export default function LoginPage() {
                     {step === "phone" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Bem-vindo</p>
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{resolverCopy("login.bemvindo", null)}</p>
                                 <h1
                                     className="text-[44px] sm:text-[52px] leading-[0.95] tracking-tight text-foreground"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -437,15 +437,15 @@ export default function LoginPage() {
                                     Faça seu pedido <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>agora.</em>
                                 </h1>
                                 <p className="text-[14px] text-muted-foreground mt-4 max-w-[320px] mx-auto leading-relaxed">
-                                    Digite seu telefone para começar. Tudo rapidinho, sem cadastro chato.
+                                    {resolverCopy("login.subtitulo", null)}
                                 </p>
                             </div>
 
                             <form onSubmit={handlePhoneContinue} className="space-y-5">
-                                <Field icon={Phone} label="Telefone">
+                                <Field icon={Phone} label={resolverCopy("login.telefone", null)}>
                                     <input
                                         type="tel"
-                                        placeholder="(11) 99999-9999"
+                                        placeholder={resolverCopy("login.placeholder_telefone", null)}
                                         value={phone}
                                         onChange={(e) => setPhone(maskPhone(e.target.value))}
                                         maxLength={15}
@@ -472,7 +472,7 @@ export default function LoginPage() {
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
                                         <>
-                                            Continuar
+                                            {resolverCopy("login.continuar", null)}
                                             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                                         </>
                                     )}
@@ -480,7 +480,7 @@ export default function LoginPage() {
                             </form>
 
                             <p className="text-center text-[11px] text-muted-foreground mt-8 leading-relaxed">
-                                Ao continuar, você concorda com receber pedidos via WhatsApp.
+                                {resolverCopy("login.termos", null)}
                             </p>
                         </section>
                     )}
@@ -491,7 +491,7 @@ export default function LoginPage() {
                             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-success-surface ring-8 ring-success-surface/60 mb-6">
                                 <Check className="w-7 h-7 text-success" strokeWidth={2.5} />
                             </div>
-                            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Que bom te ver</p>
+                            <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{resolverCopy("login.que_bom_te_ver", null)}</p>
                             <h1
                                 className="text-[40px] sm:text-[48px] leading-[1.0] tracking-tight text-foreground"
                                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -502,7 +502,7 @@ export default function LoginPage() {
                                 </em>
                             </h1>
                             <p className="text-[14px] text-muted-foreground mt-4 max-w-[320px] mx-auto leading-relaxed">
-                                Pronto pra montar mais um pedido?
+                                {resolverCopy("login.pronto", null)}
                             </p>
 
                             <div className="space-y-3 mt-8">
@@ -512,14 +512,14 @@ export default function LoginPage() {
                                     className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                 >
                                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                                        <>Entrar e pedir <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
+                                        <>{resolverCopy("login.entrar_pedir", null)} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
                                     )}
                                 </button>
                                 <button
                                     onClick={() => { setStep("phone"); setFoundClient(null); setPhone(""); }}
                                     className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
                                 >
-                                    <ArrowLeft className="w-3.5 h-3.5" /> Não sou eu
+                                    <ArrowLeft className="w-3.5 h-3.5" /> {resolverCopy("login.nao_sou_eu", null)}
                                 </button>
                             </div>
                         </section>
@@ -529,7 +529,7 @@ export default function LoginPage() {
                     {step === "new_client" && (
                         <section className="animate-in fade-in slide-in-from-bottom-3 duration-500">
                             <div className="text-center mb-8">
-                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Primeiro acesso</p>
+                                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">{resolverCopy("login.primeiro_acesso", null)}</p>
                                 <h1
                                     className="text-[36px] sm:text-[42px] leading-[1.0] tracking-tight text-foreground"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -537,7 +537,7 @@ export default function LoginPage() {
                                     Vamos te <em className="font-medium text-primary" style={{ fontStyle: "italic" }}>conhecer</em>.
                                 </h1>
                                 <p className="text-[14px] text-muted-foreground mt-4 max-w-[340px] mx-auto leading-relaxed">
-                                    Só uns dados rápidos para conseguirmos entregar direitinho na sua casa.
+                                    {resolverCopy("login.dados_rapidos", null)}
                                 </p>
                             </div>
 
@@ -551,10 +551,10 @@ export default function LoginPage() {
                                     />
                                 </Field>
 
-                                <Field icon={User} label="Nome completo">
+                                <Field icon={User} label={resolverCopy("login.nome_completo", null)}>
                                     <input
                                         type="text"
-                                        placeholder="Como posso te chamar?"
+                                        placeholder={resolverCopy("login.como_posso_chamar", null)}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         autoComplete="name"
@@ -570,7 +570,7 @@ export default function LoginPage() {
                                         <input
                                             type="text"
                                             inputMode="numeric"
-                                            placeholder="00000-000"
+                                            placeholder={resolverCopy("login.placeholder_cep", null)}
                                             maxLength={9}
                                             value={cep}
                                             onChange={(e) => handleCepChange(e.target.value)}
@@ -596,17 +596,17 @@ export default function LoginPage() {
                                     <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 pt-1">
                                         <div className="grid grid-cols-3 gap-3">
                                             <div className="col-span-3">
-                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Endereço</label>
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("login.endereco", null)}</label>
                                                 <p className="text-[14px] text-foreground leading-snug mt-0.5">
                                                     {addrFields.street}, <span className="text-muted-foreground">{addrFields.neighborhood}</span>
                                                 </p>
                                                 <p className="text-[12px] text-muted-foreground">{addrFields.city}/{addrFields.state}</p>
                                             </div>
                                             <div className="col-span-3">
-                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Número</label>
+                                                <label className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("login.numero", null)}</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="123"
+                                                    placeholder={resolverCopy("login.placeholder_numero", null)}
                                                     value={numberField}
                                                     onChange={(e) => setNumberField(e.target.value)}
                                                     disabled={loading}
@@ -630,7 +630,7 @@ export default function LoginPage() {
                                                 <div className="text-[12px] leading-relaxed">
                                                     {deliveryInfo.fee === 0 ? (
                                                         <>
-                                                            <span className="font-semibold text-success">Entrega grátis</span>
+                                                            <span className="font-semibold text-success">{resolverCopy("login.entrega_gratis", null)}</span>
                                                             <span className="text-success"> • {deliveryInfo.distanceKm.toFixed(1)} km da loja</span>
                                                         </>
                                                     ) : (
@@ -659,7 +659,7 @@ export default function LoginPage() {
                                         className="group w-full h-12 rounded-xl bg-foreground text-background text-[14px] font-semibold tracking-wide flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(28,25,23,0.18)]"
                                     >
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                                            <>Cadastrar e entrar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
+                                            <>{resolverCopy("login.cadastrar_entrar", null)} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
                                         )}
                                     </button>
                                     <button
@@ -667,7 +667,7 @@ export default function LoginPage() {
                                         onClick={resetNewClientStep}
                                         className="w-full h-10 text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center justify-center gap-1.5 transition-colors"
                                     >
-                                        <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+                                        <ArrowLeft className="w-3.5 h-3.5" /> {resolverCopy("login.voltar", null)}
                                     </button>
                                 </div>
                             </form>

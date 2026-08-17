@@ -14,19 +14,46 @@
  */
 
 export const COPY_PADRAO = {
-    "login.bemvindo":     "Bem-vindo",
-    "login.titulo":       "Faça seu pedido agora.",
-    "login.subtitulo":    "Digite seu telefone para começar. Tudo rapidinho, sem cadastro chato.",
-    "login.telefone":     "Telefone",
-    "login.continuar":    "Continuar",
-    "login.termos":       "Ao continuar, você concorda com receber pedidos via WhatsApp.",
+    "login.bemvindo":              "Bem-vindo",
+    "login.titulo":                "Faça seu pedido agora.",
+    "login.subtitulo":             "Digite seu telefone para começar. Tudo rapidinho, sem cadastro chato.",
+    "login.telefone":              "Telefone",
+    "login.placeholder_telefone":  "(11) 99999-9999",
+    "login.continuar":             "Continuar",
+    "login.termos":                "Ao continuar, você concorda com receber pedidos via WhatsApp.",
+    "login.que_bom_te_ver":        "Que bom te ver",
+    "login.pronto":                "Pronto pra montar mais um pedido?",
+    "login.entrar_pedir":          "Entrar e pedir",
+    "login.nao_sou_eu":            "Não sou eu",
+    "login.primeiro_acesso":       "Primeiro acesso",
+    "login.dados_rapidos":         "Só uns dados rápidos para conseguirmos entregar direitinho na sua casa.",
+    "login.nome_completo":         "Nome completo",
+    "login.como_posso_chamar":     "Como posso te chamar?",
+    "login.cep_nao_encontrado":    "CEP não encontrado.",
+    "login.placeholder_cep":       "00000-000",
+    "login.endereco":              "Endereço",
+    "login.numero":                "Número",
+    "login.placeholder_numero":    "123",
+    "login.entrega_gratis":        "Entrega grátis",
+    "login.cadastrar_entrar":      "Cadastrar e entrar",
+    "login.voltar":                "Voltar",
+    "login.precisa_loja":          "Não sabemos de qual loja você veio. Abra o link que a loja te enviou para continuar.",
+    "login.loja_aberta":           "Loja Aberta",
+    "login.erro_entrar":           "Erro ao entrar. Tente novamente.",
+    "login.erro_cadastrar":        "Erro ao cadastrar. Tente novamente.",
 } as const;
 
 export type CopyKey = keyof typeof COPY_PADRAO;
 
 /** Comprimento máximo por chave, onde o layout não perdoa. */
 export const LIMITES: Partial<Record<CopyKey, number>> = {
-    "login.bemvindo":  20,
-    "login.titulo":    48,
-    "login.continuar": 20,
+    "login.bemvindo":              20,
+    "login.titulo":                48,
+    "login.continuar":             20,
+    "login.que_bom_te_ver":        20,
+    "login.placeholder_telefone":  16,
+    "login.nao_sou_eu":            18,
+    "login.primeiro_acesso":       20,
+    "login.entrega_gratis":        18,
+    "login.placeholder_numero":    8,
 };
