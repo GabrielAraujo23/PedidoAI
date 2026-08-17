@@ -23,7 +23,14 @@ const EXCECOES = [
     "src/lib/terms.ts",
     // O contrato do PedidoAI é texto do produto, não da loja do lojista
     "src/app/contratar/page.tsx",
+    // Componente shadcn com rótulos em inglês para leitores de tela ("Close").
+    // Não é texto do produto e não muda conforme o ramo da loja.
+    "src/components/ui/sheet.tsx",
 ];
+
+// Nome de marca não se traduz por ramo de negócio. Sem esta lista o contador
+// nunca chega a zero, e o critério de pronto do sprint fica impossível.
+const MARCAS = ["PedidoAI"];
 
 function arquivos(dir) {
     const saida = [];
@@ -50,6 +57,9 @@ function ehTextoPortugues(texto) {
 
     // Não começa com { (interpolação JavaScript)
     if (limpo.startsWith("{")) return false;
+
+    // Nome de marca
+    if (MARCAS.includes(limpo)) return false;
 
     return true;
 }

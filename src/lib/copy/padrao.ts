@@ -56,4 +56,9 @@ export const LIMITES: Partial<Record<CopyKey, number>> = {
     "login.primeiro_acesso":       20,
     "login.entrega_gratis":        18,
     "login.placeholder_numero":    8,
+    // Os dois CTAs dividem a linha do botão com uma seta de 16px e não quebram
+    // em duas linhas: texto longo aqui estoura o botão em vez de embrulhar.
+    "login.entrar_pedir":          24,
+    "login.cadastrar_entrar":      24,
+    "login.voltar":                16,
 };
