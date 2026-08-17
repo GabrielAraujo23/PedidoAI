@@ -11,6 +11,7 @@ import {
     RotateCcw, AlertCircle, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolverCopy } from "@/lib/copy";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientHeader } from "@/components/client-header";
 import { useCart } from "@/context/CartContext";
@@ -77,10 +78,10 @@ const STATUS_CONFIG: Record<Status, { label: string; tone: string; Icon: typeof 
 type NavItem = "perfil" | "pedidos" | "enderecos" | "configuracoes";
 
 const NAV_ITEMS: { id: NavItem; label: string; Icon: typeof User }[] = [
-    { id: "perfil",        label: "Meu perfil",     Icon: User },
-    { id: "pedidos",       label: "Meus pedidos",   Icon: Package },
-    { id: "enderecos",     label: "Endereços",      Icon: MapPin },
-    { id: "configuracoes", label: "Preferências",   Icon: Settings },
+    { id: "perfil",        label: resolverCopy("perfil.meu_perfil", null),     Icon: User },
+    { id: "pedidos",       label: resolverCopy("perfil.meus_pedidos", null),   Icon: Package },
+    { id: "enderecos",     label: resolverCopy("perfil.endereços", null),      Icon: MapPin },
+    { id: "configuracoes", label: resolverCopy("perfil.preferências", null),   Icon: Settings },
 ];
 
 const eyebrowClass = "text-[11px] uppercase tracking-[0.22em] font-semibold text-muted-foreground";
@@ -283,7 +284,7 @@ export default function ProfilePage() {
 
                 {/* Page heading */}
                 <header className="mb-10 max-w-[820px]">
-                    <p className={cn(eyebrowClass, "mb-3")}>Sua conta</p>
+                    <p className={cn(eyebrowClass, "mb-3")}>{resolverCopy("perfil.sua_conta", null)}</p>
                     <h1
                         className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-foreground"
                         style={sectionTitleStyle}
@@ -321,7 +322,7 @@ export default function ProfilePage() {
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-5 pt-5 border-t border-border">
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Pedidos</p>
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("perfil.pedidos_rótulo", null)}</p>
                                     <p
                                         className="text-foreground tabular-nums leading-none mt-1"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "20px" }}
@@ -330,7 +331,7 @@ export default function ProfilePage() {
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Membro</p>
+                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("perfil.membro_rótulo", null)}</p>
                                     <p className="text-[12px] text-foreground leading-none mt-1.5">
                                         {client?.created_at
                                             ? new Date(client.created_at).getFullYear()
@@ -370,7 +371,7 @@ export default function ProfilePage() {
                                 className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13.5px] text-muted-foreground hover:text-destructive hover:bg-destructive-surface/60 transition-colors text-left mt-3"
                             >
                                 <LogOut className="w-4 h-4 shrink-0" />
-                                <span className="font-medium">Sair da conta</span>
+                                <span className="font-medium">{resolverCopy("perfil.sair_da_conta", null)}</span>
                             </button>
                         </nav>
                     </aside>
@@ -385,7 +386,7 @@ export default function ProfilePage() {
                                 <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-start justify-between gap-4 mb-7">
                                         <div className="min-w-0">
-                                            <p className={eyebrowClass}>Identidade</p>
+                                            <p className={eyebrowClass}>{resolverCopy("perfil.identidade", null)}</p>
                                             <h2
                                                 className="text-[26px] tracking-tight text-foreground mt-1"
                                                 style={sectionTitleStyle}
@@ -405,17 +406,17 @@ export default function ProfilePage() {
 
                                     <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
                                         <div>
-                                            <dt className={eyebrowClass}>Telefone</dt>
+                                            <dt className={eyebrowClass}>{resolverCopy("perfil.telefone", null)}</dt>
                                             <dd className="text-[14px] text-foreground mt-1">{client?.phone ?? "—"}</dd>
                                         </div>
                                         <div>
-                                            <dt className={eyebrowClass}>Endereço</dt>
+                                            <dt className={eyebrowClass}>{resolverCopy("perfil.endereço", null)}</dt>
                                             <dd className="text-[14px] text-foreground mt-1 truncate" title={client?.address ?? undefined}>
-                                                {client?.address ?? <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>Não informado</span>}
+                                                {client?.address ?? <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>{resolverCopy("perfil.não_informado", null)}</span>}
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className={eyebrowClass}>Total de pedidos</dt>
+                                            <dt className={eyebrowClass}>{resolverCopy("perfil.total_de_pedidos", null)}</dt>
                                             <dd
                                                 className="text-foreground tabular-nums mt-1 leading-none"
                                                 style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "22px" }}
@@ -424,7 +425,7 @@ export default function ProfilePage() {
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className={eyebrowClass}>Membro desde</dt>
+                                            <dt className={eyebrowClass}>{resolverCopy("perfil.membro_desde", null)}</dt>
                                             <dd className="text-[14px] text-foreground mt-1">{memberSince}</dd>
                                         </div>
                                     </dl>
@@ -434,12 +435,12 @@ export default function ProfilePage() {
                                 <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-center justify-between mb-6">
                                         <div>
-                                            <p className={eyebrowClass}>Histórico</p>
+                                            <p className={eyebrowClass}>{resolverCopy("perfil.histórico", null)}</p>
                                             <h2
                                                 className="text-[22px] tracking-tight text-foreground mt-0.5"
                                                 style={sectionTitleStyle}
                                             >
-                                                Seus pedidos recentes
+                                                {resolverCopy("perfil.seus_pedidos_recentes", null)}
                                             </h2>
                                         </div>
                                         <button
@@ -502,12 +503,12 @@ export default function ProfilePage() {
                         {activeNav === "pedidos" && (
                             <section className="bg-card rounded-2xl border border-border/70 p-7">
                                 <div className="mb-6">
-                                    <p className={eyebrowClass}>Histórico</p>
+                                    <p className={eyebrowClass}>{resolverCopy("perfil.histórico", null)}</p>
                                     <h2
                                         className="text-[26px] tracking-tight text-foreground mt-0.5"
                                         style={sectionTitleStyle}
                                     >
-                                        Meus pedidos
+                                        {resolverCopy("perfil.meus_pedidos_section", null)}
                                     </h2>
                                 </div>
 
@@ -599,12 +600,12 @@ export default function ProfilePage() {
                         {activeNav === "enderecos" && (
                             <section className="bg-card rounded-2xl border border-border/70 p-7">
                                 <div className="mb-6">
-                                    <p className={eyebrowClass}>Locais salvos</p>
+                                    <p className={eyebrowClass}>{resolverCopy("perfil.locais_salvos", null)}</p>
                                     <h2
                                         className="text-[26px] tracking-tight text-foreground mt-0.5"
                                         style={sectionTitleStyle}
                                     >
-                                        Endereços
+                                        {resolverCopy("perfil.endereços_section", null)}
                                     </h2>
                                 </div>
 
@@ -624,7 +625,7 @@ export default function ProfilePage() {
                                                     <div className="flex items-center gap-2">
                                                         <p className="text-[14px] font-semibold text-foreground">{label}</p>
                                                         <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-success bg-success-surface border border-success/30 px-2 py-0.5 rounded-full">
-                                                            Principal
+                                                            {resolverCopy("perfil.principal", null)}
                                                         </span>
                                                     </div>
                                                     <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{address}</p>
@@ -637,8 +638,8 @@ export default function ProfilePage() {
                                                 <Briefcase className="w-4 h-4" />
                                             </div>
                                             <div>
-                                                <p className="text-[13.5px] font-medium text-muted-foreground">Trabalho</p>
-                                                <p className="text-[11.5px]">Adicionar endereço de trabalho</p>
+                                                <p className="text-[13.5px] font-medium text-muted-foreground">{resolverCopy("perfil.trabalho", null)}</p>
+                                                <p className="text-[11.5px]">{resolverCopy("perfil.adicionar_endereço_trabalho", null)}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -651,12 +652,12 @@ export default function ProfilePage() {
                             <div className="space-y-5">
                                 <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="mb-5">
-                                        <p className={eyebrowClass}>Preferências</p>
+                                        <p className={eyebrowClass}>{resolverCopy("perfil.preferências", null)}</p>
                                         <h2
                                             className="text-[22px] tracking-tight text-foreground mt-0.5"
                                             style={sectionTitleStyle}
                                         >
-                                            Ajustes rápidos
+                                            {resolverCopy("perfil.ajustes_rápidos", null)}
                                         </h2>
                                     </div>
 
@@ -667,8 +668,8 @@ export default function ProfilePage() {
                                                     <Bell className="w-4 h-4 text-foreground" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[14px] font-semibold text-foreground">Notificações</p>
-                                                    <p className="text-[12px] text-muted-foreground">Receber atualizações de pedido</p>
+                                                    <p className="text-[14px] font-semibold text-foreground">{resolverCopy("perfil.notificações", null)}</p>
+                                                    <p className="text-[12px] text-muted-foreground">{resolverCopy("perfil.receber_atualizações", null)}</p>
                                                 </div>
                                             </div>
                                             <Toggle on={notifications} onChange={() => setNotifications(!notifications)} />
@@ -679,9 +680,9 @@ export default function ProfilePage() {
                                                     <Moon className="w-4 h-4 text-foreground" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[14px] font-semibold text-foreground">Modo escuro</p>
+                                                    <p className="text-[14px] font-semibold text-foreground">{resolverCopy("perfil.modo_escuro", null)}</p>
                                                     <p className="text-[12px] text-muted-foreground italic" style={{ fontFamily: "var(--font-display)" }}>
-                                                        em breve
+                                                        {resolverCopy("perfil.em_breve", null)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -693,12 +694,12 @@ export default function ProfilePage() {
                                 <section className="bg-card rounded-2xl border border-border/70 p-7">
                                     <div className="flex items-start justify-between gap-4 mb-5">
                                         <div>
-                                            <p className={eyebrowClass}>Conta</p>
+                                            <p className={eyebrowClass}>{resolverCopy("perfil.conta", null)}</p>
                                             <h2
                                                 className="text-[22px] tracking-tight text-foreground mt-0.5"
                                                 style={sectionTitleStyle}
                                             >
-                                                Informações pessoais
+                                                {resolverCopy("perfil.informações_pessoais", null)}
                                             </h2>
                                         </div>
                                         {!editing && (
@@ -716,19 +717,19 @@ export default function ProfilePage() {
                                         <div className="space-y-4">
                                             <dl className="space-y-4">
                                                 <div>
-                                                    <dt className={eyebrowClass}>Nome completo</dt>
+                                                    <dt className={eyebrowClass}>{resolverCopy("perfil.nome_completo", null)}</dt>
                                                     <dd className="text-[14px] text-foreground mt-1">{session.name}</dd>
                                                 </div>
                                                 <div>
-                                                    <dt className={eyebrowClass}>Telefone</dt>
+                                                    <dt className={eyebrowClass}>{resolverCopy("perfil.telefone", null)}</dt>
                                                     <dd className="text-[14px] text-foreground mt-1">{client?.phone ?? "—"}</dd>
                                                 </div>
                                                 <div>
-                                                    <dt className={eyebrowClass}>Endereço principal</dt>
+                                                    <dt className={eyebrowClass}>{resolverCopy("perfil.endereço_principal", null)}</dt>
                                                     <dd className="text-[14px] text-foreground mt-1">
                                                         {client?.address ?? (
                                                             <span className="italic text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
-                                                                Não informado
+                                                                {resolverCopy("perfil.não_informado", null)}
                                                             </span>
                                                         )}
                                                     </dd>
@@ -737,7 +738,7 @@ export default function ProfilePage() {
                                             {saveSuccess && (
                                                 <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success-surface border border-success/30 text-success text-[13px] font-medium animate-in fade-in duration-300">
                                                     <Check className="w-4 h-4 text-success shrink-0" />
-                                                    Dados atualizados com sucesso.
+                                                    {resolverCopy("perfil.dados_atualizados", null)}
                                                 </div>
                                             )}
                                         </div>
@@ -745,21 +746,21 @@ export default function ProfilePage() {
                                         <div className="space-y-4">
                                             <div>
                                                 <label htmlFor="edit-name" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5">
-                                                    Nome completo *
+                                                    {resolverCopy("perfil.nome_completo_asterisco", null)}
                                                 </label>
                                                 <input
                                                     id="edit-name"
                                                     value={editName}
                                                     onChange={(e) => setEditName(e.target.value)}
                                                     maxLength={LIMITS.name}
-                                                    placeholder="João Silva"
+                                                    placeholder={resolverCopy("perfil.placeholder_nome", null)}
                                                     className="w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-ring focus:ring-4 focus:ring-ring/20"
                                                 />
                                             </div>
 
                                             <div>
                                                 <label htmlFor="edit-phone" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5">
-                                                    Telefone *
+                                                    {resolverCopy("perfil.telefone_asterisco", null)}
                                                 </label>
                                                 <input
                                                     id="edit-phone"
@@ -767,7 +768,7 @@ export default function ProfilePage() {
                                                     onChange={(e) => setEditPhone(maskPhone(e.target.value))}
                                                     inputMode="tel"
                                                     maxLength={15}
-                                                    placeholder="(11) 99999-0001"
+                                                    placeholder={resolverCopy("perfil.placeholder_telefone", null)}
                                                     className="w-full h-11 px-3.5 rounded-xl border border-input bg-background text-[14px] text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-ring focus:ring-4 focus:ring-ring/20"
                                                 />
                                             </div>
@@ -776,9 +777,9 @@ export default function ProfilePage() {
                                                 <label htmlFor="edit-cep" className="block text-[11px] uppercase tracking-[0.18em] font-semibold text-muted-foreground mb-1.5">
                                                     <span className="flex items-center gap-1">
                                                         <MapPin className="w-3 h-3" />
-                                                        Novo CEP{" "}
+                                                        {resolverCopy("perfil.novo_cep", null)}{" "}
                                                         <span className="normal-case tracking-normal font-normal text-muted-foreground/70">
-                                                            (opcional — deixe em branco para manter o endereço atual)
+                                                            {resolverCopy("perfil.cep_opcional", null)}
                                                         </span>
                                                     </span>
                                                 </label>
@@ -787,7 +788,7 @@ export default function ProfilePage() {
                                                         id="edit-cep"
                                                         type="text"
                                                         inputMode="numeric"
-                                                        placeholder="00000-000"
+                                                        placeholder={resolverCopy("perfil.placeholder_cep", null)}
                                                         maxLength={9}
                                                         value={cep}
                                                         onChange={(e) => handleCepChange(e.target.value)}
@@ -815,7 +816,7 @@ export default function ProfilePage() {
                                             {cepStatus === "ok" && addrFields.street && (
                                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 bg-muted/80 rounded-xl p-4 border border-border">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">Endereço</p>
+                                                        <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 mb-0.5">{resolverCopy("perfil.endereço_label", null)}</p>
                                                         <p className="text-[13px] text-foreground leading-snug">
                                                             {addrFields.street}
                                                             {addrFields.neighborhood && (
@@ -826,12 +827,12 @@ export default function ProfilePage() {
                                                     </div>
                                                     <div>
                                                         <label htmlFor="edit-number" className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70 block mb-1">
-                                                            Número
+                                                            {resolverCopy("perfil.número", null)}
                                                         </label>
                                                         <input
                                                             id="edit-number"
                                                             type="text"
-                                                            placeholder="123"
+                                                            placeholder={resolverCopy("perfil.placeholder_número", null)}
                                                             value={numberField}
                                                             onChange={(e) => setNumberField(e.target.value)}
                                                             maxLength={LIMITS.address_number}
@@ -851,7 +852,7 @@ export default function ProfilePage() {
                                                     disabled={saving}
                                                     className="h-10 px-4 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                                                 >
-                                                    Cancelar
+                                                    {resolverCopy("perfil.cancelar", null)}
                                                 </button>
                                                 <button
                                                     onClick={saveProfile}
@@ -859,9 +860,9 @@ export default function ProfilePage() {
                                                     className="h-10 px-6 bg-foreground text-background rounded-xl text-[13px] font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_2px_8px_rgba(28,25,23,0.18)]"
                                                 >
                                                     {saving ? (
-                                                        <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+                                                        <><Loader2 className="w-4 h-4 animate-spin" /> {resolverCopy("perfil.salvando", null)}</>
                                                     ) : (
-                                                        "Salvar alterações"
+                                                        resolverCopy("perfil.salvar_alterações", null)
                                                     )}
                                                 </button>
                                             </div>
