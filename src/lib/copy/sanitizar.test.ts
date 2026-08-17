@@ -38,6 +38,21 @@ describe("sanitizarOverrides", () => {
         expect(resultado).toEqual({ "login.titulo": "Novo título" });
     });
 
+    it("descarta chave herdada de Object.prototype", () => {
+        // `chave in COPY_PADRAO` percorre a cadeia de protótipos, e por isso
+        // "toString", "constructor" e "valueOf" passavam como se fossem
+        // chaves do catálogo. O teste acima não pegava: ele usa um nome
+        // inventado, e nome inventado não está no protótipo. Estes três
+        // estão, e é por isso que precisam de teste próprio.
+        const entrada = {
+            "toString": "invadido",
+            "constructor": "invadido",
+            "valueOf": "invadido",
+            "login.titulo": "Novo título",
+        };
+        expect(sanitizarOverrides(entrada)).toEqual({ "login.titulo": "Novo título" });
+    });
+
     it("descarta valor que não é string", () => {
         // JSONB vindo do banco pode ter qualquer tipo dentro.
         const entrada = {

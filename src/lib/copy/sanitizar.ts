@@ -55,8 +55,14 @@ export function sanitizarOverrides(entrada: unknown): Record<string, string> {
         if (processadas >= TETO_CHAVES) break;
         processadas++;
 
-        // Chave deve existir em COPY_PADRAO
-        if (!(chave in COPY_PADRAO)) continue;
+        // Chave deve existir em COPY_PADRAO — como propriedade PRÓPRIA.
+        //
+        // `chave in COPY_PADRAO` não serve: `in` percorre a cadeia de
+        // protótipos, então "toString", "constructor" e "valueOf" passariam
+        // como se fossem chaves do catálogo. O JSONB da loja acabaria com
+        // lixo que nenhuma tela lê e que a tela de edição mostraria como se
+        // fosse texto de verdade.
+        if (!Object.prototype.hasOwnProperty.call(COPY_PADRAO, chave)) continue;
 
         // Valor deve ser string
         if (typeof valor !== "string") continue;
