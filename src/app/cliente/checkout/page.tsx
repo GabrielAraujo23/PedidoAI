@@ -9,6 +9,7 @@ import {
     AlertCircle, Check, Loader2, Pencil, ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolverCopy } from "@/lib/copy";
 import { ClientHeader } from "@/components/client-header";
 import { QuantityStepper } from "@/components/quantity-stepper";
 import { useCart } from "@/context/CartContext";
@@ -360,17 +361,17 @@ export default function CheckoutPage() {
             <main className="relative z-10 max-w-[1280px] mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-24">
 
                 {/* Breadcrumb */}
-                <nav className="flex items-center gap-1.5 text-[12px] mb-8" aria-label="breadcrumb">
+                <nav className="flex items-center gap-1.5 text-[12px] mb-8" aria-label={resolverCopy("checkout.breadcrumb", null)}>
                     <Link href="/cliente/catalogo" className="text-muted-foreground hover:text-foreground transition-colors">
-                        Catálogo
+                        {resolverCopy("cabecalho.catalogo", null)}
                     </Link>
                     <ChevronRight className="w-3 h-3 text-muted-foreground/70" />
-                    <span className="text-foreground font-semibold">Checkout</span>
+                    <span className="text-foreground font-semibold">{resolverCopy("checkout.checkout_titulo", null)}</span>
                 </nav>
 
                 {/* Page heading */}
                 <header className="mb-10 max-w-[820px]">
-                    <p className={cn(eyebrowClass, "mb-3")}>Última etapa</p>
+                    <p className={cn(eyebrowClass, "mb-3")}>{resolverCopy("checkout.última_etapa", null)}</p>
                     <h1
                         className="text-[40px] sm:text-[52px] leading-[0.96] tracking-tight text-foreground"
                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -392,7 +393,7 @@ export default function CheckoutPage() {
                         <section className="bg-card rounded-2xl border border-border/70 overflow-hidden">
                             <header className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-border">
                                 <div>
-                                    <p className={eyebrowClass}>Carrinho</p>
+                                    <p className={eyebrowClass}>{resolverCopy("checkout.carrinho", null)}</p>
                                     <h2
                                         className="text-[20px] tracking-tight text-foreground mt-0.5"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
@@ -406,7 +407,7 @@ export default function CheckoutPage() {
                             </header>
 
                             {items.length === 0 ? (
-                                <p className="text-[13px] text-muted-foreground text-center py-10">Carrinho vazio.</p>
+                                <p className="text-[13px] text-muted-foreground text-center py-10">{resolverCopy("checkout.carrinho_vazio", null)}</p>
                             ) : (
                                 <ul className="divide-y divide-border">
                                     {items.map((item) => (
@@ -435,7 +436,7 @@ export default function CheckoutPage() {
                                             <button
                                                 onClick={() => removeItem(item.product_id)}
                                                 className="p-1.5 text-muted-foreground/70 hover:text-destructive hover:bg-destructive-surface rounded-lg transition-colors shrink-0"
-                                                title="Remover"
+                                                title={resolverCopy("checkout.remover", null)}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -449,12 +450,12 @@ export default function CheckoutPage() {
                         <section className="bg-card rounded-2xl border border-border/70 p-6">
                             <div className="flex items-center justify-between mb-5">
                                 <div>
-                                    <p className={eyebrowClass}>Entrega</p>
+                                    <p className={eyebrowClass}>{resolverCopy("checkout.entrega_label", null)}</p>
                                     <h2
                                         className="text-[20px] tracking-tight text-foreground mt-0.5"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                     >
-                                        Endereço de entrega
+                                        {resolverCopy("checkout.endereço_de_entrega", null)}
                                     </h2>
                                 </div>
                                 <MapPin className="w-5 h-5 text-muted-foreground/70" />
@@ -480,7 +481,7 @@ export default function CheckoutPage() {
                                             className="flex items-center gap-1 text-[11px] text-foreground/70 hover:text-foreground font-semibold uppercase tracking-wider shrink-0"
                                         >
                                             <Pencil className="w-3 h-3" />
-                                            Alterar
+                                            {resolverCopy("checkout.alterar", null)}
                                         </button>
                                     </div>
 
@@ -504,7 +505,7 @@ export default function CheckoutPage() {
                                         <div className="flex items-center gap-2 text-[12px] text-success bg-success-surface/80 border border-success/30 rounded-xl px-3.5 py-2.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                                             <span>
-                                                <span className="font-semibold">Entrega disponível</span> · {distanceKm.toFixed(1)} km da loja
+                                                <span className="font-semibold">{resolverCopy("checkout.entrega_disponível", null)}</span> · {distanceKm.toFixed(1)} km da loja
                                             </span>
                                         </div>
                                     )}
@@ -512,7 +513,7 @@ export default function CheckoutPage() {
                                         <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive-surface/80 border border-destructive/30 rounded-xl px-3.5 py-2.5">
                                             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                                             <span>
-                                                <span className="font-semibold">Fora da área.</span> Cobrimos até {storeCoords.radius} km.
+                                                <span className="font-semibold">{resolverCopy("checkout.fora_da_área", null)}</span> Cobrimos até {storeCoords.radius} km.
                                             </span>
                                         </div>
                                     )}
@@ -523,7 +524,7 @@ export default function CheckoutPage() {
                             {showCepInput && (
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className={eyebrowClass}>CEP</label>
+                                        <label className={eyebrowClass}>{resolverCopy("checkout.cep", null)}</label>
                                         <div className="relative">
                                             <input
                                                 type="text"
@@ -558,7 +559,7 @@ export default function CheckoutPage() {
                                         <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div className="grid grid-cols-3 gap-3 p-3.5 bg-muted/60 border border-border/50 rounded-xl">
                                                 <div className="col-span-3">
-                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">Endereço</p>
+                                                    <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-muted-foreground/70">{resolverCopy("checkout.endereço_label", null)}</p>
                                                     <p className="text-[13px] text-foreground leading-snug mt-0.5">
                                                         {addrForm.street}, <span className="text-muted-foreground">{addrForm.neighborhood}</span>
                                                     </p>
@@ -569,7 +570,7 @@ export default function CheckoutPage() {
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1.5">
                                                     <label className={cn(eyebrowClass)}>
-                                                        Número <span className="text-destructive normal-case tracking-normal">*</span>
+                                                        {resolverCopy("checkout.número", null)} <span className="text-destructive normal-case tracking-normal">*</span>
                                                     </label>
                                                     <input
                                                         type="text"
@@ -582,11 +583,11 @@ export default function CheckoutPage() {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <label className={eyebrowClass}>
-                                                        Complemento <span className="text-muted-foreground/70 normal-case tracking-normal">(opcional)</span>
+                                                        {resolverCopy("checkout.complemento", null)} <span className="text-muted-foreground/70 normal-case tracking-normal">{resolverCopy("checkout.opcional", null)}</span>
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        placeholder="Apto, bloco, ref."
+                                                        placeholder={resolverCopy("checkout.placeholder_complemento", null)}
                                                         value={addrForm.complement}
                                                         onChange={(e) => setAddrForm((prev) => ({ ...prev, complement: e.target.value }))}
                                                         maxLength={LIMITS.complement}
@@ -599,7 +600,7 @@ export default function CheckoutPage() {
                                                 <div className="flex items-center gap-2 text-[12px] text-success bg-success-surface/80 border border-success/30 rounded-xl px-3.5 py-2.5">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-success" />
                                                     <span>
-                                                        <span className="font-semibold">Entrega disponível</span> · {distanceKm.toFixed(1)} km da loja
+                                                        <span className="font-semibold">{resolverCopy("checkout.entrega_disponível", null)}</span> · {distanceKm.toFixed(1)} km da loja
                                                     </span>
                                                 </div>
                                             )}
@@ -607,7 +608,7 @@ export default function CheckoutPage() {
                                                 <div className="flex items-center gap-2 text-[12px] text-destructive bg-destructive-surface/80 border border-destructive/30 rounded-xl px-3.5 py-2.5">
                                                     <AlertCircle className="w-3.5 h-3.5" />
                                                     <span>
-                                                        <span className="font-semibold">Fora da área.</span> Cobrimos até {storeCoords.radius} km.
+                                                        <span className="font-semibold">{resolverCopy("checkout.fora_da_área", null)}</span> Cobrimos até {storeCoords.radius} km.
                                                     </span>
                                                 </div>
                                             )}
@@ -620,12 +621,12 @@ export default function CheckoutPage() {
                         {/* Payment method */}
                         <section className="bg-card rounded-2xl border border-border/70 p-6">
                             <div className="mb-5">
-                                <p className={eyebrowClass}>Pagamento</p>
+                                <p className={eyebrowClass}>{resolverCopy("checkout.pagamento", null)}</p>
                                 <h2
                                     className="text-[20px] tracking-tight text-foreground mt-0.5"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                                 >
-                                    Como prefere pagar?
+                                    {resolverCopy("checkout.como_prefere_pagar", null)}
                                 </h2>
                             </div>
 
@@ -653,7 +654,7 @@ export default function CheckoutPage() {
                                         <QrCode className="w-7 h-7 text-muted-foreground/70" />
                                     </div>
                                     <p className="text-[12px] text-muted-foreground leading-relaxed">
-                                        O QR Code do PIX será gerado quando você finalizar o pedido.
+                                        {resolverCopy("checkout.qr_code_pix", null)}
                                     </p>
                                 </div>
                             )}
@@ -664,21 +665,21 @@ export default function CheckoutPage() {
                     <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
 
                         <div className="bg-card rounded-2xl border border-border/70 p-6">
-                            <p className={eyebrowClass}>Resumo</p>
+                            <p className={eyebrowClass}>{resolverCopy("checkout.resumo", null)}</p>
                             <h2
                                 className="text-[22px] tracking-tight text-foreground mt-0.5 mb-5"
                                 style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}
                             >
-                                Seu pedido
+                                {resolverCopy("checkout.seu_pedido", null)}
                             </h2>
 
                             <dl className="space-y-2.5 text-[13px] mb-5">
                                 <div className="flex justify-between">
-                                    <dt className="text-muted-foreground">Subtotal</dt>
+                                    <dt className="text-muted-foreground">{resolverCopy("checkout.subtotal", null)}</dt>
                                     <dd className="text-foreground tabular-nums">{formatCurrency(totalPrice)}</dd>
                                 </div>
                                 <div className="flex justify-between items-baseline">
-                                    <dt className="text-muted-foreground">Entrega</dt>
+                                    <dt className="text-muted-foreground">{resolverCopy("checkout.entrega_label", null)}</dt>
                                     <dd className="text-right">
                                         {deliveryStatus === "ok" ? (
                                             <span className="text-foreground tabular-nums">
@@ -690,15 +691,15 @@ export default function CheckoutPage() {
                                                 )}
                                             </span>
                                         ) : deliveryStatus === "too_far" ? (
-                                            <span className="text-destructive text-[12px] font-medium">Fora da área</span>
+                                            <span className="text-destructive text-[12px] font-medium">{resolverCopy("checkout.fora_da_área_simple", null)}</span>
                                         ) : (
-                                            <span className="text-muted-foreground/70 text-[12px] italic">A calcular</span>
+                                            <span className="text-muted-foreground/70 text-[12px] italic">{resolverCopy("checkout.a_calcular", null)}</span>
                                         )}
                                     </dd>
                                 </div>
 
                                 <div className="border-t border-border pt-3 mt-3 flex justify-between items-baseline">
-                                    <dt className={eyebrowClass}>Total</dt>
+                                    <dt className={eyebrowClass}>{resolverCopy("checkout.total", null)}</dt>
                                     <dd
                                         className="text-foreground tabular-nums leading-none"
                                         style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: "28px" }}
@@ -717,7 +718,7 @@ export default function CheckoutPage() {
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                     <>
-                                        Finalizar pedido
+                                        {resolverCopy("checkout.finalizar_pedido", null)}
                                         <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                                     </>
                                 )}
@@ -736,8 +737,8 @@ export default function CheckoutPage() {
                             )}
 
                             <p className="text-[10px] text-muted-foreground/70 text-center mt-3 leading-relaxed">
-                                Ao finalizar, você concorda com os{" "}
-                                <span className="text-foreground cursor-pointer hover:underline">Termos de Serviço</span>.
+                                {resolverCopy("checkout.ao_finalizar", null)} {" "}
+                                <span className="text-foreground cursor-pointer hover:underline">{resolverCopy("checkout.termos_de_serviço", null)}</span>.
                             </p>
                         </div>
 
@@ -745,23 +746,23 @@ export default function CheckoutPage() {
                         <div className="bg-foreground rounded-2xl p-5 relative overflow-hidden">
                             <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-primary/20 blur-2xl pointer-events-none" />
                             <div className="relative">
-                                <p className="text-[10px] uppercase tracking-[0.22em] text-background/60 mb-1 font-semibold">Cupom</p>
+                                <p className="text-[10px] uppercase tracking-[0.22em] text-background/60 mb-1 font-semibold">{resolverCopy("checkout.cupom", null)}</p>
                                 <p
                                     className="text-background text-[18px] mb-3"
                                     style={{ fontFamily: "var(--font-display)", fontWeight: 500 }}
                                 >
-                                    Tem um <em style={{ fontStyle: "italic" }} className="text-background">desconto?</em>
+                                    {resolverCopy("checkout.tem_um", null)} <em style={{ fontStyle: "italic" }} className="text-background">{resolverCopy("checkout.desconto", null)}</em>
                                 </p>
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
                                         value={coupon}
                                         onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-                                        placeholder="CÓDIGO"
+                                        placeholder={resolverCopy("checkout.placeholder_cupom", null)}
                                         className="flex-1 h-9 px-3 rounded-lg bg-white/10 text-white placeholder:text-white/30 text-[12px] font-semibold outline-none focus:bg-white/15 focus:ring-2 focus:ring-white/20 transition-all"
                                     />
                                     <button className="bg-background text-foreground px-3.5 h-9 rounded-lg text-[11px] font-bold uppercase tracking-wider hover:bg-muted transition-colors">
-                                        Aplicar
+                                        {resolverCopy("checkout.aplicar", null)}
                                     </button>
                                 </div>
                             </div>
