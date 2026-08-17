@@ -153,6 +153,17 @@ export const COPY_PADRAO = {
     "pedido.sim_cancelar":         "Sim, cancelar",
     "pedido.ver_recibo":           "Ver Recibo",
     "pedido.novo_pedido":          "Novo Pedido",
+
+    "recibo.não_encontrado":       "Pedido não encontrado",
+    "recibo.recibo_de_pedido":     "RECIBO DE PEDIDO",
+    "recibo.cliente":              "CLIENTE",
+    "recibo.itens":                "ITENS",
+    "recibo.produto":              "Produto",
+    "recibo.und":                  "Und.",
+    "recibo.unit":                 "Unit.",
+    "recibo.total":                "Total",
+    "recibo.subtotal":             "Subtotal",
+    "recibo.obrigado":             "Obrigado pela preferência!",
 } as const;
 
 export type CopyKey = keyof typeof COPY_PADRAO;
