@@ -131,6 +131,28 @@ export const COPY_PADRAO = {
     "checkout.ao_finalizar":       "Ao finalizar, você concorda com os",
     "checkout.tem_um":             "Tem um",
     "checkout.aplicar":            "Aplicar",
+
+    "pedido.não_encontrado":       "Pedido não encontrado",
+    "pedido.cancelado":            "Este pedido foi cancelado.",
+    "pedido.sucesso":              "SUCESSO",
+    "pedido.cancelado_label":      "Pedido cancelado",
+    "pedido.status_envio":         "Status do Envio",
+    "pedido.a_caminho":            "A caminho",
+    "pedido.resumo":               "Resumo do Pedido",
+    "pedido.subtotal":             "Subtotal",
+    "pedido.taxa_entrega":         "Taxa de entrega",
+    "pedido.a_calcular":           "A calcular",
+    "pedido.total":                "Total",
+    "pedido.cliente":              "CLIENTE",
+    "pedido.pedido_feito_em":      "PEDIDO FEITO EM",
+    "pedido.tem_certeza":          "Tem certeza?",
+    "pedido.ação_não_desfeita":    "Esta ação não pode ser desfeita.",
+    "pedido.fazer_novo":           "Fazer novo pedido",
+    "pedido.cancelar_pedido":      "Cancelar pedido",
+    "pedido.manter":               "Manter",
+    "pedido.sim_cancelar":         "Sim, cancelar",
+    "pedido.ver_recibo":           "Ver Recibo",
+    "pedido.novo_pedido":          "Novo Pedido",
 } as const;
 
 export type CopyKey = keyof typeof COPY_PADRAO;
